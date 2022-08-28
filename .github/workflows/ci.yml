@@ -1,0 +1,89 @@
+name: CI
+on:
+  push:
+  schedule:
+    - cron: '0 0 * * *'
+env:
+  REDIS_HOST: '127.0.0.1'
+  REDIS_PORT: 6379
+jobs:
+  tests:
+    name: "PHP ${{ matrix.php-version }} ${{ matrix.database }}"
+    runs-on: "ubuntu-20.04"
+    strategy:
+#      max-parallel: 3
+      matrix:
+        php-version:
+          - "8.0"
+          - "8.1"
+        database:
+          - sqlite
+          - mysql
+          - postgres
+    steps:
+      - name: Setup MySQL
+        if: matrix.database == 'mysql'
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE lightning;' -uroot -proot
+          mysql -e 'SHOW DATABASES;' -uroot -proot
+      - name: Setup Postgres
+        if: matrix.database == 'postgres'
+        run: |
+          docker run -d -e POSTGRES_PASSWORD=root -e POSTGRES_DB=lightning -p 5432:5432 postgres
+          sudo apt-get install postgresql-client
+      - name: Setup Redis
+        run: docker run -p 6379:6379 -d redis
+      - name: Checkout source code
+        uses: "actions/checkout@v2"
+      - name: Install PHP
+        uses: "shivammathur/setup-php@v2"
+        with:
+          coverage: "xdebug"
+          php-version: "${{ matrix.php-version }}"
+          extensions: pdo_mysql, pdo_sqlite, pdo_pgsql, mailparse, imap, redis, ssh2
+          ini-values: apc.enable=1, apc.enable_cli=1
+      - name: Install dependencies
+        run: |
+          composer require --dev php-coveralls/php-coveralls
+          composer update --no-progress --prefer-dist
+      - name: Setup
+        run: |
+          touch .env
+          sudo locale-gen es_ES.UTF-8 nl_NL.UTF-8
+          mkdir -p build/logs
+      - name: Run PHPUnit
+        run: |
+            if [[ ${{ matrix.database }} == 'sqlite' ]]; then
+              export DB_URL="sqlite:${PWD}/test.sqlite";
+              export DB_USERNAME=root;
+              export DB_PASSWORD=root;
+        
+              cat database/schema/sqlite.sql | sqlite3 ${PWD}/test.sqlite
+            fi;
+            
+            if [[ ${{ matrix.database }} == 'mysql' ]]; then
+              export DB_URL="mysql:host=127.0.0.1;port=3306;dbname=lightning";
+              export DB_USERNAME=root;
+              export DB_PASSWORD=root;
+
+              sudo mysql -uroot -proot -h 127.0.0.1 lightning < database/schema/schema.sql
+
+            fi;
+
+            if [[ ${{ matrix.database }} == 'postgres' ]]; then
+             
+              export DB_URL="pgsql:host=127.0.0.1;port=5432;dbname=lightning";
+              export DB_USERNAME=postgres;
+              export DB_PASSWORD=root
+
+              sudo PGPASSWORD=root psql -h 127.0.0.1 -U postgres -d lightning -f database/schema/postgres.sql
+            fi;
+
+            php vendor/bin/phpunit --coverage-clover build/logs/clover.xml
+      - name: Coveralls
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: "php vendor/bin/php-coveralls --verbose"
+      - name: Run PHPStan
+        run: "vendor/bin/phpstan analyse src --error-format=github"
