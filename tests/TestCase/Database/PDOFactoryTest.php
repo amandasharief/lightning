@@ -12,7 +12,7 @@ final class PdoFactoryTest extends TestCase
 {
     public function testCreate()
     {
-        $pdoFactory = new PdoFactory(env('DB_URL'), env('DB_USERNAME'), env('DB_PASSWORD'),false);
+        $pdoFactory = new PdoFactory(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'),false);
         $pdo = $pdoFactory->create();
         $this->assertInstanceOf(PDO::class, $pdo);
         $this->assertFalse($pdo->getAttribute(PDO::ATTR_PERSISTENT));
@@ -28,7 +28,7 @@ final class PdoFactoryTest extends TestCase
 
     public function testCreatePersistent()
     {
-        $pdoFactory = new PdoFactory(env('DB_URL'), env('DB_USERNAME'), env('DB_PASSWORD'),true);
+        $pdoFactory = new PdoFactory(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'),true);
 
         $pdo = $pdoFactory->create();
         $this->assertInstanceOf(PDO::class, $pdo);

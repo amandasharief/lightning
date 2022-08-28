@@ -17,7 +17,7 @@ final class RowTest extends TestCase
 
     public function setUp(): void
     {
-        $this->pdo = new PDO(env('DB_URL'), env('DB_USERNAME'), env('DB_PASSWORD'));
+        $this->pdo = new PDO(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
         // $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, [PDO::FETCH_CLASS, Row::class]);
 
         $this->fixtureManager = new FixtureManager($this->pdo);
@@ -99,7 +99,7 @@ final class RowTest extends TestCase
 
     public function testWorksWithPDO(): void
     {
-        $connection = new Connection(new PdoFactory(env('DB_URL'), env('DB_USERNAME'), env('DB_PASSWORD')));
+        $connection = new Connection(new PdoFactory(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD')));
         $connection->connect();
         
         $result = $connection->execute('SELECT * FROM articles')->fetchObject(Row::class);

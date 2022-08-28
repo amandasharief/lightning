@@ -23,7 +23,7 @@ class NoExceptionConfigPdoFactory implements PdoFactoryInterface
 {
     public function create(): PDO
     {
-        return new PDO(env('DB_URL'), env('DB_USERNAME'), env('DB_PASSWORD'));
+        return new PDO(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
     }
 
 }
@@ -37,7 +37,7 @@ final class ConnectionTest extends TestCase
 
     public function setUp(): void
     {
-        $this->pdoFactory = new PdoFactory(env('DB_URL'), env('DB_USERNAME'), env('DB_PASSWORD'),true);
+        $this->pdoFactory = new PdoFactory(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'),true);
         $this->pdo = $this->pdoFactory->create();
 
         $this->fixtureManager = new FixtureManager($this->pdo);

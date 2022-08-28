@@ -25,7 +25,7 @@ final class HttpBasicAuthenticationMiddlewareTest extends TestCase
 
     public function setUp(): void
     {
-        $pdoFactory = new PdoFactory(env('DB_URL'), env('DB_USERNAME'), env('DB_PASSWORD'),true);
+        $pdoFactory = new PdoFactory(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'),true);
         $this->pdo = $pdoFactory->create();
 
         $this->fixtureManager = new FixtureManager($this->pdo);

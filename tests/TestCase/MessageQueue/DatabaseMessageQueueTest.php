@@ -30,7 +30,7 @@ final class DatabaseMessageQueueTest extends TestCase
 
     public function setUp(): void
     {
-        $this->pdo = new PDO(env('DB_URL'), env('DB_USERNAME'), env('DB_PASSWORD'));
+        $this->pdo = new PDO(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 
         $this->fixtureManager = new FixtureManager($this->pdo);
         $this->fixtureManager->load([MessageQueueFixture::class]);

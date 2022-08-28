@@ -12,9 +12,9 @@ use Lightning\Fixture\SqlDialect\PostgresDialect;
 final class SqlDialectFactoryTest extends TestCase
 {
     /*
-    DB_URL=mysql:host=mysql;port=3306;dbname=lightning
-#DB_URL=pgsql:host=pgsql;port=5432;dbname=lightning;schema=public
-#DB_URL=sqlite:dbname=database/db.sqlite
+    DB_DSN=mysql:host=mysql;port=3306;dbname=lightning
+#DB_DSN=pgsql:host=pgsql;port=5432;dbname=lightning;schema=public
+#DB_DSN=sqlite:dbname=database/db.sqlite
 */
     public function testCreateMySql()
     {

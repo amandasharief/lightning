@@ -36,7 +36,7 @@ final class ContactsControllerTest extends TestCase
 {
     protected function setUp() : void 
     {
-        $pdo = new PDO(getenv('DB_URL'), getenv('DB_USERNAME'), getenv('DB_PASSWORD'));
+        $pdo = new PDO(getenv('DB_DSN'), getenv('DB_USERNAME'), getenv('DB_PASSWORD'));
         $this->fixtureManager = new FixtureManager($pdo);
         $this->fixtureManager->load([ContactsFixture::class]); // this loads the fixtures
     }

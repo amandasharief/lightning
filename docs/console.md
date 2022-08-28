@@ -57,7 +57,7 @@ use Lightning\Migration\Command\MigrateDownCommand;
 include dirname(__DIR__) . '/config/bootstrap_cli.php';
 
 $io = new ConsoleIo();
-$pdo = new PDO(env('DB_URL'), env('DB_USERNAME'), env('DB_PASSWORD'));
+$pdo = new PDO(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 $migration = new Migration($pdo, dirname(__DIR__) . '/database/migrations');
 $parser = new ConsoleArgumentParser();
 

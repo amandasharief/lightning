@@ -25,7 +25,7 @@ class CustomPdoFactory implements PdoFactoryInterface
 {
     public function create(): PDO
     {
-        return new PDO(env('DB_URL'), env('DB_USERNAME'), env('DB_PASSWORD'));
+        return new PDO(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
     }
 }
 ```
