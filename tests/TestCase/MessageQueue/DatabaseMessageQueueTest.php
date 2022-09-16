@@ -44,7 +44,7 @@ final class DatabaseMessageQueueTest extends TestCase
     public function testSend()
     {
         $this->assertTrue(
-            $this->createMessageQueue()->send('default','foo')
+            $this->createMessageQueue()->send('default', 'foo')
         );
     }
 
@@ -54,7 +54,7 @@ final class DatabaseMessageQueueTest extends TestCase
     public function testReceive()
     {
         $queue = $this->createMessageQueue();
-        $queue->send('default','foo');
+        $queue->send('default', 'foo');
 
         $this->assertEquals('foo', $queue->receive('default'));
         $this->assertNull($queue->receive('default'));
@@ -66,9 +66,9 @@ final class DatabaseMessageQueueTest extends TestCase
     public function testReceiveDelayed()
     {
         $queue = $this->createMessageQueue();
-        $queue->send('delayed','foo', 1);
+        $queue->send('delayed', 'foo', 2);
         $this->assertNull($queue->receive('delayed'));
-        sleep(1);
+        sleep(2);
         $this->assertEquals('foo', $queue->receive('default'));
         $this->assertNull($queue->receive('delayed'));
     }
