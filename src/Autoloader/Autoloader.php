@@ -22,8 +22,6 @@ class Autoloader
 
     /**
      * Construtor
-     *
-     * @param string $directory
      */
     public function __construct(string $directory)
     {
@@ -32,8 +30,6 @@ class Autoloader
 
     /**
      * Register loader with SPL autoloader stack.
-     *
-     * @return boolean
      */
     public function register(): bool
     {
@@ -44,8 +40,6 @@ class Autoloader
 
     /**
      * Sort prefixes so that the longest prefixes are first and shorter ones are last
-     *
-     * @return void
      */
     protected function sortPrefixes(): void
     {
@@ -64,9 +58,6 @@ class Autoloader
      *      'Lightning\\Test' => 'tests/TestCase',
      *      'App' => 'app'
      *  ]);
-     *
-     * @param array $namespaces
-     * @return void
      */
     public function addNamespaces(array $namespaces): void
     {
@@ -79,10 +70,6 @@ class Autoloader
      * @example
      *
      * $autoloader->addNamespace('App\\Test','tests/TestCase')
-     *
-     * @param string $prefix
-     * @param string $baseDirectory
-     * @return void
      */
     public function addNamespace(string $prefix, string $baseDirectory): void
     {
@@ -92,9 +79,6 @@ class Autoloader
 
     /**
      * This is the class loading functionality
-     *
-     * @param string $class
-     * @return boolean
      */
     public function loadClass(string $class): bool
     {
@@ -112,9 +96,6 @@ class Autoloader
 
     /**
      * Requires the file
-     *
-     * @param string $path
-     * @return boolean
      */
     protected function requireFile(string $path): bool
     {
