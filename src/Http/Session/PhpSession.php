@@ -23,11 +23,14 @@ class PhpSession extends AbstractSession
             $_SESSION = [];
         }
     }
+
+    private function isCli(): bool
+    {
+        return (! defined('SWOOLE_HTTP') && (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg'));
+    }
+
     /**
-     * Undocumented function
-     *
-     * @param string|null $id
-     * @return boolean
+     * Starts the session
      */
     public function start(?string $id): bool
     {
@@ -39,15 +42,13 @@ class PhpSession extends AbstractSession
 
         session_id($this->id);
 
-        // Disable the PHP cookie features, credit to @pmjones for this
-        $this->isStarted = session_start([
+        $this->isStarted = $this->isCli() ?: session_start([
             'use_cookies' => false,
             'use_only_cookies' => false,
             'use_trans_sid' => false
-        ]);
-
-        $this->session = $_SESSION ?? [];
-
+         ]);
+ 
+        $this->session = $_SESSION ?: []; 
         return $this->isStarted;
     }
 
@@ -67,7 +68,8 @@ class PhpSession extends AbstractSession
         foreach ($removed as  $key) {
             unset($_SESSION[$key]);
         }
-        $closed = session_write_close();
+        
+        $closed = $this->isCli() ?: session_write_close();
 
         $this->isStarted = $closed === false;
 
@@ -76,8 +78,6 @@ class PhpSession extends AbstractSession
 
     /**
      * Copy session data to new ID
-     *
-     * @return boolean
      */
     private function regenerateSessionData(): bool
     {
