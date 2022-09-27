@@ -18,10 +18,10 @@ final class ArticlesControllerTest extends TestCase
     public function setUp(): void
     {
         // Create DI Container
-        $definitions = include dirname(__DIR__, 3) . '/config/services.php';
+        $definitions = include dirname(__DIR__, 2) . '/config/services.php';
         $container = new Container($definitions);
         $container->enableAutowiring()
-                  ->enableAutoConfiguration();
+                  ->enableAutoConfigure();
 
         $requestHandler = $container->get(Router::class); // RequestHandlerInterface
 

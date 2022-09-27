@@ -44,7 +44,7 @@ class Route
         $this->constraints = $constraints;
 
         $pattern = preg_replace('/\//', '\\/', $this->path);   // Escape forward slashes for ReGex
-        $pattern = preg_replace('/\:([a-z]+)/i', '(?P<\1>[^\.\/]+)', $pattern);  // Convert vars e.g. :id :name
+        $pattern = preg_replace('/\:([a-z]+)/i', '(?P<\1>[^\/]+)', $pattern);  // Convert vars e.g. :id :name
         $this->pattern = "/^{$pattern}$/";
     }
 

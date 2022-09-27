@@ -11,7 +11,6 @@
 
 namespace Lightning\Autowire;
 
-use Closure;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionParameter;
@@ -27,8 +26,6 @@ class Autowire
 
     /**
      * Constructor
-     *
-     * @param ContainerInterface|null $container
      */
     public function __construct(?ContainerInterface $container = null)
     {
@@ -37,9 +34,6 @@ class Autowire
 
     /**
      * Sets the PSR-11 Container to be used
-     *
-     * @param ContainerInterface $container
-     * @return static
      */
     public function setContainer(ContainerInterface $container): static
     {
@@ -50,12 +44,6 @@ class Autowire
 
     /**
      * Autowires a class using the constructor method
-     *
-     * @internal I put parameters here as well to keep consistent despite being unsure.
-     *
-     * @param string $class
-     * @param array $parameters
-     * @return object
      */
     public function class(string $class, array $parameters = []): object
     {
@@ -77,16 +65,13 @@ class Autowire
 
     /**
      * Invokes a method on the object
-     *
-     * @param object $object
-     * @param string $method
-     * @param array $parameters
-     * @return mixed
      */
     public function method(object $object, string $method, array $parameters = []): mixed
     {
         if (! method_exists($object, $method)) {
-            throw new AutowireException(sprintf('`%s` does not have the `%s` method', $object::class, $method));
+            throw new AutowireException(
+                sprintf('`%s` does not have the `%s` method', $object::class, $method)
+            );
         }
 
         $reflection = (new ReflectionClass($object))->getMethod($method);
@@ -97,10 +82,7 @@ class Autowire
     }
 
     /**
-     * Undocumented function
-     *
-     * @param string|closure $function
-     * @return mixed
+     * Autowires a function
      */
     public function function($function, array $parameters = []): mixed
     {
@@ -112,10 +94,7 @@ class Autowire
     }
 
     /**
-     * Resolves an array of paramaters
-     *
-     * @param array $parameters
-     * @return array
+     * Resolves an array of parameters
     */
     protected function resolveParameters(array $parameters, array $vars = []): array
     {
@@ -126,14 +105,9 @@ class Autowire
 
     /**
      * Resolves a paramater
-     *
-     * @param ReflectionParameter $parameter
-     * @param array $vars
-     * @return mixed
      */
     protected function resolveParameter(ReflectionParameter $parameter, array $vars = []): mixed
     {
-
         /** @var \ReflectionNamedType|\ReflectionUnionType|null $parameterType */
         $parameterType = $parameter->getType();
 
@@ -142,7 +116,9 @@ class Autowire
                 return $parameter->getDefaultValue();
             }
 
-            throw new AutowireException(sprintf('constructor parameter `%s` has no type or default value', $parameter->name));
+            throw new AutowireException(
+                sprintf('constructor parameter `%s` has no type or default value', $parameter->name)
+            );
         }
 
         $hasDefaultValue = $parameter->isDefaultValueAvailable();
