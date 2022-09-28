@@ -35,18 +35,11 @@ class FormAuthenticationMiddleware extends AbstractAuthenticationMiddleware impl
 
     /**
      * An unauthorized exception is thrown unless you set an url where it will be redirected to
-     *
-     * @var string|null
      */
     protected ?string $unauthenticatedRedirect = null;
 
     /**
      * Constructor
-     *
-     * @param IdentityServiceInterface $identityService
-     * @param PasswordHasherInterface $passwordHasher
-     * @param SessionInterface $session
-     * @param ResponseInterface $emptyResponse
      */
     public function __construct(IdentityServiceInterface $identityService, PasswordHasherInterface $passwordHasher, SessionInterface $session, ResponseFactoryInterface $responseFactory)
     {
@@ -58,9 +51,6 @@ class FormAuthenticationMiddleware extends AbstractAuthenticationMiddleware impl
 
     /**
      * Sets the unauthenticated redirect url
-     *
-     * @param string $url
-     * @return static
      */
     public function setUnauthenticatedRedirect(string $url): static
     {
@@ -71,8 +61,6 @@ class FormAuthenticationMiddleware extends AbstractAuthenticationMiddleware impl
 
     /**
      * Get the value of unauthenticatedRedirect
-     *
-     * @return ?string
      */
     public function getUnauthenticatedRedirect(): ?string
     {
@@ -81,9 +69,6 @@ class FormAuthenticationMiddleware extends AbstractAuthenticationMiddleware impl
 
     /**
      * Sets the username field, e.g. username, email, user etc
-     *
-     * @param string $field
-     * @return static
      */
     public function setUsernameField(string $field): static
     {
@@ -94,9 +79,6 @@ class FormAuthenticationMiddleware extends AbstractAuthenticationMiddleware impl
 
     /**
      * Set session key
-     *
-     * @param string $key
-     * @return static
      */
     public function setSessionKey(string $key): static
     {
@@ -107,9 +89,6 @@ class FormAuthenticationMiddleware extends AbstractAuthenticationMiddleware impl
 
     /**
      * Sets the password field if needed
-     *
-     * @param string $field
-     * @return static
      */
     public function setPasswordField(string $field): static
     {
@@ -120,37 +99,21 @@ class FormAuthenticationMiddleware extends AbstractAuthenticationMiddleware impl
 
     /**
      * Process the server request and produce a response
-     *
-     * @param ServerRequestInterface $request
-     * @param RequestHandlerInterface $handler
-     * @return ResponseInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        // check against path and publicPaths paths
+        // Checks if login page
+        if ($request->getUri()->getPath() === $this->loginPath) {
+            return $this->handleLogin($request, $handler);
+        }
+
+        // check against path and public paths
         if (! $this->requiresAuthentication($request)) {
             return $handler->handle($request);
         }
 
         // Get user from session
-        $identity = $this->getLoggedInUser();
-
-        // If not logged in and on login page attempt to authenticate
-        if (! $identity && $request->getUri()->getPath() === $this->loginPath) {
-
-            // only allow authentication from POST requests
-            if ($request->getMethod() === 'POST') {
-                $identity = $this->authenticate($request);
-            }
-
-            if (! $identity) {
-                return $handler->handle($request); # Render login page ONLY
-            }
-            $this->session->set($this->sessionKey, $identity->toArray());
-        }
-
-        // User is now logged in
-        if ($identity) {
+        if ($identity = $this->getLoggedInUser()) {
             return $handler->handle($request->withAttribute('identity', $identity));
         }
 
@@ -163,9 +126,23 @@ class FormAuthenticationMiddleware extends AbstractAuthenticationMiddleware impl
     }
 
     /**
+     * Handles the login page
+     */
+    protected function handleLogin(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    {
+        // only allow authentication from POST requests
+        if ($request->getMethod() === 'POST') {
+            if ($identity = $this->authenticate($request)) {
+                $this->session->set($this->sessionKey, $identity->toArray());
+                $request = $request->withAttribute('identity', $identity);
+            }
+        }
+
+        return $handler->handle($request); # Continue rendering login page
+    }
+
+    /**
      * Gets the user from Session
-     *
-     * @return Identity|null
      */
     protected function getLoggedInUser(): ?Identity
     {
@@ -177,13 +154,9 @@ class FormAuthenticationMiddleware extends AbstractAuthenticationMiddleware impl
 
     /**
      * The authentication logic
-     *
-     * @param ServerRequestInterface $request
-     * @return Identity|null
      */
     protected function authenticate(ServerRequestInterface $request): ?Identity
     {
-
         // Get the credentials from the request
         $body = $request->getParsedBody();
         $username = $body[$this->usernameField] ?? '';
@@ -205,8 +178,6 @@ class FormAuthenticationMiddleware extends AbstractAuthenticationMiddleware impl
 
     /**
      * Get the value of usernameField
-     *
-     * @return string
      */
     public function getUsernameField(): string
     {
@@ -215,8 +186,6 @@ class FormAuthenticationMiddleware extends AbstractAuthenticationMiddleware impl
 
     /**
      * Get the value of passwordField
-     *
-     * @return string
      */
     public function getPasswordField(): string
     {
@@ -225,8 +194,6 @@ class FormAuthenticationMiddleware extends AbstractAuthenticationMiddleware impl
 
     /**
      * Get the value of sessionKey
-     *
-     * @return string
      */
     public function getSessionKey(): string
     {
@@ -235,8 +202,6 @@ class FormAuthenticationMiddleware extends AbstractAuthenticationMiddleware impl
 
     /**
      * Get the value of loginPath
-     *
-     * @return string
      */
     public function getLoginPath(): string
     {
@@ -245,10 +210,6 @@ class FormAuthenticationMiddleware extends AbstractAuthenticationMiddleware impl
 
     /**
      * Set the value of loginPath
-     *
-     * @param string $loginPath
-     *
-     * @return static
      */
     public function setLoginPath(string $loginPath): static
     {
@@ -259,8 +220,6 @@ class FormAuthenticationMiddleware extends AbstractAuthenticationMiddleware impl
 
     /**
      * Get the value of session
-     *
-     * @return SessionInterface
      */
     public function getSession(): SessionInterface
     {
@@ -269,8 +228,6 @@ class FormAuthenticationMiddleware extends AbstractAuthenticationMiddleware impl
 
     /**
      * Get the value of identityService
-     *
-     * @return IdentityServiceInterface
      */
     public function getIdentityService(): IdentityServiceInterface
     {
