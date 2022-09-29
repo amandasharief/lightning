@@ -82,8 +82,8 @@ class ExceptionHandlerMiddleware implements MiddlewareInterface
             );
         }
 
-        // If it accepts JSON or the path starts with /api/ then use JSON as default.
-        if ($this->isJson($request) || str_starts_with($request->getUri()->getPath(), '/api/')) {
+        // If it accepts JSON or if request looks like an API request then use JSON as default.
+        if ($this->isJson($request) || $this->isApiRequest($request)) {
             return $this->createResponse(
                 $statusCode, $this->render->json($message, $statusCode), 'application/json'
             );
@@ -93,7 +93,12 @@ class ExceptionHandlerMiddleware implements MiddlewareInterface
         return $this->createResponse(
             $statusCode, $this->render->html($this->template($exception, $statusCode), $message, $statusCode, $request, $exception), 'text/html'
         );
-    } 
+    }
+
+    private function isApiRequest(ServerRequestInterface $request): bool
+    {
+        return str_starts_with($request->getUri()->getPath(), '/api/') && $request->getHeaderLine('Accept') === '*/*';
+    }
 
     private function template(Throwable $exception, int  $statusCode): string
     {
