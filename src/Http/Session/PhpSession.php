@@ -18,7 +18,7 @@ class PhpSession extends AbstractSession
      */
     public function __construct()
     {
-        // work in CLI e.g. testing or swoole etc
+        // work in CLI e.g. testing
         if (! isset($_SESSION)) {
             $_SESSION = [];
         }
@@ -26,7 +26,7 @@ class PhpSession extends AbstractSession
 
     private function isCli(): bool
     {
-        return (! defined('SWOOLE_HTTP') && (PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg'));
+        return PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg';
     }
 
     /**
