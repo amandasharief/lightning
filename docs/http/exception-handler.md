@@ -8,16 +8,17 @@ Create the Middleware by passing a path to the error files , the ErrorRenderer o
 
 ```php
 $middleware = new ExceptionHandlerMiddleware(
-        __DIR__ . '/../app/View/error' , new ErrorRenderer(), new ResponseFactory(), new Logger()
-    );
+  __DIR__ . '/../app/View/error' , new ErrorRenderer(), new ResponseFactory(), new Logger()
+);
 ```
 
 Any `Lighting\Http\Exceptions\HttpException` exceptions will show the exception message and status code that was passed, all other exceptions will be treated as an internal server error with the generic message `Internal Server Error`. HTTP exceptions are designed to be showed to the user, whilst other exception messages are not.
 
+By default error messages will be rendered as HTML or if an API request is detected then JSON will be the default response type.
+
 ### HTML Rendering
 
 You must have two files `error400.php` or `error500.php` will be rendered, `code`,`message`,`request` and `exception` vars will be passed to these. See below for a template.
-
 
 ### JSON 
 

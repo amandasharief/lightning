@@ -3,6 +3,7 @@
 echo json_encode([
     'error' => [
         'code' => $code,
-        'message' => $message
+        'message' => $message,
+        'custom' => true
     ]
 ]);

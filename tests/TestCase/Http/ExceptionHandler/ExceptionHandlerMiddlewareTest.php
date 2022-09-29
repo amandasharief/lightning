@@ -21,7 +21,7 @@ class MockRequestHandler implements RequestHandlerInterface
     {
         $target = $request->getRequestTarget();
 
-        if ($target === '/404') {
+        if ($target === '/404' || $target === '/api/404') {
             throw new NotFoundException();
         }
 
@@ -49,14 +49,22 @@ final class ExceptionHandlerMiddlewareTest extends TestCase
     public function testItWorks(): void
     {
         $middleware = new ExceptionHandlerMiddleware($this->path, new ErrorRenderer(), new Psr17Factory());
-        $response = $middleware->process(new ServerRequest('GET', '/not-important'), new MockRequestHandler());
+        $request = new ServerRequest('GET', '/not-important');
+        $request = $request->withHeader('Accept','text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8');
+
+        $response = $middleware->process($request, new MockRequestHandler());
+
         $this->assertEquals(200, $response->getStatusCode());
     }
 
     public function test400ErrorHtml(): void
     {
         $middleware = new ExceptionHandlerMiddleware($this->path, new ErrorRenderer(), new Psr17Factory());
-        $response = $middleware->process(new ServerRequest('GET', '/404'), new MockRequestHandler());
+    
+        $request = new ServerRequest('GET', '/404');
+        $request = $request->withHeader('Accept','text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8');
+        $response = $middleware->process($request, new MockRequestHandler());
+
         $this->assertEquals(404, $response->getStatusCode());
         $this->assertEquals('text/html', $response->getHeaderLine('Content-type'));
         $this->assertEquals(
@@ -68,11 +76,16 @@ final class ExceptionHandlerMiddlewareTest extends TestCase
     public function test501ErrorHtml(): void
     {
         $middleware = new ExceptionHandlerMiddleware($this->path, new ErrorRenderer(), new Psr17Factory());
-        $response = $middleware->process(new ServerRequest('GET', '/501'), new MockRequestHandler());
+    
+        $request = new ServerRequest('GET', '/501');
+        $request = $request->withHeader('Accept','text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8');
+        $response = $middleware->process($request, new MockRequestHandler());
+
+
         $this->assertEquals(501, $response->getStatusCode());
         $this->assertEquals('text/html', $response->getHeaderLine('Content-type'));
         $this->assertEquals(
-            '{"error":{"code":501,"message":"Not Implemented"}}',
+            '{"error":{"code":501,"message":"Not Implemented","custom":true}}',
            (string) $response->getBody()
         );
     }
@@ -80,11 +93,15 @@ final class ExceptionHandlerMiddlewareTest extends TestCase
     public function test500ErrorHtml(): void
     {
         $middleware = new ExceptionHandlerMiddleware($this->path, new ErrorRenderer(), new Psr17Factory());
-        $response = $middleware->process(new ServerRequest('GET', '/other'), new MockRequestHandler());
+    
+        $request = new ServerRequest('GET', '/other');
+        $request = $request->withHeader('Accept','text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8');
+        $response = $middleware->process($request, new MockRequestHandler());
+
         $this->assertEquals(500, $response->getStatusCode());
         $this->assertEquals('text/html', $response->getHeaderLine('Content-type'));
         $this->assertEquals(
-            '{"error":{"code":500,"message":"Internal Server Error"}}',
+            '{"error":{"code":500,"message":"Internal Server Error","custom":true}}',
            (string) $response->getBody()
         );
     }
@@ -94,6 +111,20 @@ final class ExceptionHandlerMiddlewareTest extends TestCase
         $middleware = new ExceptionHandlerMiddleware($this->path, new ErrorRenderer(), new Psr17Factory());
         $request = new ServerRequest('GET', '/404');
         $request = $request->withAddedHeader('Accept', 'application/json');
+
+        $response = $middleware->process($request, new MockRequestHandler());
+        $this->assertEquals(404, $response->getStatusCode());
+        $this->assertEquals('application/json', $response->getHeaderLine('Content-type'));
+        $this->assertEquals(
+            '{"error":{"code":404,"message":"Not Found"}}',
+           (string) $response->getBody()
+        );
+    }
+
+    public function testJsonErrorDetectRest(): void
+    {
+        $middleware = new ExceptionHandlerMiddleware($this->path, new ErrorRenderer(), new Psr17Factory());
+        $request = new ServerRequest('GET', '/api/404');
 
         $response = $middleware->process($request, new MockRequestHandler());
         $this->assertEquals(404, $response->getStatusCode());

@@ -38,11 +38,6 @@ class ExceptionHandlerMiddleware implements MiddlewareInterface
 
     /**
      * Constructor
-     *
-     * @param string $path
-     * @param ErrorRenderer $renderer
-     * @param ResponseFactoryInterface $responseFactory
-     * @param LoggerInterface|null $logger
      */
     public function __construct(string $path, ErrorRenderer $renderer, ResponseFactoryInterface $responseFactory, ?LoggerInterface $logger = null)
     {
@@ -54,10 +49,6 @@ class ExceptionHandlerMiddleware implements MiddlewareInterface
 
     /**
      * Processes an incoming server request in order to produce a response.
-     *
-     * @param ServerRequestInterface $request
-     * @param RequestHandlerInterface $handler
-     * @return ResponseInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
@@ -70,10 +61,6 @@ class ExceptionHandlerMiddleware implements MiddlewareInterface
 
     /**
      * Processes the exception to produce a response
-     *
-     * @param Throwable $exception
-     * @param ServerRequestInterface $request
-     * @return ResponseInterface
      */
     private function handleException(Throwable $exception, ServerRequestInterface $request): ResponseInterface
     {
@@ -88,23 +75,25 @@ class ExceptionHandlerMiddleware implements MiddlewareInterface
             );
         }
 
-        // security code and message only
-        if ($this->isJson($request)) {
-            return $this->createResponse(
-                $statusCode, $this->render->json($message, $statusCode), 'application/json'
-            );
-        }
-
-        if ($this->isXml($request) && ! $this->isHtml($request)) {
+        // requested XML but not HTML (e.g browser)
+        if ($this->isXml($request)) {
             return $this->createResponse(
                 $statusCode, $this->render->xml($message, $statusCode), 'application/xml'
             );
         }
 
+        // If it accepts JSON or the path starts with /api/ then use JSON as default.
+        if ($this->isJson($request) || str_starts_with($request->getUri()->getPath(), '/api/')) {
+            return $this->createResponse(
+                $statusCode, $this->render->json($message, $statusCode), 'application/json'
+            );
+        }
+
+        // Return HTML for any other reason.
         return $this->createResponse(
             $statusCode, $this->render->html($this->template($exception, $statusCode), $message, $statusCode, $request, $exception), 'text/html'
         );
-    }
+    } 
 
     private function template(Throwable $exception, int  $statusCode): string
     {
@@ -115,9 +104,6 @@ class ExceptionHandlerMiddleware implements MiddlewareInterface
 
     /**
      * Checks if the request is wanting JSON
-     *
-     * @param ServerRequestInterface $request
-     * @return boolean
      */
     private function isJson(ServerRequestInterface $request): bool
     {
@@ -125,33 +111,15 @@ class ExceptionHandlerMiddleware implements MiddlewareInterface
     }
 
     /**
-     * Checksif the request is wanting XML
-     *
-     * @param ServerRequestInterface $request
-     * @return boolean
-     */
-    private function isHtml(ServerRequestInterface $request): bool
-    {
-        return strpos($request->getHeaderLine('Accept'), 'text/html') !== false;
-    }
-
-    /**
-     * Checksif the request is wanting XML
-     *
-     * @param ServerRequestInterface $request
-     * @return boolean
+     * Checks if the request is wanting XML. Browsers request both html and application/xml
      */
     private function isXml(ServerRequestInterface $request): bool
     {
-        return (bool) preg_match('/text\/xml|application\/xml/', $request->getHeaderLine('Accept'));
+        return strpos($request->getHeaderLine('Accept'), 'text/html') === false && (bool) preg_match('/text\/xml|application\/xml/', $request->getHeaderLine('Accept'));
     }
+
     /**
      * Creates the Response Object
-     *
-     * @param integer $statusCode
-     * @param string $body
-     * @param string $contentType
-     * @return ResponseInterface
      */
     private function createResponse(int $statusCode, string $body, string $contentType): ResponseInterface
     {
