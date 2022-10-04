@@ -54,12 +54,19 @@ final class CacheTest extends TestCase
         $this->assertInstanceOf(CacheInterface::class, new RedisCache($redis, $prefix));
     }
 
+
     /**
      * @dataProvider cacheProvider
      */
     public function testSet(AbstractCache $cache)
     {
+
+
         $this->assertTrue($cache->set('testSet', 'true'));
+        $this->assertTrue($cache->set('testNumber', 1));
+        $this->assertTrue($cache->set('testBool', true));
+        $this->assertTrue($cache->set('testNull', null));
+        $this->assertTrue($cache->set('testArray',['foo'=>'bar']));
     }
 
     /**
@@ -69,9 +76,19 @@ final class CacheTest extends TestCase
     public function testGet(AbstractCache $cache)
     {
         $cache->set('testGet', 'true');
+        $cache->set('testNumber', 1);
+        $cache->set('testBool', true);
+        $cache->set('testNull', null);
+        $cache->set('testArray',['foo'=>'bar']);
+
         $this->assertEquals('true', $cache->get('testGet'));
         $this->assertNull($cache->get('testGetNotFound'));
         $this->assertEquals('result', $cache->get('testGetWithDefault', 'result'));
+
+        $this->assertEquals(1, $cache->get('testNumber'));
+        $this->assertEquals(true, $cache->get('testBool'));
+        $this->assertNull($cache->get('testNull'));
+        $this->assertEquals(['foo'=>'bar'],$cache->get('testArray'));
     }
 
     /**

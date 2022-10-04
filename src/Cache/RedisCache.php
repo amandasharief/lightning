@@ -20,10 +20,6 @@ class RedisCache extends AbstractCache
 
     /**
      * Constructor
-     *
-     * @param Redis $redis
-     * @param string $prefix
-     * @param integer $timeout
      */
     public function __construct(Redis $redis, string $prefix = '', int $timeout = 0)
     {
@@ -37,9 +33,7 @@ class RedisCache extends AbstractCache
     *
     * @param string $key     The unique key of this item in the cache.
     * @param mixed  $default Default value to return if the key does not exist.
-    *
     * @return mixed The value of the item from the cache, or $default in case of cache miss.
-    *
     * @throws InvalidArgumentException
     *   MUST be thrown if the $key string is not a legal value.
     */
@@ -48,10 +42,10 @@ class RedisCache extends AbstractCache
         $key = $this->addPrefix($key);
         $result = $this->redis->get($key);
         if ($result === false) {
-            $result = $default;
+            return $default;
         }
 
-        return $result;
+        return ctype_digit($result) ? (int) $result : unserialize($result);
     }
 
     /**
@@ -62,9 +56,7 @@ class RedisCache extends AbstractCache
      * @param null|int|\DateInterval $ttl   Optional. The TTL value of this item. If no value is sent and
      *                                      the driver supports TTL then the library may set a default value
      *                                      for it or let the driver take care of that.
-     *
      * @return bool True on success and false on failure.
-     *
      * @throws InvalidArgumentException
      *   MUST be thrown if the $key string is not a legal value.
      */
@@ -72,6 +64,10 @@ class RedisCache extends AbstractCache
     {
         $key = $this->addPrefix($key);
         $ttl = $this->getDuration($ttl);
+
+        if (! is_int($value)) {
+            $value = serialize($value);
+        }
 
         return $ttl === 0 ? $this->redis->set($key, $value) : $this->redis->setex($key, $ttl, $value);
     }
@@ -85,9 +81,7 @@ class RedisCache extends AbstractCache
      * another script can remove it making the state of your app out of date.
      *
      * @param string $key The cache item key.
-     *
      * @return bool
-     *
      * @throws InvalidArgumentException
      *   MUST be thrown if the $key string is not a legal value.
      */
@@ -102,9 +96,7 @@ class RedisCache extends AbstractCache
      * Delete an item from the cache by its unique key.
      *
      * @param string $key The unique cache key of the item to delete.
-     *
      * @return bool True if the item was successfully removed. False if there was an error.
-     *
      * @throws InvalidArgumentException
      *   MUST be thrown if the $key string is not a legal value.
      */
@@ -117,8 +109,6 @@ class RedisCache extends AbstractCache
 
     /**
      * Wipes clean the entire cache's keys.
-     *
-     * TODO: Add prefix support, here will need to remove just those matching prefix
      *
      * @return bool True on success and false on failure.
      */
