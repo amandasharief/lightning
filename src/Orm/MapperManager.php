@@ -12,7 +12,7 @@
 namespace Lightning\Orm;
 
 use Lightning\DataMapper\DataSourceInterface;
-use Psr\EventDispatcher\EventDispatcherInterface;
+
 
 /**
  * MapperManager
@@ -20,7 +20,6 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 class MapperManager
 {
     private DataSourceInterface $dataSource;
-    private EventDispatcherInterface $eventDispatcher;
 
     /**
      * @var AbstractObjectRelationalMapper[]
@@ -35,10 +34,9 @@ class MapperManager
     /**
      * Constructor
      */
-    public function __construct(DataSourceInterface $dataSource, EventDispatcherInterface $eventDispatcher)
+    public function __construct(DataSourceInterface $dataSource)
     {
         $this->dataSource = $dataSource;
-        $this->eventDispatcher = $eventDispatcher;
     }
 
     /**
@@ -87,9 +85,9 @@ class MapperManager
         if (isset($this->factoryCallables[$class])) {
             $callback = $this->factoryCallables[$class];
 
-            return $callback($dataSource, $this->eventDispatcher, $this);
+            return $callback($dataSource, $this);
         }
 
-        return new $class($dataSource, $this->eventDispatcher, $this);
+        return new $class($dataSource, $this);
     }
 }

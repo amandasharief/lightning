@@ -116,8 +116,8 @@ final class MapperManagerTest extends TestCase
     public function testGet(): void
     {
         $dataSource = new MemoryDataSource();
-        $eventDispatcher = new EventDispatcher(new ListenerRegistry());
-        $manager = new MapperManager($dataSource, $eventDispatcher);
+        
+        $manager = new MapperManager($dataSource);
 
         $this->assertInstanceOf(
             DummyArticle::class, $manager->get(DummyArticle::class)
@@ -126,10 +126,10 @@ final class MapperManagerTest extends TestCase
     public function testAdd(): void
     {
         $dataSource = new MemoryDataSource();
-        $eventDispatcher = new EventDispatcher(new ListenerRegistry());
-        $manager = new MapperManager($dataSource, $eventDispatcher);
+        
+        $manager = new MapperManager($dataSource);
 
-        $mapper = new DummyArticle($dataSource, $eventDispatcher, $manager);
+        $mapper = new DummyArticle($dataSource, $manager);
         $this->assertInstanceOf(
           MapperManager::class, $manager->add($mapper)
         );
@@ -138,12 +138,12 @@ final class MapperManagerTest extends TestCase
     public function testConfigure(): void
     {
         $dataSource = new MemoryDataSource();
-        $eventDispatcher = new EventDispatcher(new ListenerRegistry());
-        $manager = new MapperManager($dataSource, $eventDispatcher);
+        
+        $manager = new MapperManager($dataSource);
 
         $this->assertInstanceOf(
-            MapperManager::class, $manager->configure(DummyArticle::class, function (DataSourceInterface $dataSource, EventDispatcherInterface $eventDispatcher, MapperManager $manager) {
-                $mapper = new DummyArticle($dataSource, $eventDispatcher, new MapperManager($dataSource, $eventDispatcher));
+            MapperManager::class, $manager->configure(DummyArticle::class, function (DataSourceInterface $dataSource,  MapperManager $manager) {
+                $mapper = new DummyArticle($dataSource, new MapperManager($dataSource));
                 $mapper->foo = 'bar'; // ensure its callback
 
                 return $mapper;
@@ -159,10 +159,10 @@ final class MapperManagerTest extends TestCase
     public function testGetExisting(): void
     {
         $dataSource = new MemoryDataSource();
-        $eventDispatcher = new EventDispatcher(new ListenerRegistry());
-        $manager = new MapperManager($dataSource, $eventDispatcher);
+        
+        $manager = new MapperManager($dataSource);
 
-        $mapper = new DummyArticle($dataSource, $eventDispatcher, $manager);
+        $mapper = new DummyArticle($dataSource, $manager);
 
         $mapper->foo = 'bar'; // test its not being created
 
