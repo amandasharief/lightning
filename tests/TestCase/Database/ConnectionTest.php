@@ -82,19 +82,6 @@ final class ConnectionTest extends TestCase
         $this->assertContains($this->createConnection()->getDriver(), ['mysql','sqlite','pgsql']);
     }
 
-    public function testGetLastInsertId(): void
-    {
-        $connection = $this->createConnection();
-
-        switch ($connection->getDriver()) {
-            case 'mysql':
-                $this->assertNull($connection->getLastInsertId());
-            break;
-            case 'sqlite':
-                $this->assertEquals(2002, $connection->getLastInsertId());
-            break;
-        }
-    }
 
     public function testPrepare(): void
     {
@@ -308,8 +295,19 @@ final class ConnectionTest extends TestCase
                 'created_at' => date('Y-m-d H:i:s'),
                 'updated_at' => date('Y-m-d H:i:s'),
             ])
-            );
+        );
+        switch ($connection->getDriver()) {
+            case 'pgsql':
+                $this->assertEquals(1, $connection->getLastInsertId());
+            break;
+            case 'mysql':
+            case 'sqlite':
+                $this->assertEquals(2003, $connection->getLastInsertId());
+            break;
+        }
     }
+
+
 
     public function testUpdate(): void
     {
