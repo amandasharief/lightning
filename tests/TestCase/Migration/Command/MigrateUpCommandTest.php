@@ -5,7 +5,7 @@ namespace App\Command;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use function Lightning\Dotenv\env;
-use Lightning\Database\PdoFactory;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\Migration\Migration;
 use Lightning\Fixture\FixtureManager;
 use Lightning\Console\ConsoleArgumentParser;
@@ -19,7 +19,7 @@ final class MigrateUpCommandTest extends TestCase
 {
     use ConsoleIntegrationTestTrait;
 
-    protected PDO $pdo;
+    protected ?PDO $pdo;
     protected string $migrationFolder;
 
     protected FixtureManager $fixtureManager;
@@ -28,9 +28,7 @@ final class MigrateUpCommandTest extends TestCase
     public function setUp(): void
     {
         // Create Connection
-        $pdoFactory = new PdoFactory(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'),true);
-        $this->pdo = $pdoFactory->create();
-
+        $this->pdo = ( new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
         $driver = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
 
         $this->fixtureManager = new FixtureManager($this->pdo);
@@ -45,6 +43,11 @@ final class MigrateUpCommandTest extends TestCase
         $migration = new Migration($this->pdo, dirname(__DIR__). '/migrations/' . $driver);
         $command = new MigrateUpCommand(new ConsoleArgumentParser(), new TestConsoleIo(), $migration);
         $this->setupIntegrationTesting($command);
+    }
+
+    public function tearDown(): void 
+    {
+        unset($this->pdo);
     }
 
     public function testMigrate(): void

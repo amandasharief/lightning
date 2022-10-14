@@ -4,30 +4,18 @@ Database components come with `PdoFactory`, `Connection` and a `QueryBuilder`.
 
 ## PDO Factory
 
-Creates and configures PDO object to in a standard and secure way.
+Creates and configures `PDO` instance to in a standard and secure way.
 
 ```php
 use Lightning\Database\PdoFactory;
-$pdoFactory = new PdoFactory('mysql:host=127.0.0.1;port=3306;dbname=lightning', 'root', 'secret');
-$pdo = $pdoFactory->create();
+$pdoFactory = new PdoFactory();
+$pdo = $pdoFactory->create('mysql:host=127.0.0.1;port=3306;dbname=lightning', 'root', 'secret');
 ```
 
 The default fetch mode for the `PDO` object to an associative array, however if you want to change it to objects.
 
 ```php
-$pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE,PDO::FETCH_OBJ);
-```
-
-You maybe also want the `PdoFactory` to work differently
-
-```php
-class CustomPdoFactory implements PdoFactoryInterface
-{
-    public function create(): PDO
-    {
-        return new PDO(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
-    }
-}
+$pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
 ```
 
 ## Connection
@@ -37,8 +25,11 @@ Works with PDO and PSR-3 Logger, also allows you to connect and disconnect as ne
 ### Usage
 
 ```php
-$pdoFactory = new PdoFactory('mysql:host=mysql;port=3306;dbname=lightning', 'root', 'root'); // 
-$db = new Connection($pdoFactory);
+$pdo = new PDO('mysql:host=mysql;port=3306;dbname=lightning','root', 'root', [
+    PDO::ATTR_EMULATE_PREPARES => false,
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+]);
+$db = new Connection($pdo);
 $db->connect();
 $db->disconnect();
 ```

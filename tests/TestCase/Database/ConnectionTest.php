@@ -10,35 +10,23 @@ use PHPUnit\Framework\TestCase;
 use Lightning\Database\Statement;
 use function Lightning\Dotenv\env;
 use Lightning\Database\Connection;
-use Lightning\Database\PdoFactory;
-use Lightning\Database\PdoFactoryInterface;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\Fixture\FixtureManager;
 use Lightning\Test\Fixture\TagsFixture;
 use Lightning\QueryBuilder\QueryBuilder;
 use Lightning\TestSuite\LoggerTestTrait;
 use Lightning\Test\Fixture\ArticlesFixture;
 
-
-class NoExceptionConfigPdoFactory implements PdoFactoryInterface
-{
-    public function create(): PDO
-    {
-        return new PDO(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
-    }
-
-}
-
 final class ConnectionTest extends TestCase
 {
     use LoggerTestTrait;
 
-    private PdoFactory $pdoFactory;
-    private PDO $pdo;
+    private ?PDO $pdo;
+    private ?Connection $connection;
 
     public function setUp(): void
     {
-        $this->pdoFactory = new PdoFactory(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'),true);
-        $this->pdo = $this->pdoFactory->create();
+        $this->pdo = ( new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 
         $this->fixtureManager = new FixtureManager($this->pdo);
         $this->fixtureManager->load([
@@ -49,29 +37,36 @@ final class ConnectionTest extends TestCase
         $this->setLogger($this->createLogger());
     }
 
-    private function createConnection(bool $useExceptions = true): Connection
+    public function tearDown(): void 
     {
-
-        $connection = new Connection($useExceptions ? $this->pdoFactory : new NoExceptionConfigPdoFactory());
-        $connection->setLogger($this->getLogger());
-        $connection->connect();
-
-
-        return $connection;
+        unset($this->pdo);
+        if(isset($this->connection)){
+            $this->connection->disconnect();
+        }
     }
 
-    public function testGetPDO(): void
+
+    private function createConnection(): Connection
     {
-        $connection = new Connection($this->pdoFactory);
+        $this->connection = new Connection(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
+        $this->connection->setLogger($this->getLogger());
+        $this->connection->connect();
+        return $this->connection;
+    }
+
+    public function testGetPdo(): void
+    {
+        $connection = $connection = new Connection(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
         $this->assertNull($connection->getPdo());
         $connection->connect();
         $this->assertInstanceOf(PDO::class,$connection->getPdo());
+        $connection->disconnect();
     }
 
 
     public function testIsConnected(): void 
     {
-        $connection = new Connection($this->pdoFactory);
+        $connection = $connection = new Connection(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
         $this->assertFalse($connection->isConnected());
 
         
@@ -94,11 +89,9 @@ final class ConnectionTest extends TestCase
         switch ($connection->getDriver()) {
             case 'mysql':
                 $this->assertNull($connection->getLastInsertId());
-
             break;
             case 'sqlite':
                 $this->assertEquals(2002, $connection->getLastInsertId());
-
             break;
         }
     }

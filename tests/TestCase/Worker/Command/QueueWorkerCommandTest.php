@@ -42,7 +42,7 @@ final class QueueWorkerCommandTest extends TestCase
 {
     use ConsoleIntegrationTestTrait;
 
-    protected PDO $pdo;
+    protected ?PDO $pdo;
     protected string $migrationFolder;
 
     protected FixtureManager $fixtureManager;

@@ -7,25 +7,29 @@ use PHPUnit\Framework\TestCase;
 
 use Lightning\Database\Statement;
 use function Lightning\Dotenv\env;
-use Lightning\Database\PdoFactory;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\Fixture\FixtureManager;
 use Lightning\Test\Fixture\TagsFixture;
 use Lightning\Test\Fixture\ArticlesFixture;
 
 final class StatementTest extends TestCase
 {
-    private PDO $pdo;
+    private ?PDO $pdo;
 
     public function setUp(): void
     {
-        $pdoFactory = new PdoFactory(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'),true);
-        $this->pdo = $pdoFactory->create();
+        $this->pdo = ( new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 
         $this->fixtureManager = new FixtureManager($this->pdo);
         $this->fixtureManager->load([
             ArticlesFixture::class,
             TagsFixture::class
         ]);
+    }
+
+    public function tearDown(): void 
+    {
+        unset($this->pdo);
     }
 
     public function testExecute(): void

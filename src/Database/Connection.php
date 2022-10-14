@@ -26,11 +26,29 @@ class Connection
     protected ?PDO $pdo = null;
     protected ?LoggerInterface $logger = null;
 
+    private const DEFAULT_PDO_OPTIONS = [
+        /**
+         * don't set to true unless you know what you are doing, this can have all kinds of effects
+         * that need to be understood properly.
+         */
+        PDO::ATTR_PERSISTENT => false,
+        /**
+         * 1. This must be set to false for security reasons
+         * 2. It also plays a part in cast in casting data types such as integer
+         */
+        PDO::ATTR_EMULATE_PREPARES => false,
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+    ];
+
     /**
      * Constructor
      */
     public function __construct(
-        protected PdoFactoryInterface $pdoFactory
+        private string $dsn,
+        private ?string $username = null,
+        private ?string $password = null,
+        private array $pdoOptions = self::DEFAULT_PDO_OPTIONS
     ) {
     }
 
@@ -40,7 +58,7 @@ class Connection
     public function connect(): void
     {
         if (! isset($this->pdo)) {
-            $this->pdo = $this->pdoFactory->create();
+            $this->pdo = new PDO($this->dsn, $this->username, $this->password, $this->pdoOptions);
         }
     }
 
@@ -73,6 +91,14 @@ class Connection
     public function getPdo(): ?PDO
     {
         return $this->pdo;
+    }
+
+    /**
+     * Gets the DSN string
+     */
+    public function getDsn(): string
+    {
+        return $this->dsn;
     }
 
     /**

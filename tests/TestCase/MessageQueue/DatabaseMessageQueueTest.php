@@ -26,7 +26,7 @@ class DatabaseMessage
 final class DatabaseMessageQueueTest extends TestCase
 {
     protected $fixtureManager;
-    private PDO $pdo;
+    private ?PDO $pdo;
 
     public function setUp(): void
     {
@@ -34,6 +34,11 @@ final class DatabaseMessageQueueTest extends TestCase
 
         $this->fixtureManager = new FixtureManager($this->pdo);
         $this->fixtureManager->load([MessageQueueFixture::class]);
+    }
+
+    public function tearDown(): void 
+    {
+        unset($this->pdo);
     }
 
     private function createMessageQueue(): DatabaseMessageQueue

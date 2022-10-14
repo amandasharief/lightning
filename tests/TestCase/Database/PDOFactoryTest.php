@@ -2,18 +2,18 @@
 
 namespace Lightning\Test\Database;
 
+use Lightning\Database\PdoFactory;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use function Lightning\Dotenv\env;
 
-use Lightning\Database\PdoFactory;
+
 
 final class PdoFactoryTest extends TestCase
 {
     public function testCreate()
     {
-        $pdoFactory = new PdoFactory(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'),false);
-        $pdo = $pdoFactory->create();
+        $pdo = ( new PdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
         $this->assertInstanceOf(PDO::class, $pdo);
         $this->assertFalse($pdo->getAttribute(PDO::ATTR_PERSISTENT));
 
@@ -24,15 +24,7 @@ final class PdoFactoryTest extends TestCase
 
         $this->assertEquals(PDO::ERRMODE_EXCEPTION, $pdo->getAttribute(PDO::ATTR_ERRMODE));
         $this->assertEquals(PDO::FETCH_ASSOC, $pdo->getAttribute(PDO::ATTR_DEFAULT_FETCH_MODE));
-    }
 
-    public function testCreatePersistent()
-    {
-        $pdoFactory = new PdoFactory(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'),true);
-
-        $pdo = $pdoFactory->create();
-        $this->assertInstanceOf(PDO::class, $pdo);
-        $this->assertTrue($pdo->getAttribute(PDO::ATTR_PERSISTENT));
-
+        $pdo = null;
     }
 }

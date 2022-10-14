@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 use Lightning\Utility\Collection;
 use function Lightning\Dotenv\env;
-use Lightning\Database\PdoFactory;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\Entity\AbstractEntity;
 use Lightning\Event\EventDispatcher;
 use Lightning\DataMapper\QueryObject;
@@ -280,13 +280,12 @@ final class AbstractDataMapperTest extends TestCase
 {
     use EventDispatcherTestTrait;
 
-    protected PDO $pdo;
+    protected ?PDO $pdo;
     protected FixtureManager $fixtureManager;
 
     public function setUp(): void
     {
-        $pdoFactory = new PdoFactory(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'),true);
-        $this->pdo = $pdoFactory->create();
+        $this->pdo = ( new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 
         $this->storage = new DatabaseDataSource($this->pdo, new QueryBuilder());
 
@@ -299,12 +298,19 @@ final class AbstractDataMapperTest extends TestCase
         $this->setEventDispatcher(new TestEventDispatcher(new EventDispatcher(new ListenerRegistry())));
     }
 
+    public function tearDown(): void 
+    {
+        unset($this->pdo);
+    }
+
     public function testGetDataSource(): void
     {
         $mapper = new Article($this->storage);
 
         $this->assertInstanceOf(DataSourceInterface::class, $mapper->getDataSource());
     }
+
+ 
 
     public function testCreateEntity(): void
     {

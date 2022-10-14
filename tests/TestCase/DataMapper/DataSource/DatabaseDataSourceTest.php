@@ -6,7 +6,7 @@ use PDO;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use function Lightning\Dotenv\env;
-use Lightning\Database\PdoFactory;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\DataMapper\QueryObject;
 use Lightning\Fixture\FixtureManager;
 use Lightning\QueryBuilder\QueryBuilder;
@@ -17,17 +17,21 @@ use Lightning\DataMapper\DataSource\DatabaseDataSource;
 
 final class DatabaseDataSourceTest extends TestCase
 {
-    protected PDO $pdo;
+    protected ?PDO $pdo;
     protected FixtureManager $fixtureManager;
 
     protected function setUp(): void
     {
         // Create Connection
-        $pdoFactory = new PdoFactory(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'),true);
-        $this->pdo = $pdoFactory->create();
-
+        $this->pdo = ( new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
+        
         $this->fixtureManager = new FixtureManager($this->pdo);
         $this->fixtureManager->load([ArticlesFixture::class,AuthorsFixture::class]);
+    }
+
+    public function tearDown(): void 
+    {
+        unset($this->pdo);
     }
 
     private function createStorage(): DatabaseDataSource

@@ -5,7 +5,7 @@ namespace Lightning\Test\TestCase\Repository;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use function Lightning\Dotenv\env;
-use Lightning\Database\PdoFactory;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\Event\EventDispatcher;
 use Lightning\DataMapper\QueryObject;
 use Lightning\Entity\EntityInterface;
@@ -37,13 +37,12 @@ class ArticleMapper extends AbstractDataMapper
 
 final class AbstractRepositoryTest extends TestCase
 {
-    protected PDO $pdo;
+    protected ?PDO $pdo;
     protected FixtureManager $fixtureManager;
 
     public function setUp(): void
     {
-        $pdoFactory = new PdoFactory(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'),true);
-        $this->pdo = $pdoFactory->create();
+        $this->pdo = ( new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 
         $this->storage = new DatabaseDataSource($this->pdo, new QueryBuilder());
 
@@ -51,6 +50,11 @@ final class AbstractRepositoryTest extends TestCase
         $this->fixtureManager->load([
             ArticlesFixture::class
         ]);
+    }
+
+    public function tearDown(): void 
+    {
+        unset($this->pdo);
     }
 
     public function testFind(): void

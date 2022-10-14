@@ -3,9 +3,7 @@
 use Nyholm\Psr7\Response;
 use Lightning\Router\Router;
 
-use Psr\Log\LoggerInterface;
 use Lightning\Autowire\Autowire;
-use Lightning\Logger\FileLogger;
 use function Lightning\Dotenv\env;
 use Lightning\Database\PdoFactory;
 use Lightning\Event\EventDispatcher;
@@ -44,15 +42,11 @@ use Lightning\Http\Auth\IdentityService\PdoIdentityService;
 
          return $router;
      },
-     LoggerInterface::class => function (ContainerInterface $container) {
-         return new FileLogger(dirname(__DIR__) . '/logs/application.log');
-     },
+
      ResponseInterface::class => Response::class,
 
      PDO::class => function (ContainerInterface $container) {
-         $pdoFactory = new PdoFactory();
-
-         return $pdoFactory->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'),true);
+         return (new PdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
      },
      TemplateRenderer::class => function (ContainerInterface $container) {
 

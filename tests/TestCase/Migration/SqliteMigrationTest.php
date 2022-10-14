@@ -5,14 +5,14 @@ namespace Lightning\Test\Migration;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use function Lightning\Dotenv\env;
-use Lightning\Database\PdoFactory;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\Migration\Migration;
 use Lightning\Fixture\FixtureManager;
 use Lightning\Test\Fixture\MigrationsFixture;
 
 final class SqliteMigrationTest extends TestCase
 {
-    protected PDO $pdo;
+    protected ?PDO $pdo;
     protected string $migrationFolder;
 
     protected FixtureManager $fixtureManager;
@@ -20,8 +20,7 @@ final class SqliteMigrationTest extends TestCase
     public function setUp(): void
     {
         // Create Connection
-        $pdoFactory = new PdoFactory(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'),true);
-        $this->pdo = $pdoFactory->create();
+        $this->pdo = (new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 
         $this->fixtureManager = new FixtureManager($this->pdo);
         $this->fixtureManager->load([MigrationsFixture::class]);
@@ -32,6 +31,11 @@ final class SqliteMigrationTest extends TestCase
         if ($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'sqlite') {
             $this->markTestSkipped('This test is written for Sqlite');
         }
+    }
+
+    public function tearDown(): void 
+    {
+        unset($this->pdo);
     }
 
     public function testUp()

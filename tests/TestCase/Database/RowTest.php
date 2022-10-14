@@ -7,13 +7,13 @@ use Lightning\Database\Row;
 use PHPUnit\Framework\TestCase;
 use function Lightning\Dotenv\env;
 use Lightning\Database\Connection;
-use Lightning\Database\PdoFactory;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\Fixture\FixtureManager;
 use Lightning\Test\Fixture\ArticlesFixture;
 
 final class RowTest extends TestCase
 {
-    private PDO $pdo;
+    private ?PDO $pdo;
 
     public function setUp(): void
     {
@@ -24,6 +24,11 @@ final class RowTest extends TestCase
         $this->fixtureManager->load([
             ArticlesFixture::class
         ]);
+    }
+
+    public function tearDown(): void 
+    {
+        unset($this->pdo);
     }
 
     public function testIsset()
@@ -98,8 +103,8 @@ final class RowTest extends TestCase
     }
 
     public function testWorksWithPDO(): void
-    {
-        $connection = new Connection(new PdoFactory(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD')));
+    {   
+        $connection = new Connection(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
         $connection->connect();
         
         $result = $connection->execute('SELECT * FROM articles')->fetchObject(Row::class);
