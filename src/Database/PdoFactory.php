@@ -24,7 +24,7 @@ class PdoFactory
      */
     public function create(string $dsn, ?string $username, ?string $password): PDO
     {
-        return $this->pdo = new PDO($dsn, $username, $password, [
+        return new PDO($dsn, $username, $password, [
             /**
              * 1. This must be set to false for security reasons
              * 2. It also plays a part in cast in casting data types such as integer

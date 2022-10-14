@@ -24,7 +24,8 @@ class PersistentPdoFactory
      */
     public function create(string $dsn, ?string $username, ?string $password): PDO
     {
-        return $this->pdo = new PDO($dsn, $username, $password, [
+        return new PDO($dsn, $username, $password, [
+
             PDO::ATTR_PERSISTENT => true,
 
             /**
