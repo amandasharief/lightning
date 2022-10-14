@@ -5,7 +5,6 @@ namespace Lightning\Test\Database;
 use PDO;
 use Exception;
 use PDOException;
-use Psr\Log\LogLevel;
 use PHPUnit\Framework\TestCase;
 use Lightning\Database\Statement;
 use function Lightning\Dotenv\env;
@@ -14,12 +13,10 @@ use Lightning\Test\PersistentPdoFactory;
 use Lightning\Fixture\FixtureManager;
 use Lightning\Test\Fixture\TagsFixture;
 use Lightning\QueryBuilder\QueryBuilder;
-use Lightning\TestSuite\LoggerTestTrait;
 use Lightning\Test\Fixture\ArticlesFixture;
 
 final class ConnectionTest extends TestCase
 {
-    use LoggerTestTrait;
 
     private ?PDO $pdo;
     private ?Connection $connection;
@@ -34,7 +31,6 @@ final class ConnectionTest extends TestCase
             TagsFixture::class
         ]);
 
-        $this->setLogger($this->createLogger());
     }
 
     public function tearDown(): void 
@@ -49,7 +45,6 @@ final class ConnectionTest extends TestCase
     private function createConnection(): Connection
     {
         $this->connection = new Connection(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
-        $this->connection->setLogger($this->getLogger());
         $this->connection->connect();
         return $this->connection;
     }
@@ -109,8 +104,6 @@ final class ConnectionTest extends TestCase
         $this->assertTrue($connection->inTransaction());
         $this->assertFalse($connection->beginTransaction());
 
-        $this->assertLogHasMessage('BEGIN', LogLevel::DEBUG);
-        $this->assertLogMessagesCount(1);
 
         $connection->rollback();
     }
@@ -126,9 +119,6 @@ final class ConnectionTest extends TestCase
         $this->assertTrue($connection->commit());
         $this->assertFalse($connection->inTransaction());
 
-        $this->assertLogHasMessage('COMMIT', LogLevel::DEBUG);
-        $this->assertLogMessagesCount(2);
-
         $connection->rollback();
     }
 
@@ -140,9 +130,6 @@ final class ConnectionTest extends TestCase
         $connection->beginTransaction();
 
         $this->assertTrue($connection->rollback());
-
-        $this->assertLogHasMessage('ROLLBACK', LogLevel::DEBUG);
-        $this->assertLogMessagesCount(2);
     }
 
     public function testExecute(): void
@@ -152,9 +139,6 @@ final class ConnectionTest extends TestCase
         $statement = $connection->execute('SELECT * FROM articles');
         $this->assertInstanceOf(Statement::class, $statement);
         $this->assertEquals('SELECT * FROM articles', $statement->getQueryString());
-
-        $this->assertLogHasMessage('SELECT * FROM articles', LogLevel::DEBUG);
-        $this->assertLogMessagesCount(1);
     }
 
     public function testExecuteWithParams(): void
@@ -164,9 +148,6 @@ final class ConnectionTest extends TestCase
         $statement = $connection->execute('SELECT * FROM articles WHERE id = ?', [1000]);
         $this->assertEquals('SELECT * FROM articles WHERE id = ?', $statement->getQueryString());
         $this->assertCount(1, $statement->fetchAll());
-
-        $this->assertLogHasMessage('SELECT * FROM articles WHERE id = 1000', LogLevel::DEBUG);
-        $this->assertLogMessagesCount(1);
     }
 
     public function testTransaction(): void
@@ -224,30 +205,7 @@ final class ConnectionTest extends TestCase
         );
     }
 
-    public function testExecuteWasLogged(): void
-    {
-        $connection = $this->createConnection(true);
-
-        $result = $connection->execute('SELECT * FROM articles');
-
-        $this->assertLogHasMessage('SELECT * FROM articles', LogLevel::DEBUG);
-        $this->assertLogMessagesCount(1);
-    }
-
-    // public function testExecuteCache()
-    // {
-    //     $cache = new MemoryCache();
-    //     $connection = $this->createConnection(true, $cache);
-
-    //     $result = $connection->execute('SELECT * FROM articles WHERE id = ?', [1000], ['cache' => true]);
-    //     $this->assertTrue($cache->has('623830ea9e449f9a5c3aa470ed9b7701312fe8e1'));
-
-    //     // Modifiy the cached version so we know thats its the same one
-    //     $cache->get('623830ea9e449f9a5c3aa470ed9b7701312fe8e1')->foo = 'bar';
-
-    //     $result = $connection->execute('SELECT * FROM articles WHERE id = ?', [1000], ['cache' => true]);
-    //     $this->assertEquals('bar', $result->foo);
-    // }
+  
 
     public function testExecuteError(): void
     {
@@ -337,5 +295,25 @@ final class ConnectionTest extends TestCase
         $this->assertEquals(1,
             $connection->delete('articles', ['id' => 1000])
         );
+    }
+
+    public function testAutoconnect(): void 
+    {
+
+        $connection = $this->createConnection();
+        $count = $connection->execute('SELECT COUNT(*) AS count FROM users')->fetchColumn();
+        $this->assertEquals(3,$count);
+    }
+
+    public function testSerialize(): void 
+    {
+
+        $connection = $this->createConnection();
+        $connection->connect();
+        $this->assertTrue($connection->isConnected());
+        $string = serialize($connection);
+        $connection2 = unserialize($string);
+
+        $this->assertFalse($connection2->isConnected());
     }
 }

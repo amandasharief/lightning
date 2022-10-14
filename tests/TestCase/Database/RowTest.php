@@ -82,9 +82,6 @@ final class RowTest extends TestCase
         $row = new Row();
         $row->set('foo', 'bar');
         $this->assertEquals('bar', $row->get('foo'));
-
-        $row->set(['bar' => 'foo']);
-        $this->assertEquals('foo', $row->get('bar'));
     }
 
     public function testArrayAccess(): void

@@ -1,6 +1,6 @@
 # Database
 
-Database components come with `PdoFactory`, `Connection` and a `QueryBuilder`.
+Database components are `Connection` a PDO wrapper with a custom `Statement` object. There is also a `PdoFactory` and `Row` a custom object for fetching data from the database.
 
 ## PDO Factory
 
@@ -104,4 +104,4 @@ $title = $row['title'];
 
 ## Resources
 
-- [https://phpdelusions.net/pdo](https://phpdelusions.net/pdo)
+- [https://phpdelusions.net/pdo](https://phpdelusions.net/pdo Great content on PDO)

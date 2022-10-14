@@ -16,16 +16,16 @@ use Throwable;
 use Stringable;
 use Psr\Log\LoggerInterface;
 use Lightning\Database\Exception\DatabaseException;
+use PDOStatement;
 
 /**
  * Connection
- * Database abstraction-level (DBAL) which adds support for logging, caching and other stuff.
+ * Database abstraction-level (DBAL)
  */
 class Connection
 {
     protected ?PDO $pdo = null;
-    protected ?LoggerInterface $logger = null;
-
+ 
     private const DEFAULT_PDO_OPTIONS = [
         /**
          * don't set to true unless you know what you are doing, this can have all kinds of effects
@@ -50,6 +50,14 @@ class Connection
         private ?string $password = null,
         private array $pdoOptions = self::DEFAULT_PDO_OPTIONS
     ) {
+    }
+
+    /**
+     * Magic method to return property names that will be serialized
+     */
+    public function __sleep() : array 
+    {
+        return ['dsn','username','password','pdoOptions'];
     }
 
     /**
@@ -78,13 +86,6 @@ class Connection
         return $this->pdo instanceof PDO;
     }
 
-    public function setLogger(LoggerInterface $logger): static
-    {
-        $this->logger = $logger;
-
-        return $this;
-    }
-
     /**
      * Gets the PDO object
      */
@@ -110,10 +111,6 @@ class Connection
             return false;
         }
 
-        if ($this->logger) {
-            $this->logger->debug('BEGIN');
-        }
-
         return $this->pdo->beginTransaction();
     }
 
@@ -126,10 +123,6 @@ class Connection
             return false;
         }
 
-        if ($this->logger) {
-            $this->logger->debug('COMMIT');
-        }
-
         return $this->pdo->commit();
     }
 
@@ -140,10 +133,6 @@ class Connection
     {
         if (! $this->inTransaction()) {
             return false;
-        }
-
-        if ($this->logger) {
-            $this->logger->debug('ROLLBACK');
         }
 
         return $this->pdo->rollBack();
@@ -180,15 +169,15 @@ class Connection
      */
     public function execute(string|Stringable $query, array $params = []): Statement
     {
+        if(!$this->pdo){
+            $this->connect();
+        }
+
         $statement = $this->prepare($query);
         if ($params) {
             $statement->bind($params);
         }
         $statement->execute();
-
-        if ($this->logger) {
-            $this->logger->debug($this->interpolateStatement($statement->getQueryString(), $params));
-        }
 
         return $statement;
     }
@@ -230,20 +219,6 @@ class Connection
         return ! is_string($id) || $id === '0' ? null : $id;
     }
 
-    /**
-     * A simple interpolater for logging purposes
-     */
-    private function interpolateStatement(string $sql, array $params): string
-    {
-        $keys = [];
-        $values = [];
-        foreach ($params as $key => $value) {
-            $keys[] = is_int($key) ? '/\?/' : '/:' . $key .'/';
-            $values[] = $value;
-        }
-
-        return preg_replace($keys, $values, $sql, 1);
-    }
 
     /**
      * Inserts a row into the table

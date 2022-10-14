@@ -18,16 +18,13 @@ use JsonSerializable;
 class Row implements ArrayAccess, JsonSerializable, Stringable
 {
     private array $data = [];
-
+    
     final public function __construct()
     {
     }
 
     /**
      * Creates the Row object using the row from the database
-     *
-     * @param array $state
-     * @return Row
      */
     public static function fromState(array $state): Row
     {
@@ -36,13 +33,11 @@ class Row implements ArrayAccess, JsonSerializable, Stringable
 
         return $row;
     }
-
     /**
      * Sets a value
      *
      * @param string $key
      * @param mixed $value
-     * @return void
      */
     public function __set($key, $value): void
     {
@@ -50,33 +45,21 @@ class Row implements ArrayAccess, JsonSerializable, Stringable
     }
 
     /**
-     * Sets a value or all
-     *
-     * @param string|array $key
-     * @param mixed $value
-     * @return static
+     * Sets a value
      */
-    public function set($key, mixed $value = null): static
+    public function set(string $key, mixed $value = null): static
     {
-        if (is_array($key)) {
-            $this->data = $key;
-        } else {
-            $this->$key = $value;
-        }
+        $this->$key = $value;
 
         return $this;
     }
 
     /**
      * Gets a value
-     *
-     * @param string $key
-     * @return mixed
      */
     public function &__get(string $key): mixed
     {
         $value = null;
-
         if (array_key_exists($key, $this->data)) {
             $value = &$this->data[$key];
         }
@@ -86,9 +69,6 @@ class Row implements ArrayAccess, JsonSerializable, Stringable
 
     /**
      * Gets a value
-     *
-     * @param string $key
-     * @return mixed
      */
     public function get(string $key): mixed
     {
@@ -97,9 +77,6 @@ class Row implements ArrayAccess, JsonSerializable, Stringable
 
     /**
      * Checks if a property set
-     *
-     * @param string $key
-     * @return boolean
      */
     public function __isset(string $key): bool
     {
@@ -108,9 +85,6 @@ class Row implements ArrayAccess, JsonSerializable, Stringable
 
     /**
      * Checks if this object has a property
-     *
-     * @param string $key
-     * @return boolean
      */
     public function has(string $key): bool
     {
@@ -119,9 +93,6 @@ class Row implements ArrayAccess, JsonSerializable, Stringable
 
     /**
      * Unsets a property
-     *
-     * @param string $property
-     * @return void
      */
     public function __unset(string $property)
     {
@@ -130,9 +101,6 @@ class Row implements ArrayAccess, JsonSerializable, Stringable
 
     /**
      * Unsets a property
-     *
-     * @param string $property
-     * @return void
      */
     public function unset(string $property): void
     {
@@ -141,8 +109,6 @@ class Row implements ArrayAccess, JsonSerializable, Stringable
 
     /**
      * JsonSerializable Interface
-     *
-     * @return mixed
      */
     public function jsonSerialize(): mixed
     {
@@ -151,8 +117,6 @@ class Row implements ArrayAccess, JsonSerializable, Stringable
 
     /**
      * Converts this object recrusively to an array (if other rows were later added)
-     *
-     * @return array
      */
     public function toArray(): array
     {
@@ -173,8 +137,6 @@ class Row implements ArrayAccess, JsonSerializable, Stringable
 
     /**
      * Returns a string representation of this object
-     *
-     * @return string
      */
     public function toString(): string
     {
@@ -183,8 +145,6 @@ class Row implements ArrayAccess, JsonSerializable, Stringable
 
     /**
      * Returns a string representation of this object
-     *
-     * @return string
      */
     public function __toString()
     {
