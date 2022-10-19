@@ -5,14 +5,13 @@ namespace Lightning\Test\TestCase\Repository;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use function Lightning\Dotenv\env;
-use Lightning\Test\PersistentPdoFactory;
 use Lightning\Event\EventDispatcher;
 use Lightning\DataMapper\QueryObject;
-use Lightning\Entity\EntityInterface;
 use Lightning\Event\ListenerRegistry;
 use Lightning\Fixture\FixtureManager;
 use Lightning\QueryBuilder\QueryBuilder;
 use Lightning\Test\Entity\ArticleEntity;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\Test\Fixture\ArticlesFixture;
 use Lightning\DataMapper\AbstractDataMapper;
 use Lightning\Repository\AbstractRepository;
@@ -28,11 +27,7 @@ class ArticleMapper extends AbstractDataMapper
     protected $primaryKey = 'id';
     protected string $table = 'articles';
     protected array $fields = ['id','title','body','author_id','created_at','updated_at'];
-
-    public function mapDataToEntity(array $state): EntityInterface
-    {
-        return ArticleEntity::fromState($state);
-    }
+    protected string $entityClass = ArticleEntity::class;
 }
 
 final class AbstractRepositoryTest extends TestCase
@@ -52,7 +47,7 @@ final class AbstractRepositoryTest extends TestCase
         ]);
     }
 
-    public function tearDown(): void 
+    public function tearDown(): void
     {
         unset($this->pdo);
     }
@@ -61,7 +56,7 @@ final class AbstractRepositoryTest extends TestCase
     {
         $respository = $this->createRepository();
 
-        $this->assertInstanceOf(EntityInterface::class, $respository->find());
+        $this->assertInstanceOf(ArticleEntity::class, $respository->find());
     }
 
     public function testFindNone(): void
@@ -135,7 +130,7 @@ final class AbstractRepositoryTest extends TestCase
         $respository = $this->createRepository();
 
         $this->assertNull($respository->findBy(['id' => 12345678]));
-        $this->assertInstanceOf(EntityInterface::class, $respository->findBy(['id' => 1001]));
+        $this->assertInstanceOf(ArticleEntity::class, $respository->findBy(['id' => 1001]));
     }
 
     public function testFindAllBy(): void

@@ -6,10 +6,10 @@ use Nyholm\Psr7\ServerRequest;
 use Lightning\Validator\Errors;
 use PHPUnit\Framework\TestCase;
 use Lightning\Validator\Validator;
-use Lightning\Entity\AbstractEntity;
+
 use Lightning\Validator\ValidationSet;
 
-class User extends AbstractEntity
+class User
 {
     private ?int $id = null;
     private ?string $email = null;

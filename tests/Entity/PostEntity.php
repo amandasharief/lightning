@@ -3,7 +3,6 @@
 namespace Lightning\Test\Entity;
 
 use Lightning\Utility\Collection;
-use Lightning\Entity\AbstractEntity;
 
 class PostEntity extends AbstractEntity
 {

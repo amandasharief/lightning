@@ -11,13 +11,14 @@
 
 namespace Lightning\DataMapper;
 
+use App\Command\Person;
 use ReflectionProperty;
 use BadMethodCallException;
 use Lightning\Database\Row;
 use InvalidArgumentException;
 use Lightning\Utility\Collection;
-use Lightning\Entity\EntityInterface;
 use Lightning\DataMapper\Exception\EntityNotFoundException;
+use Lightning\Entity\PersistableInterface;
 
 abstract class AbstractDataMapper
 {
@@ -30,11 +31,17 @@ abstract class AbstractDataMapper
      */
     protected $primaryKey = 'id';
     protected string $table = 'none';
+    protected string $entityClass;
 
     /**
-     * The default fields to select, if this is empty then a wildcard will be used
+     * These are the fields that DataMapper works with
      */
     protected array $fields = [];
+
+    /**
+     * hashes of entities persisted
+     */
+    private array $persisted = [];
 
     /**
      * Constructor
@@ -51,6 +58,31 @@ abstract class AbstractDataMapper
      */
     protected function initialize(): void
     {
+    }
+
+    /**
+     * Checks if the Entity is persisted
+     */
+    public function isPersisted(object $entity): bool
+    {
+        return in_array(spl_object_hash($entity), $this->persisted);
+    }
+
+
+    /**
+     * Marks an entity as persisted
+     */
+    public function markPersisted(object $entity, bool $status) : void 
+    {
+        if($status){
+            array_push($this->persisted, spl_object_hash($entity));
+            return;
+        }
+        
+        $key = array_search(spl_object_hash($entity), $this->persisted);
+        if ($key !== false) {
+            unset($this->persisted[$key]);
+        }
     }
 
     /**
@@ -72,7 +104,7 @@ abstract class AbstractDataMapper
     /**
      * Before create callback
      */
-    protected function beforeCreate(EntityInterface $entity): bool
+    protected function beforeCreate(object $entity): bool
     {
         return true;
     }
@@ -80,14 +112,14 @@ abstract class AbstractDataMapper
     /**
      * After create callback
      */
-    protected function afterCreate(EntityInterface $entity): void
+    protected function afterCreate(object $entity): void
     {
     }
 
     /**
      * Before update callback
      */
-    protected function beforeUpdate(EntityInterface $entity): bool
+    protected function beforeUpdate(object $entity): bool
     {
         return true;
     }
@@ -95,14 +127,14 @@ abstract class AbstractDataMapper
     /**
      * after update callback
      */
-    protected function afterUpdate(EntityInterface $entity): void
+    protected function afterUpdate(object $entity): void
     {
     }
 
     /**
      * Before save callback
      */
-    protected function beforeSave(EntityInterface $entity): bool
+    protected function beforeSave(object $entity): bool
     {
         return true;
     }
@@ -110,14 +142,14 @@ abstract class AbstractDataMapper
     /**
      * After save callback
      */
-    protected function afterSave(EntityInterface $entity): void
+    protected function afterSave(object $entity): void
     {
     }
 
     /**
      * Before delete callback
      */
-    protected function beforeDelete(EntityInterface $entity): bool
+    protected function beforeDelete(object $entity): bool
     {
         return true;
     }
@@ -125,7 +157,7 @@ abstract class AbstractDataMapper
     /**
      * after delete callback
      */
-    protected function afterDelete(EntityInterface $entity): void
+    protected function afterDelete(object $entity): void
     {
     }
 
@@ -147,7 +179,7 @@ abstract class AbstractDataMapper
     /**
      * Inserts an Entity into the database
      */
-    protected function create(EntityInterface $entity): bool
+    protected function create(object $entity): bool
     {
         if (! $this->beforeCreate($entity)) {
             return false;
@@ -157,8 +189,6 @@ abstract class AbstractDataMapper
         $result = $this->dataSource->create($this->table, $row);
 
         if ($result) {
-            $entity->markPersisted(true);
-
             // Add generated ID
             $id = $this->dataSource->getGeneratedId();
             if ($id && is_string($this->primaryKey)) {
@@ -178,15 +208,16 @@ abstract class AbstractDataMapper
     /**
      * Saves an Entity
      */
-    public function save(EntityInterface $entity): bool
+    public function save(object $entity): bool
     {
         if (! $this->beforeSave($entity)) {
             return false;
         }
 
-        $result = $entity->isNew() ? $this->create($entity) : $this->update($entity);
+        $result = $this->isPersisted($entity) ? $this->update($entity) : $this->create($entity);
 
         if ($result) {
+            $this->markPersisted($entity, true);
             $this->afterSave($entity);
         }
 
@@ -197,7 +228,7 @@ abstract class AbstractDataMapper
      * Gets an Entity or throws an exception
      * @throws EntityNotFoundException
      */
-    public function get(QueryObject $query): EntityInterface
+    public function get(QueryObject $query): object
     {
         $result = $this->find($query);
 
@@ -211,7 +242,7 @@ abstract class AbstractDataMapper
     /**
      * Finds a single Entity
      */
-    public function find(?QueryObject $query = null): ?EntityInterface
+    public function find(?QueryObject $query = null): ?object
     {
         $query = $query ?? $this->createQueryObject();
 
@@ -220,7 +251,7 @@ abstract class AbstractDataMapper
 
     /**
      * Finds multiple Entities
-     * @return Collection|EntityInterface[]
+     * @return Collection|object[]
      */
     public function findAll(?QueryObject $query = null): Collection
     {
@@ -304,7 +335,7 @@ abstract class AbstractDataMapper
     /**
      * Gets an Entity or throws an exception
      */
-    public function getBy(array $criteria = [], array $options = []): EntityInterface
+    public function getBy(array $criteria = [], array $options = []): object
     {
         return $this->get($this->createQueryObject($criteria, $options));
     }
@@ -316,16 +347,16 @@ abstract class AbstractDataMapper
      *  - limit
      *  - offset
      *  - sort
-     * @return EntityInterface|null
+     * @return object|null
      */
-    public function findBy(array $criteria = [], array $options = []): ?EntityInterface
+    public function findBy(array $criteria = [], array $options = []): ?object
     {
         return $this->find($this->createQueryObject($criteria, $options));
     }
 
     /**
      * Finds multiple instances
-     * @return Collection|EntityInterface[]
+     * @return Collection|object[]
      */
     public function findAllBy(array $criteria, array $options = []): Collection
     {
@@ -382,9 +413,8 @@ abstract class AbstractDataMapper
 
         if ($mapResult) {
             foreach ($collection as $index => $row) {
-                $entity = $this->mapDataToEntity($row->toArray());
-                $entity->markPersisted(true);
-                $collection[$index] = $entity;
+                $collection[$index] = $this->mapDataToEntity($row->toArray());
+                $this->markPersisted($collection[$index], true);
             }
         }
 
@@ -394,7 +424,7 @@ abstract class AbstractDataMapper
     /**
      * Updates an Entity
      */
-    public function update(EntityInterface $entity): bool
+    public function update(object $entity): bool
     {
         if (! $this->beforeUpdate($entity)) {
             return false;
@@ -471,7 +501,7 @@ abstract class AbstractDataMapper
     /**
      * Deletes an entity
      */
-    public function delete(EntityInterface $entity): bool
+    public function delete(object $entity): bool
     {
         if (! $this->beforeDelete($entity)) {
             return false;
@@ -483,6 +513,7 @@ abstract class AbstractDataMapper
         $result = $this->dataSource->delete($this->table, $query) === 1;
 
         if ($result) {
+            $this->markPersisted($entity,false);
             $this->afterDelete($entity);
         }
 
@@ -508,28 +539,59 @@ abstract class AbstractDataMapper
     /**
      * Maps state array to entity
      */
-    abstract public function mapDataToEntity(array $state): EntityInterface;
+    public function mapDataToEntity(array $state): object
+    {
+        $entity = new $this->entityClass();
+
+        foreach ($state as $key => $value) {
+            if (in_array($key, $this->fields)) {
+                $reflectionProperty = new ReflectionProperty($entity, $key);
+                if ($reflectionProperty->isPrivate()) {
+                    $reflectionProperty->setAccessible(true); // Only required for PHP 8.0 and lower
+                }
+                $reflectionProperty->setValue($entity, $value);
+            }
+        }
+
+        return $entity;
+    }
 
     /**
      * Converts the entity into a database row
      */
-    public function mapEntityToData(EntityInterface $entity): array
+    public function mapEntityToData(object $entity): array
     {
-        return $entity->toState();
+        $data = [];
+        foreach ($this->fields as $field) {
+            $reflectionProperty = new ReflectionProperty($entity, $field);
+            
+            if ($reflectionProperty->isPrivate()) {
+                $reflectionProperty->setAccessible(true); // Only required for PHP 8.0 and lower 
+            }
+
+            if( $reflectionProperty->isInitialized($entity)){
+                $data[$field] = $reflectionProperty->getValue($entity);
+            }
+        }
+
+        return $data;
     }
 
     /**
      * Creates an Entity from an array using mapping.
      */
-    public function createEntity(array $data = [], array $options = []): EntityInterface
+    public function createEntity(array $data = [], array $options = []): object
     {
         $options += ['fields' => $this->fields,'persisted' => false];
         if ($options['fields']) {
             $data = array_intersect_key($data, array_flip((array) $options['fields']));
         }
 
+        /** @todo think this is redunant now since it is not used internally */
         $entity = $this->mapDataToEntity($data);
-        $entity->markPersisted($options['persisted']);
+        if ($options['persisted']) {
+            $this->markPersisted($entity, true);
+        }
 
         return $entity;
     }

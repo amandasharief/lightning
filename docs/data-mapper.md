@@ -2,6 +2,9 @@
 
 DataMapper component implements the [Data Mapper Pattern](https://martinfowler.com/eaaCatalog/dataMapper.html), this uses the `Entity`, `Collection` and `QueryBuilder` components.
 
+Recently i thought to myself how much code is in an ORM or Data Mapper to save the programmer a few seconds when coding, but then on each script run its doing all kinds of checks and trying to figure out things out, it is totally unnessary. This datamapper, you set the initial configuration, it uses minimal
+magic.
+
 ## Example
 
 Create your `DataMapper`, ensuring that you add the `table`, `fields` properties and the `mapDataToEntity` method.
@@ -19,15 +22,91 @@ class Article extends AbstractDataMapper
 {
     protected $primaryKey = 'id';
     protected string $table = 'articles';
+
+    // fields to work with
     protected array $fields = [
         'id', 'title','body','author_id','created_at','updated_at'
     ];
+    protected string $entityClass = ArticleEntity::class;
+   
+}
+```
 
-    public function mapDataToEntity(array $data): EntityInterface
+The `DataMapper` will use `Reflection` to set the properties on your `Entity`. 
+
+Create your entity class (a Plain Old PHP Object (POPO)).
+
+1. Only make a property nullable if the data storage is set to `nullable`.
+2. properties should be `private`
+3. the primary key should not have a setter method, the datamapper will use reflection to set this
+4. the `DataMapper` does not call the setter or getter methods, it uses reflection to set or get values, and properties value should match what is/will be stored in the datasource.
+
+```php
+final class ArticleEntity
+{
+    private int $id;
+    private string $title;
+    private string $body;
+    private string $created_at;
+    private string $updated_at;
+
+    /**
+     * Can be null before being persisted
+     */
+    public function getId(): ?int
     {
-        return ArticleEntity::fromState($data);
+        return $this->id ?? null;
+    }
+
+    public function getTitle(): string
+    {
+        return $this->title;
+    }
+
+    public function setTitle(string $title): self
+    {
+        $this->title = $title;
+
+        return $this;
+    }
+
+    public function getBody(): string
+    {
+        return $this->body;
+    }
+
+    public function setBody(string $body): self
+    {
+        $this->body = $body;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?string
+    {
+        return $this->created_at ?? null;
+    }
+
+    public function setCreatedAt(string $created_at): self
+    {
+        $this->created_at = $created_at;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?string
+    {
+        return $this->updated_at ?? null;
+    }
+
+    public function setUpdatedAt(string $updated_at): self
+    {
+        $this->updated_at = $updated_at;
+
+        return $this;
     }
 }
+
 ```
 
 Finding records, this under the hood uses the `QueryBuilder` component.
@@ -60,7 +139,7 @@ $count = $aritcle->deleteAllBy([
 
 ## Query Object
 
-Under the hood, the find methods use the `QueryObject`, this object is passed to the `Events` and `Hooks`.
+Under the hood, the find methods use the `QueryObject`, this object is passed to the callbacks.
 
 ```php
 $query = new QueryObject(['status' => 'pending'],['order' => 'title DESC']);
@@ -98,39 +177,39 @@ For example
 ```php
 abstract AppDataMapper extends AbstractDataMapper
 {
-    protected function beforeCreate(EntityInterface $entity): bool
+    protected function beforeCreate(object $entity): bool
     {
         return true;
     }
 
-    protected function afterCreate(EntityInterface $entity): void
+    protected function afterCreate(object $entity): void
     {
     }
 
-    protected function beforeUpdate(EntityInterface $entity): bool
-    {
-        return true;
-    }
-
-    protected function afterUpdate(EntityInterface $entity): void
-    {
-    }
-
-    protected function beforeSave(EntityInterface $entity): bool
+    protected function beforeUpdate(object $entity): bool
     {
         return true;
     }
 
-    protected function afterSave(EntityInterface $entity): void
+    protected function afterUpdate(object $entity): void
     {
     }
 
-    protected function beforeDelete(EntityInterface $entity): bool
+    protected function beforeSave(object $entity): bool
     {
         return true;
     }
 
-    protected function afterDelete(EntityInterface $entity): void
+    protected function afterSave(object $entity): void
+    {
+    }
+
+    protected function beforeDelete(object $entity): bool
+    {
+        return true;
+    }
+
+    protected function afterDelete(object $entity): void
     {
     }
 

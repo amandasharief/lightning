@@ -10,16 +10,14 @@ use PHPUnit\Framework\TestCase;
 
 use Lightning\Utility\Collection;
 use function Lightning\Dotenv\env;
-use Lightning\Test\PersistentPdoFactory;
-use Lightning\Entity\AbstractEntity;
 use Lightning\Event\EventDispatcher;
 use Lightning\DataMapper\QueryObject;
 
-use Lightning\Entity\EntityInterface;
 use Lightning\Event\ListenerRegistry;
 use Lightning\Fixture\FixtureManager;
 use Lightning\Test\Fixture\TagsFixture;
 use Lightning\QueryBuilder\QueryBuilder;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\Test\Fixture\ArticlesFixture;
 use Lightning\DataMapper\AbstractDataMapper;
 use Lightning\TestSuite\TestEventDispatcher;
@@ -29,9 +27,9 @@ use Lightning\DataMapper\DataSource\DatabaseDataSource;
 use Lightning\Test\TestCase\DataMapper\Entity\TagEntity;
 use Lightning\DataMapper\Exception\EntityNotFoundException;
 
-final class ArticleEntity extends AbstractEntity
+final class ArticleEntity
 {
-    private int $id;
+    private ?int $id = null;
 
     private string $title;
     private string $body;
@@ -74,9 +72,9 @@ final class ArticleEntity extends AbstractEntity
         return $this;
     }
 
-    public function getCreatedAt(): string
+    public function getCreatedAt(): ?string
     {
-        return $this->created_at;
+        return $this->created_at ?: null;
     }
 
     public function setCreatedAt(string $created_at): self
@@ -86,9 +84,9 @@ final class ArticleEntity extends AbstractEntity
         return $this;
     }
 
-    public function getUpdatedAt(): string
+    public function getUpdatedAt(): ?string
     {
-        return $this->updated_at;
+        return $this->updated_at ?: null;
     }
 
     public function setUpdatedAt(string $updated_at): self
@@ -105,6 +103,7 @@ final class ArticleEntity extends AbstractEntity
 
     /**
      * Set the value of id
+     * @internal Should not do this never
      */
     public function setId(?int $id): self
     {
@@ -121,11 +120,7 @@ class Tag extends AbstractDataMapper
     protected array $fields = [
         'id', 'name','created_at','updated_at'
     ];
-
-    public function mapDataToEntity(array $row): EntityInterface
-    {
-        return TagEntity::fromState($row);
-    }
+    protected string $entityClass = TagEntity::class;
 }
 
 class Article extends AbstractDataMapper
@@ -136,10 +131,7 @@ class Article extends AbstractDataMapper
         'id', 'title','body','author_id','created_at','updated_at'
     ];
 
-    public function mapDataToEntity(array $row): EntityInterface
-    {
-        return ArticleEntity::fromState($row);
-    }
+    protected string $entityClass = ArticleEntity::class;
 
     public function setProperty($property, $value)
     {
@@ -169,10 +161,16 @@ class Article extends AbstractDataMapper
         $this->stopOn = $method;
     }
 
+    public function reset() : void 
+    {
+        $this->called = [];
+        $this->stopOn = null;
+    }
+
     /**
      * Before create hook
      */
-    protected function beforeCreate(EntityInterface $entity): bool
+    protected function beforeCreate(object $entity): bool
     {
         parent::beforeCreate($entity);
 
@@ -184,7 +182,7 @@ class Article extends AbstractDataMapper
     /**
      * After create hook
      */
-    protected function afterCreate(EntityInterface $entity): void
+    protected function afterCreate(object $entity): void
     {
         parent::afterCreate($entity);
 
@@ -194,7 +192,7 @@ class Article extends AbstractDataMapper
     /**
      * Before update hook
      */
-    protected function beforeUpdate(EntityInterface $entity): bool
+    protected function beforeUpdate(object $entity): bool
     {
         parent::beforeUpdate($entity);
 
@@ -206,7 +204,7 @@ class Article extends AbstractDataMapper
     /**
      * after update hook
      */
-    protected function afterUpdate(EntityInterface $entity): void
+    protected function afterUpdate(object $entity): void
     {
         parent::afterUpdate($entity);
 
@@ -216,7 +214,7 @@ class Article extends AbstractDataMapper
     /**
      * Before save hook
      */
-    protected function beforeSave(EntityInterface $entity): bool
+    protected function beforeSave(object $entity): bool
     {
         parent::beforeSave($entity);
 
@@ -228,7 +226,7 @@ class Article extends AbstractDataMapper
     /**
      * After save hook
      */
-    protected function afterSave(EntityInterface $entity): void
+    protected function afterSave(object $entity): void
     {
         parent::afterSave($entity);
         $this->wasCalled('afterSave');
@@ -237,7 +235,7 @@ class Article extends AbstractDataMapper
     /**
      * Before delete hook
      */
-    protected function beforeDelete(EntityInterface $entity): bool
+    protected function beforeDelete(object $entity): bool
     {
         parent::beforeDelete($entity);
 
@@ -249,7 +247,7 @@ class Article extends AbstractDataMapper
     /**
      * after delete hook
      */
-    protected function afterDelete(EntityInterface $entity): void
+    protected function afterDelete(object $entity): void
     {
         parent::afterDelete($entity); // code cover friendly
         $this->wasCalled('afterDelete');
@@ -298,7 +296,7 @@ final class AbstractDataMapperTest extends TestCase
         $this->setEventDispatcher(new TestEventDispatcher(new EventDispatcher(new ListenerRegistry())));
     }
 
-    public function tearDown(): void 
+    public function tearDown(): void
     {
         unset($this->pdo);
     }
@@ -310,8 +308,6 @@ final class AbstractDataMapperTest extends TestCase
         $this->assertInstanceOf(DataSourceInterface::class, $mapper->getDataSource());
     }
 
- 
-
     public function testCreateEntity(): void
     {
         $mapper = new Article($this->storage);
@@ -320,13 +316,18 @@ final class AbstractDataMapperTest extends TestCase
             'title' => 'test',
             'body' => 'none',
             'author_id' => 1234,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
+            'created_at' => '2022-10-18 09:40:45',
+            'updated_at' => '2022-10-18 09:40:45',
         ];
 
         $entity = $mapper->createEntity($data);
-        $this->assertInstanceOf(EntityInterface::class, $entity);
-        $this->assertSame($data, $entity->toState());
+        $this->assertInstanceOf(ArticleEntity::class, $entity);
+
+        $this->assertEquals('test', $entity->getTitle());
+        $this->assertEquals('none', $entity->getBody());
+        $this->assertEquals(1234, $entity->getAuthorId());
+        $this->assertEquals('2022-10-18 09:40:45', $entity->getCreatedAt());
+        $this->assertEquals('2022-10-18 09:40:45', $entity->getUpdatedAt());
     }
 
     public function testCreateEntities(): void
@@ -342,8 +343,8 @@ final class AbstractDataMapperTest extends TestCase
         ];
 
         $result = $mapper->createEntities([$data,$data]);
-        $this->assertInstanceOf(EntityInterface::class, $result[0]);
-        $this->assertInstanceOf(EntityInterface::class, $result[1]);
+        $this->assertInstanceOf(ArticleEntity::class, $result[0]);
+        $this->assertInstanceOf(ArticleEntity::class, $result[1]);
     }
 
     public function testGetPrimaryKey(): void
@@ -358,7 +359,7 @@ final class AbstractDataMapperTest extends TestCase
         /** @var ArticleEntity $article */
         $article = $mapper->getBy(['id' => 1000]);
 
-        $this->assertInstanceOf(EntityInterface::class, $article);
+        $this->assertInstanceOf(ArticleEntity::class, $article);
         $this->assertSame('Article #1', $article->getTitle());
     }
 
@@ -374,8 +375,8 @@ final class AbstractDataMapperTest extends TestCase
         /** @var ArticleEntity $article */
         $article = $mapper->getBy(['id' => 1000]);
 
-        $this->assertNull($article->toState()['created_at']);
-        $this->assertNull($article->toState()['updated_at']);
+        $this->assertNull($article->getCreatedAt());
+        $this->assertNull($article->getUpdatedAt());
     }
 
     public function testGetNotFound(): void
@@ -415,12 +416,13 @@ final class AbstractDataMapperTest extends TestCase
         $mapper = new Article($this->storage);
         $entity = $mapper->find(new QueryObject());
         $this->assertEquals('Article #1', $entity->getTitle());
+        $this->assertTrue($mapper->isPersisted($entity));
     }
 
     public function testFindHookCalled(): void
     {
         $mapper = new Article($this->storage);
-        $this->assertInstanceOf(EntityInterface::class, $mapper->find(new QueryObject()));
+        $this->assertInstanceOf(ArticleEntity::class, $mapper->find(new QueryObject()));
         $this->assertEquals(['beforeFind','afterFind'], $mapper->getCalled());
     }
 
@@ -526,17 +528,9 @@ final class AbstractDataMapperTest extends TestCase
     public function testUpdate(): void
     {
         $mapper = new Article($this->storage);
-
-        $article = ArticleEntity::fromState([
-            'id' => 1000,
-            'title' => 'test',
-            'body' => 'none',
-            'author_id' => 1234,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s')
-        ]);
-        $article->markPersisted(true);
-
+        $article = $mapper->find();
+        $mapper->reset();
+       
         $this->assertTrue($mapper->save($article));
 
         $this->assertEquals(['beforeSave','beforeUpdate','afterUpdate','afterSave'], $mapper->getCalled());
@@ -545,16 +539,8 @@ final class AbstractDataMapperTest extends TestCase
     public function testUpdateBeforeSaveHookCancelled(): void
     {
         $mapper = new Article($this->storage);
-
-        $article = ArticleEntity::fromState([
-            'id' => 1000,
-            'title' => 'test',
-            'body' => 'none',
-            'author_id' => 1234,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s')
-        ]);
-        $article->markPersisted(true);
+        $article = $mapper->find();
+        $mapper->reset();
 
         $mapper->stopOn('beforeSave');
         $this->assertFalse($mapper->save($article));
@@ -565,17 +551,8 @@ final class AbstractDataMapperTest extends TestCase
     public function testUpdateBeforeUpdateHookCancelled(): void
     {
         $mapper = new Article($this->storage);
-
-        $article = ArticleEntity::fromState([
-            'id' => 1000,
-            'title' => 'test',
-            'body' => 'none',
-            'author_id' => 1234,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s')
-        ]);
-        $article->markPersisted(true);
-
+        $article = $mapper->find();
+        $mapper->reset();
         $mapper->stopOn('beforeUpdate');
         $this->assertFalse($mapper->save($article));
 
@@ -585,35 +562,20 @@ final class AbstractDataMapperTest extends TestCase
     public function testUpdateWithNoPrimaryKey(): void
     {
         $mapper = new Article($this->storage);
+        $article = $mapper->find();
+        $article->setId(null);
 
         $this->expectException(BadMethodCallException::class);
         $this->expectExceptionMessage('Primary key `id` has no value');
 
-        $entity = ArticleEntity::fromState([
-            'title' => 'test',
-            'body' => 'none',
-            'author_id' => 1234,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s')
-        ]);
-
-        $entity->markPersisted(true);
-        $mapper->save($entity);
+        $mapper->save($article);
     }
 
     public function testUpdateFail(): void
     {
         $mapper = new Article($this->storage);
-
-        $article = ArticleEntity::fromState([
-            'id' => 1234,
-            'title' => 'test',
-            'body' => 'none',
-            'author_id' => 1234,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
-        $article->markPersisted(true);
+        $article = $mapper->find();
+        $article->setId(1234);
         $this->assertFalse($mapper->save($article));
     }
 
@@ -630,19 +592,13 @@ final class AbstractDataMapperTest extends TestCase
     public function testSaveManyFail(): void
     {
         $mapper = new Article($this->storage);
-
-        $article = ArticleEntity::fromState([
-            'id' => 1234,
-            'title' => 'test',
-            'body' => 'none',
-            'author_id' => 1234,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
-        $article->markPersisted(true);
+        $article = $mapper->find();
+        $article->setId(1234);
         $this->assertFalse($mapper->save($article));
 
         $mapper = new Article($this->storage);
+        $article = $mapper->find();
+        $article->setId(1234);
         $entities = $mapper->createCollection([$article]);
         $this->assertFalse($mapper->saveMany($entities));
     }
@@ -687,16 +643,8 @@ final class AbstractDataMapperTest extends TestCase
     public function testDelete(): void
     {
         $mapper = new Article($this->storage);
-
-        $article = ArticleEntity::fromState([
-            'id' => 1000,
-            'title' => 'test',
-            'body' => 'none',
-            'author_id' => 1234,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
-        $article->markPersisted(true);
+        $article = $mapper->find();
+        $mapper->reset();
 
         $this->assertTrue($mapper->delete($article));
         $this->assertEquals(['beforeDelete','afterDelete'], $mapper->getCalled());
@@ -705,16 +653,9 @@ final class AbstractDataMapperTest extends TestCase
     public function testDeleteHookCancelled(): void
     {
         $mapper = new Article($this->storage);
+        $article = $mapper->find();
+        $mapper->reset();
 
-        $article = ArticleEntity::fromState([
-            'id' => 1000,
-            'title' => 'test',
-            'body' => 'none',
-            'author_id' => 1234,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
-        $article->markPersisted(true);
         $mapper->stopOn('beforeDelete');
         $this->assertFalse($mapper->delete($article));
         $this->assertEquals(['beforeDelete'], $mapper->getCalled());
@@ -723,14 +664,8 @@ final class AbstractDataMapperTest extends TestCase
     public function testDeleteFail(): void
     {
         $mapper = new Article($this->storage);
-        $article = ArticleEntity::fromState([
-            'id' => 1234,
-            'title' => 'test',
-            'body' => 'none',
-            'author_id' => 1234,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
+        $article = $mapper->find();
+        $article->setId(1234);
 
         $this->assertFalse($mapper->delete($article));
     }
@@ -747,22 +682,15 @@ final class AbstractDataMapperTest extends TestCase
     public function testDeleteManyFail(): void
     {
         $mapper = new Article($this->storage);
-        $article = ArticleEntity::fromState([
-            'id' => 1234,
-            'title' => 'test',
-            'body' => 'none',
-            'author_id' => 1234,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
+        $article = $mapper->find();
+        $article->setId(1234);
+        $this->assertFalse($mapper->delete($article));
 
-        $articles = [
-            $mapper->find(),
-            $article
-        ];
-
-        $this->assertFalse($mapper->deleteMany($articles));
-        $this->assertCount(2, $mapper->findAll());
+        $mapper = new Article($this->storage);
+        $article = $mapper->find();
+        $article->setId(1234);
+        $entities = $mapper->createCollection([$article]);
+        $this->assertFalse($mapper->deleteMany($entities));
     }
 
     public function testFindList(): void

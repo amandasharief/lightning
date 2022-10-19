@@ -2,9 +2,8 @@
 
 namespace Lightning\Test\TestCase\DataMapper\Entity;
 
-use Lightning\Entity\AbstractEntity;
 
-class TagEntity extends AbstractEntity
+class TagEntity
 {
     private ?int $id = null;
     private string $name;

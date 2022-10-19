@@ -13,7 +13,6 @@ namespace Lightning\Repository;
 
 use Lightning\Utility\Collection;
 use Lightning\DataMapper\QueryObject;
-use Lightning\Entity\EntityInterface;
 use Lightning\DataMapper\AbstractDataMapper;
 use Lightning\DataMapper\DataSourceInterface;
 
@@ -50,7 +49,7 @@ abstract class AbstractRepository
      *
      * @throws EntityNotFoundException
      */
-    public function get(QueryObject $query): EntityInterface
+    public function get(QueryObject $query): object
     {
         return $this->mapper->get($query);
     }
@@ -58,7 +57,7 @@ abstract class AbstractRepository
     /**
      * Gets an Entity or throws an exception
      */
-    public function getBy(array $criteria = [], array $options = []): EntityInterface
+    public function getBy(array $criteria = [], array $options = []): object
     {
         return $this->mapper->getBy($criteria, $options);
     }
@@ -66,14 +65,14 @@ abstract class AbstractRepository
     /**
      * Finds a single Entity
      */
-    public function find(?QueryObject $query = null): ?EntityInterface
+    public function find(?QueryObject $query = null): ?object
     {
         return $this->mapper->find($query);
     }
 
     /**
      * Finds multiple Entities
-     * @return Collection|EntityInterface[]
+     * @return Collection|object[]
      */
     public function findAll(?QueryObject $query = null): Collection
     {
@@ -105,7 +104,7 @@ abstract class AbstractRepository
     /**
      * Returns a single instance
      */
-    public function findBy(array $criteria, array $options = []): ?EntityInterface
+    public function findBy(array $criteria, array $options = []): ?object
     {
         return $this->mapper->findBy($criteria, $options);
     }
@@ -113,7 +112,7 @@ abstract class AbstractRepository
     /**
      * Finds multiple instances
      *
-     * @return Collection|EntityInterface[]
+     * @return Collection|object[]
      */
     public function findAllBy(array $criteria, array $options = []): Collection
     {
@@ -144,7 +143,7 @@ abstract class AbstractRepository
     /**
      * Saves an Entity
      */
-    public function save(EntityInterface $entity): bool
+    public function save(object $entity): bool
     {
         return $this->mapper->save($entity);
     }
@@ -160,7 +159,7 @@ abstract class AbstractRepository
     /**
      * Deletes an Entity
      */
-    public function delete(EntityInterface $entity): bool
+    public function delete(object $entity): bool
     {
         return $this->mapper->delete($entity);
     }
@@ -216,7 +215,7 @@ abstract class AbstractRepository
     /**
      * Creates an Entity
      */
-    public function createEntity(array $data = [], array $options = []): EntityInterface
+    public function createEntity(array $data = [], array $options = []): object
     {
         return $this->mapper->createEntity($data, $options);
     }

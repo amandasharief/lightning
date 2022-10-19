@@ -23,6 +23,8 @@ class Author extends AbstractObjectRelationalMapper
             'propertyName' => 'articles'
         ]
     ];
+
+    protected string $entityClass = AuthorEntity::class;
 }
 
 ```
@@ -45,6 +47,8 @@ class Article extends AbstractObjectRelationalMapper
             'propertyName' => 'author'
         ]
     ];
+
+    protected string $entityClass = AritcleEntity::class;
 }
 ```
 

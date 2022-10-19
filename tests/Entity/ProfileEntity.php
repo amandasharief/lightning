@@ -2,7 +2,6 @@
 
 namespace Lightning\Test\Entity;
 
-use Lightning\Entity\AbstractEntity;
 
 class ProfileEntity extends AbstractEntity
 {

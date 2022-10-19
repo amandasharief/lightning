@@ -2,8 +2,6 @@
 
 namespace Lightning\Test\Entity;
 
-use Lightning\Entity\AbstractEntity;
-
 class ArticleEntity extends AbstractEntity
 {
     private int $id;
@@ -93,5 +91,10 @@ class ArticleEntity extends AbstractEntity
         $this->author = $author;
 
         return $this;
+    }
+
+    public function toArray() : array 
+    {
+        return get_object_vars($this);
     }
 }

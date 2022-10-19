@@ -12,9 +12,9 @@
 namespace Lightning\Orm;
 
 use LogicException;
+use ReflectionProperty;
 use Lightning\Utility\Collection;
 use Lightning\DataMapper\QueryObject;
-use Lightning\Entity\EntityInterface;
 use Lightning\DataMapper\AbstractDataMapper;
 use Lightning\DataMapper\DataSourceInterface;
 
@@ -30,7 +30,7 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
     protected MapperManager $mapperManager;
 
     /**
-      * This also assumes $this->profile is the Profile model injected during construction
+      * This also assumes $this->profile is the Profile mapper injected during construction
       *
       * @example
       *  'profile' => [
@@ -38,8 +38,6 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
       *       'foreignKey' => 'user_id', // in other table
       *       'dependent' => false
       *   ]
-      *
-      * @var array
       */
     protected array $hasOne = [];
 
@@ -49,8 +47,6 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
      *       'className' => User::class
      *       'foreignKey' => 'user_id' // in this table
      *   ]
-     *
-     * @var array
      */
 
     protected array $belongsTo = [];
@@ -63,8 +59,6 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
      *      'foreignKey' => 'user_id', // in other table
       *     'dependent' => false
      *  ]
-     *
-     * @var array
      */
     protected array $hasMany = [];
 
@@ -78,8 +72,6 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
      *      'otherForeignKey' => 'user_id', // the foreignKey for the associated model
      *      'dependent' => true
      * ]
-     *
-     * @var array
      */
     protected array $belongsToMany = [];
 
@@ -87,8 +79,6 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
 
     /**
      * Constructor
-     *
-     * @param DataSourceInterface $dataSource
      */
     public function __construct(DataSourceInterface $dataSource, MapperManager $mapperManager)
     {
@@ -100,10 +90,6 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
 
     /**
      * Reads from the DataSource
-     *
-     * @param QueryObject $query
-     * @param boolean $mapResult
-     * @return Collection
      */
     protected function read(QueryObject $query, bool $mapResult = true): Collection
     {
@@ -112,17 +98,10 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
         return $query->getOption('with') && $resultSet->isEmpty() === false ? $this->loadRelatedData($resultSet, $query) : $resultSet;
     }
 
-    /**
-     * TODO: onDelete or doDelete or something
-     *
-     * @param EntityInterface $entity
-     * @return boolean
-     */
-    public function delete(EntityInterface $entity): bool
+    public function delete(object $entity): bool
     {
         if ($result = parent::delete($entity) && is_string($this->primaryKey)) {
-            $id = $entity->toState()[$this->primaryKey] ?? null;
-            if ($id) {
+            if ($id = $this->getEntityProperty($entity, $this->primaryKey)) {
                 $this->deleteDependent($id);
             }
         }
@@ -132,8 +111,6 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
 
     /**
      * Check array defintions and add some defaults
-     *
-     * @return void
      */
     private function initializeOrm(): void
     {
@@ -208,11 +185,11 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
                 }
             }
         }
-
+        
         $primaryKey = $this->getPrimaryKey()[0];
 
         foreach ($resultSet as &$entity) {
-            $row = $entity->toState();
+            $row = $this->mapEntityToData($entity);
 
             foreach ($associations as $type => $association) {
                 foreach ($association as $config) {
@@ -226,20 +203,19 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
                             case 'belongsTo':
                                 $conditions[$bindingKey] = $row[$config['foreignKey']];
                                 $result = $mapper->findAllBy($conditions, $options);
-                                $this->setEntityValue($entity, $config['propertyName'], $result ? $result[0] : null);
+                                $this->setObjectProperty($entity, $config['propertyName'], $result ? $result[0] : null);
 
                             break;
                             case 'hasOne':
 
                                 $conditions[$config['foreignKey']] = $row[$primaryKey];
-
                                 $result = $mapper->findAllBy($conditions, $options);
-                                $this->setEntityValue($entity, $config['propertyName'], $result ? $result[0] : null);
+                                $this->setObjectProperty($entity, $config['propertyName'], $result ? $result[0] : null);
 
                             break;
                             case 'hasMany':
                                 $conditions[$config['foreignKey']] = $row[$bindingKey];
-                                $this->setEntityValue($entity, $config['propertyName'], $mapper->findAllBy($conditions, $options));
+                                $this->setObjectProperty($entity, $config['propertyName'], $mapper->findAllBy($conditions, $options));
 
                             break;
                             case 'belongsToMany':
@@ -253,7 +229,7 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
                                 }, $result);
 
                                 $conditions[$primaryKey] = $ids;
-                                $this->setEntityValue($entity, $config['propertyName'], $mapper->findAllBy($conditions, $options));
+                                $this->setObjectProperty($entity, $config['propertyName'], $mapper->findAllBy($conditions, $options));
 
                             break;
                     }
@@ -262,12 +238,6 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
         }
 
         return $resultSet;
-    }
-
-    private function setEntityValue(EntityInterface $entity, string $property, $value): void
-    {
-        $method = 'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $property)));
-        $entity->$method($value);
     }
 
     /**
@@ -295,5 +265,34 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
                 $this->dataSource->delete($config['joinTable'], new QueryObject([$config['foreignKey'] => $id]));
             }
         }
+    }
+
+    private function getEntityProperty(object $entity, string $property): mixed
+    {
+        $result = null;
+        $reflectionProperty = new ReflectionProperty($entity, $property);
+        if ($reflectionProperty->isPrivate()) {
+            $reflectionProperty->setAccessible(true); // Only required for PHP 8.0 and lower
+        }
+
+        if ($reflectionProperty->isInitialized($entity)) {
+            $result = $reflectionProperty->getValue($entity);
+        }
+
+        return  $result ;
+    }
+
+    /**
+     * @internal this is not checking fields, since we are adding RElATED data which is not part of field
+     */
+    private function setObjectProperty(object $entity, string $property, mixed $value): void
+    {
+        $reflectionProperty = new ReflectionProperty($entity, $property);
+
+        if ($reflectionProperty->isPrivate()) {
+            $reflectionProperty->setAccessible(true); // Only required for PHP 8.0 and lower
+        }
+
+        $reflectionProperty->setValue($entity, $value);
     }
 }

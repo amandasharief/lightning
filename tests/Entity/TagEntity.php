@@ -2,8 +2,6 @@
 
 namespace Lightning\Test\Entity;
 
-use Lightning\Entity\AbstractEntity;
-
 class TagEntity extends AbstractEntity
 {
     private int $id;

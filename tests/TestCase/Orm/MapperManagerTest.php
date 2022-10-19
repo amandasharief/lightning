@@ -4,17 +4,13 @@ namespace Lightning\Test\Orm;
 
 use PHPUnit\Framework\TestCase;
 use Lightning\Orm\MapperManager;
-use App\Controllers\EntityInterface;
-use Lightning\Entity\AbstractEntity;
-use Lightning\Event\EventDispatcher;
-use Lightning\Event\ListenerRegistry;
+
 use Lightning\DataMapper\DataSourceInterface;
 use Lightning\Orm\AbstractObjectRelationalMapper;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Lightning\DataMapper\DataSource\MemoryDataSource;
-use Lightning\Entity\EntityInterface as EntityEntityInterface;
 
-class DummyArticleEntity extends AbstractEntity
+class DummyArticleEntity
 {
     private ?int $id = null;
     private string $title;
@@ -22,7 +18,7 @@ class DummyArticleEntity extends AbstractEntity
     private ?int $author_id = null;
     private ?string $created_at = null;
     private ?string $updated_at = null;
-    private ?EntityInterface $author = null;
+    private ?object $author = null;
 
     public function getTitle(): string
     {
@@ -89,12 +85,12 @@ class DummyArticleEntity extends AbstractEntity
         return $this;
     }
 
-    public function getAuthor(): ?EntityInterface
+    public function getAuthor(): ?object
     {
         return $this->author;
     }
 
-    public function setAuthor(?EntityInterface $author): self
+    public function setAuthor(?object $author): self
     {
         $this->author = $author;
 
@@ -105,10 +101,7 @@ class DummyArticleEntity extends AbstractEntity
 class DummyArticle extends AbstractObjectRelationalMapper
 {
     protected string $table = 'articles';
-    public function mapDataToEntity(array $state): EntityEntityInterface
-    {
-        return DummyArticleEntity::fromState($state);
-    }
+    protected string $entityClass = DummyArticleEntity::class;
 }
 
 final class MapperManagerTest extends TestCase

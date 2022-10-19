@@ -7,10 +7,8 @@ use LogicException;
 use PHPUnit\Framework\TestCase;
 use Lightning\Orm\MapperManager;
 use function Lightning\Dotenv\env;
-use Lightning\Test\PersistentPdoFactory;
 use Lightning\Test\Entity\TagEntity;
 use Lightning\DataMapper\QueryObject;
-use Lightning\Entity\EntityInterface;
 use Lightning\Fixture\FixtureManager;
 use Lightning\Test\Entity\PostEntity;
 use Lightning\Test\Entity\UserEntity;
@@ -21,12 +19,15 @@ use Lightning\Test\Entity\ArticleEntity;
 use Lightning\Test\Entity\ProfileEntity;
 use Lightning\Test\Fixture\PostsFixture;
 use Lightning\Test\Fixture\UsersFixture;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\Test\Fixture\AuthorsFixture;
 use Lightning\Test\Fixture\ArticlesFixture;
 use Lightning\Test\Fixture\ProfilesFixture;
 use Lightning\Test\Fixture\PostsTagsFixture;
 use Lightning\Orm\AbstractObjectRelationalMapper;
 use Lightning\DataMapper\DataSource\DatabaseDataSource;
+use ReflectionClass;
+use ReflectionProperty;
 
 abstract class MockMapper extends AbstractObjectRelationalMapper
 {
@@ -67,6 +68,7 @@ abstract class MockMapper extends AbstractObjectRelationalMapper
 
         return null;
     }
+
 }
 
 class Article extends MockMapper
@@ -87,10 +89,7 @@ class Article extends MockMapper
         ]
     ];
 
-    public function mapDataToEntity(array $data): EntityInterface
-    {
-        return ArticleEntity::fromState($data);
-    }
+    protected string $entityClass = ArticleEntity::class;
 }
 
 class Author extends MockMapper
@@ -115,15 +114,16 @@ class Author extends MockMapper
         $this->hasMany[0]['dependent'] = $dependent;
     }
 
-    public function mapDataToEntity(array $data): EntityInterface
-    {
-        return AuthorEntity::fromState($data);
-    }
+    protected string $entityClass = AuthorEntity::class;
 }
 
 class Profile extends MockMapper
 {
     protected string $table = 'profiles';
+
+    protected array $fields = [
+        'id', 'name','user_id','created_at','updated_at'
+    ];
 
     protected array $belongsTo = [
         [
@@ -133,16 +133,15 @@ class Profile extends MockMapper
         ]
     ];
 
-    public function mapDataToEntity(array $data): EntityInterface
-    {
-        return ProfileEntity::fromState($data);
-    }
+    protected string $entityClass = ProfileEntity::class;
 }
 
 class User extends MockMapper
 {
     protected string $table = 'users';
-
+    protected array $fields = [
+        'id', 'name','created_at','updated_at'
+    ];
     protected array $hasOne = [
         [
             'className' => Profile::class,
@@ -157,25 +156,24 @@ class User extends MockMapper
         $this->hasOne[0]['dependent'] = $dependent;
     }
 
-    public function mapDataToEntity(array $data): EntityInterface
-    {
-        return UserEntity::fromState($data); //
-    }
+    protected string $entityClass = UserEntity::class;
 }
 
 class Tag extends MockMapper
 {
     protected string $table = 'tags';
-    public function mapDataToEntity(array $data): EntityInterface
-    {
-        return TagEntity::fromState($data); //
-    }
+    protected array $fields = [
+        'id', 'name','created_at','updated_at'
+    ];
+    protected string $entityClass = TagEntity::class;
 }
 
 class Post extends MockMapper
 {
     protected string $table = 'posts';
-
+    protected array $fields = [
+        'id', 'title', 'body','created_at','updated_at'
+    ];
     protected array $belongsToMany = [
         [
             'className' => Tag::class,
@@ -191,10 +189,7 @@ class Post extends MockMapper
         $this->belongsToMany[0]['dependent'] = $dependent;
     }
 
-    public function mapDataToEntity(array $state): EntityInterface
-    {
-        return PostEntity::fromState($state);
-    }
+    protected string $entityClass = PostEntity::class;
 }
 
 /**
@@ -222,11 +217,13 @@ final class AbstractObjectRelationalMapperTest extends TestCase
             PostsTagsFixture::class,
         ]);
     }
-    
-    public function tearDown(): void 
+
+    public function tearDown(): void
     {
         unset($this->pdo);
     }
+
+
 
     public function testBelongsTo(): void
     {
@@ -249,6 +246,11 @@ final class AbstractObjectRelationalMapperTest extends TestCase
                 'updated_at' => '2021-10-03 14:02:00'
             ]
         ];
+
+   
+        $this->assertInstanceOf(ArticleEntity::class, $result);
+        $this->assertInstanceOf(AuthorEntity::class, $result->getAuthor());
+
         $this->assertEquals($expected, $result->toState());
     }
 
@@ -324,6 +326,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
                 'updated_at' => '2021-10-03 14:02:00'
             ]
         ];
+        
 
         $this->assertEquals($expected, $result->toState());
     }
