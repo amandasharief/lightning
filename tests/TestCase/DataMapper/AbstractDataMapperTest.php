@@ -530,6 +530,8 @@ final class AbstractDataMapperTest extends TestCase
         $mapper = new Article($this->storage);
         $article = $mapper->find();
         $mapper->reset();
+
+        $article->setTitle('foo');
        
         $this->assertTrue($mapper->save($article));
 
