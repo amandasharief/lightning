@@ -29,7 +29,7 @@ use Lightning\DataMapper\Exception\EntityNotFoundException;
 
 final class ArticleEntity
 {
-    private ?int $id = null;
+    private int $id;
 
     private string $title;
     private string $body;
@@ -480,6 +480,7 @@ final class AbstractDataMapperTest extends TestCase
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
 
+    
         $this->assertTrue($mapper->save($article));
 
         //
@@ -564,8 +565,16 @@ final class AbstractDataMapperTest extends TestCase
     public function testUpdateWithNoPrimaryKey(): void
     {
         $mapper = new Article($this->storage);
-        $article = $mapper->find();
-        $article->setId(null);
+       
+        $article = $mapper->createEntity([
+            'title' => 'test',
+            'body' => 'none',
+            'author_id' => 1234,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        $mapper->markPersisted($article,true);
 
         $this->expectException(BadMethodCallException::class);
         $this->expectExceptionMessage('Primary key `id` has no value');
