@@ -97,7 +97,7 @@ $validator->validate($_POST);
 Special rules
 
 - `nullable` If a `null` value has been passed for the field/property then rule is skipped (still needs to be present)
-- `optional` If no data (including null) has been passed for the field/property then the rule is skipped.
+- `optional` If no data (including a `null` value) has been passed for the field/property then the rule is skipped.
 - `stopOnFailure` - Any validation rule will immediately stop running any subsequent rules, calling this will ensure that only one error is every returned.
 - `stopIfFailure` - If there are any validation errors for this field/property, then stop, do not run anymore validation rules. For example, if you are validating DNS records for a domain, but its an invalid domain, then there is no point checking the DNS records.
 
