@@ -103,6 +103,23 @@ class UserValidator extends Validator
     }
 }
 
+class BookValidator extends Validator
+{
+    protected function initialize(): void
+    {
+        $this->createRuleFor('name')
+            ->notBlank();
+
+        $this->createRuleFor('field_1')
+            ->optional()
+            ->alphaNumeric();
+
+        $this->createRuleFor('field_2')
+            ->nullable()
+            ->alphaNumeric();
+    }
+}
+
 final class ValidatorTest extends TestCase
 {
     public function testCreateRules(): void
@@ -349,5 +366,54 @@ final class ValidatorTest extends TestCase
             ->lengthBetween(5, 255);
 
         $this->assertEquals($emailRule, $validator->getRuleFor('email'));
+    }
+
+    public function testOptional()
+    {
+        $validator = new BookValidator();
+        $book = [
+            'name' => 'Book Title',
+            'field_1' => 'abc',
+            'field_2' => null
+        ];
+
+        $this->assertTrue($validator->validate($book));
+
+        $validator = new BookValidator();
+        $book = [
+            'name' => 'Book Title',
+            'field_2' => null
+        ];
+
+        $this->assertTrue($validator->validate($book));
+    }
+
+    public function testNullable()
+    {
+        $validator = new BookValidator();
+        $book = [
+            'name' => 'Book Title',
+            'field_1' => 'abc',
+            'field_2' => null
+        ];
+
+        $this->assertTrue($validator->validate($book));
+
+        $validator = new BookValidator();
+        $book = [
+            'name' => 'Book Title',
+            'field_1' => 'abc',
+            'field_2' => 'abc'
+        ];
+
+        $this->assertTrue($validator->validate($book));
+
+        $validator = new BookValidator();
+        $book = [
+            'name' => 'Book Title',
+            'field_1' => 'abc'
+        ];
+
+        $this->assertFalse($validator->validate($book));
     }
 }

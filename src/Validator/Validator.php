@@ -84,7 +84,11 @@ class Validator
         foreach ($this->validate as $field => $validationSet) {
             $value = $data[$field] ?? null;
 
-            if ($validationSet->isOptional() && $this->validation->empty($value)) {
+            if ($validationSet->isOptional() && array_key_exists($field, $data) === false) {
+                continue;
+            }
+
+            if($validationSet->isNullable() && array_key_exists($field, $data) && $value === null){
                 continue;
             }
 

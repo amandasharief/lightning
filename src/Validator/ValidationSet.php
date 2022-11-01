@@ -16,6 +16,7 @@ class ValidationSet
     protected array $validationRules = [];
     protected bool $stopOnFailure = false;
     protected bool $optional = false;
+    protected bool $nullable = false;
 
     /**
      * Value must must only contain alphabetic characters
@@ -298,13 +299,30 @@ class ValidationSet
     }
 
     /**
-     * The value is optional, and no further validation takes place if the value is empty
+     * The value that is passed can also be null
+     */
+    public function nullable() : static 
+    {
+        $this->nullable = true;
+        return $this;
+    }
+
+    /**
+     * The value is optionally passed (regardless if null or not)
      */
     public function optional(): static
     {
         $this->optional = true;
 
         return $this;
+    }
+
+    /**
+     * The value that is passed can also be null
+     */
+    public function isNullable(): bool 
+    {
+        return $this->nullable;
     }
 
     /**
