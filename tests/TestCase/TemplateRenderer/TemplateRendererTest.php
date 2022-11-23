@@ -18,7 +18,7 @@ final class TemplateRendererTest extends TestCase
 
     public function testRender(): void
     {
-        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', $this->cachedPath);
+        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', 'php', $this->cachedPath);
 
         $this->assertEquals(
             '<p>ok</p>',
@@ -28,7 +28,7 @@ final class TemplateRendererTest extends TestCase
 
     public function testRenderWithData(): void
     {
-        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', $this->cachedPath);
+        $templateRenderer = new TemplateRenderer(__DIR__ .'/views','php',  $this->cachedPath);
 
         $this->assertEquals(
             '{"foo":"bar"}',
@@ -38,23 +38,37 @@ final class TemplateRendererTest extends TestCase
 
     public function testSetGetPath(): void
     {
-        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', $this->cachedPath);
+        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', 'php', $this->cachedPath);
 
         $this->assertEquals('/tmp', $templateRenderer->setPath('/tmp')->getPath());
     }
 
     public function testSetGetLayout(): void
     {
-        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', $this->cachedPath);
+        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', 'php', $this->cachedPath);
 
         $this->assertNull($templateRenderer->getLayout());
 
         $this->assertEquals('layouts/foo', $templateRenderer->setLayout('layouts/foo')->getLayout());
     }
 
+    public function testSetGetFileExtension(): void 
+    {
+        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', null);
+        $this->assertNull($templateRenderer->getFileExtension());
+        $this->assertEquals('ctp',$templateRenderer->setFileExtension('ctp')->getFileExtension());
+    }
+
+    public function testWithFileExtension(): void 
+    {
+        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', null);
+        $this->assertEquals('php',$templateRenderer->withFileExtension('php')->getFileExtension());
+        $this->assertNull($templateRenderer->getFileExtension());
+    }
+
     public function testRenderWithinRender(): void
     {
-        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', $this->cachedPath);
+        $templateRenderer = new TemplateRenderer(__DIR__ .'/views','php', $this->cachedPath);
 
         $this->assertEquals(
             "<h1>holder</h1>\n<p>ok</p>",
@@ -64,7 +78,7 @@ final class TemplateRendererTest extends TestCase
 
     public function testRenderWithLayout(): void
     {
-        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', $this->cachedPath);
+        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', 'php', $this->cachedPath);
 
         $this->assertEquals(
             "<!doctype html>\n<html lang=\"en\">\n  <head>\n    <title>Web Application</title>\n  </head>\n  <body>\n    <p>ok</p>  \n  </body>\n</html>",
@@ -74,7 +88,7 @@ final class TemplateRendererTest extends TestCase
 
     public function testRenderViewNotFound(): void
     {
-        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', $this->cachedPath);
+        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', 'php', $this->cachedPath);
 
         $this->expectException(TemplateRendererException::class);
         $this->expectExceptionMessage('File `foo.php` not found');
@@ -84,7 +98,7 @@ final class TemplateRendererTest extends TestCase
 
     public function testRenderWithViewPath(): void
     {
-        $templateRenderer = new TemplateRenderer('/nowhere', $this->cachedPath);
+        $templateRenderer = new TemplateRenderer('/nowhere', 'php', $this->cachedPath);
 
         $this->expectException(TemplateRendererException::class);
         $this->expectExceptionMessage('File `index.php` not found');
@@ -94,21 +108,21 @@ final class TemplateRendererTest extends TestCase
 
     public function testSetGetAttribute(): void
     {
-        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', $this->cachedPath);
+        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', 'php', $this->cachedPath);
         $this->assertNull($templateRenderer->getAttribute('foo'));
         $this->assertEquals('bar', $templateRenderer->setAttribute('foo', 'bar')->getAttribute('foo'));
     }
 
     public function testRenderWithAttribute(): void
     {
-        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', $this->cachedPath);
+        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', 'php', $this->cachedPath);
 
         $this->assertEquals(
             '{"foo":"bar"}',
             $templateRenderer->setAttribute('data', ['foo' => 'bar'])->render('index')
         );
 
-        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', $this->cachedPath);
+        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', 'php', $this->cachedPath);
 
         // Tests attributes are overwritten if param is set the same
         $this->assertEquals(
@@ -119,7 +133,7 @@ final class TemplateRendererTest extends TestCase
 
     public function testCompile(): void
     {
-        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', $this->cachedPath);
+        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', 'php', $this->cachedPath);
 
         $templateRenderer->setAttribute('title', 'Article #1')
             ->setAttribute('body', 'This is an article.');

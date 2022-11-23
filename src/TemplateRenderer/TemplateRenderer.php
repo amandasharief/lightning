@@ -27,7 +27,11 @@ class TemplateRenderer
     /**
      * Constructor
      */
-    public function __construct(private string $path, ?string $cachePath = null)
+    public function __construct(
+        private string $path,
+        private ?string $fileExtension = 'php', 
+        ?string $cachePath = null
+        )
     {
         $this->encoding = mb_internal_encoding() ?: 'UTF-8';
 
@@ -123,6 +127,33 @@ class TemplateRenderer
     }
 
     /**
+     * Sets the default file extension, e.g .php .ctp or null if you want to specificy the name yourself
+     */
+    public function setFileExtension(?string $extension) : static 
+    {
+        $this->fileExtension = $extension;
+        return $this;
+    }
+
+    /**
+     * Gets the defualt file extension
+     */
+    public function getFileExtension(): ?string 
+    {
+        return $this->fileExtension;
+    }
+
+    /**
+     * Returns a new instance with the new extension
+     */
+    public function withFileExtension(?string $extension) : static 
+    {
+        $template = clone $this;
+        $template->fileExtension = $extension;
+        return $template;
+    }
+
+    /**
      * Renders a view and returns a response
      *
      * @param string $path articles/index or /var/www/app/resources/views/articles/index.php
@@ -130,13 +161,13 @@ class TemplateRenderer
      */
     public function render(string $path, array $variables = []): string
     {
-        $path = strncmp($path, '/', 1) === 0 ? $path : $this->path . '/' . trim($path, '/') . '.php';
+        $path = strncmp($path, '/', 1) === 0 ? $path : $this->path . '/' . trim($path, '/') . ($this->fileExtension ? '.' . $this->fileExtension : null);
 
         $content = $this->renderTemplate($path, $variables);
 
         if ($this->layout && ! $this->inRender) {
             $content = $this->renderTemplate(
-                $this->path . '/' . trim($this->layout, '/') . '.php',
+                $this->path . '/' . trim($this->layout, '/') .  ($this->fileExtension ? '.' . $this->fileExtension : null),
                 ['content' => $content] + $variables
             );
         }

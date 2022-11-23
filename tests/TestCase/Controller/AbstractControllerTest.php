@@ -262,6 +262,6 @@ final class AbstractControllerTest extends TestCase
     {
         $path = __DIR__ .'/TestApp/templates';
 
-        return new ArticlesController(new TemplateRenderer($path, sys_get_temp_dir()));
+        return new ArticlesController(new TemplateRenderer($path, 'php', sys_get_temp_dir()));
     }
 }

@@ -18,7 +18,7 @@ Create a template in your `views` folder
 To create the `TemplateRenderer` object pass the template folder and temporary folder where the compiled templates are stored.
 
 ```php
-$templateRenderer = new TemplateRenderer('/var/www/resources/views');
+$templateRenderer = new TemplateRenderer('/var/www/templates');
 $output = $templateRenderer->render('articles/index');
 ```
 
@@ -33,13 +33,13 @@ $templateRenderer->render('articles/index', ['foo' => 'bar']); //
 To render a template using a specific file, make sure the template name starts with `/`
 
 ```php
-$output = $templateRenderer->render('/var/www/resources/views/articles/index.php');
+$output = $templateRenderer->render('/var/www/templates/articles/index.php');
 ```
 
 By default the `TemplateRenderer` caches the template compliation to the system temp directory, however if you to prefer to use somewhere else, then during the creation of the object set the cache path.
 
 ```php
-$templateRenderer = new TemplateRenderer('/var/www/resources/views', '/var/www/tmp/views');
+$templateRenderer = new TemplateRenderer('/var/www/templates','php','/var/www/tmp/templates');
 ```
 
 
@@ -70,7 +70,7 @@ Now configure the `TemplateRenderer` to use the layout
 
 ```php
 $output = $templateRenderer
-    ->withLayout('layouts/app') // /var/www/resources/views/layouts/app.php
+    ->withLayout('layouts/app') // /var/www/templates/layouts/app.php
     ->render('articles/index');
 ```
 
