@@ -126,28 +126,3 @@ $router->delete('/articles/:id', [ArticlesController::class,'destroy'], ['id' =>
 ## PSR-11: DI Container
 
 When creating the Router object add a `Container` object to use when creating the object from the matched route proxy.
-
-## Autowiring
-
-You can also use autowiring of methods or closures, simply supply the `Autowire` object when creating the Router object.
-
-
-## ControllerInterface
-
-You can add the `ControllerInterface` add life cycle callbacks to your `Controller` which will be called before and after the action is invoked.
-
-```php
-class ArticlesController implements ControllerInterface
-{
-    public function beforeFilter(ServerRequestInterface $request): ?ResponseInterface
-    {
-        $this->request = $request;
-        return $this->eventDispatcher->dispatch(new BeforeFilterEvent($request))->getResponse(); // Response object or null
-    }
-
-    public function afterFilter(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
-    {
-       return $this->eventDispatcher->dispatch(new AfterFilterEvent($request, $response))->getResponse(); // Response object
-    }
-}
-```

@@ -22,9 +22,6 @@ trait MiddlewareTrait
 
     /**
      * Adds middleware to queue
-     *
-     * @param MiddlewareInterface $middleware
-     * @return static
      */
     public function middleware(MiddlewareInterface $middleware): static
     {
@@ -35,9 +32,6 @@ trait MiddlewareTrait
 
     /**
      * Adds middleware to the start of queue
-     *
-     * @param MiddlewareInterface $middleware
-     * @return static
      */
     public function prependMiddleware(MiddlewareInterface $middleware): static
     {

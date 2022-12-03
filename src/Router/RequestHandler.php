@@ -25,8 +25,6 @@ class RequestHandler implements RequestHandlerInterface
 
     /**
      * Constructor
-     *
-     * @param array $middleware
      */
     public function __construct(array $middleware = [])
     {
@@ -34,10 +32,7 @@ class RequestHandler implements RequestHandlerInterface
     }
 
     /**
-     * Handles a server request and produces a response
-     *
-     * @param ServerRequestInterface $request
-     * @return ResponseInterface
+     * Handles a server request and produces a responsex
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {

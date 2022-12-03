@@ -14,24 +14,14 @@ namespace Lightning\Router;
 trait RouteTrait
 {
     /**
-    * Creates a GET route
-    *
-    * @param string $path
-    * @param callable|array|string $handler
-    * @param array $constraints
-    * @return Route
+     * Creates a GET route
     */
     public function get(string $path, callable|array|string $handler, array $constraints = []): Route
     {
         return $this->map('GET', $path, $handler, $constraints);
     }
     /**
-     * Creates a POST route
-     *
-     * @param string $path
-     * @param callable|array|string $handler
-     * @param array $constraints
-     * @return Route
+      * Creates a POST route
      */
     public function post(string $path, callable|array|string $handler, array $constraints = []): Route
     {
@@ -40,11 +30,6 @@ trait RouteTrait
 
     /**
      * Creates a PATCH route
-     *
-     * @param string $path
-     * @param callable|array|string $handler
-     * @param array $constraints
-     * @return Route
      */
     public function patch(string $path, callable|array|string $handler, array $constraints = []): Route
     {
@@ -53,11 +38,6 @@ trait RouteTrait
 
     /**
      * Creates a PUT route
-     *
-     * @param string $path
-     * @param callable|array|string $handler
-     * @param array $constraints
-     * @return Route
      */
     public function put(string $path, callable|array|string $handler, array $constraints = []): Route
     {
@@ -66,11 +46,6 @@ trait RouteTrait
 
     /**
      * Creates a DELETE route
-     *
-     * @param string $path
-     * @param callable|array|string $handler
-     * @param array $constraints
-     * @return Route
      */
     public function delete(string $path, callable|array|string $handler, array $constraints = []): Route
     {
@@ -79,11 +54,6 @@ trait RouteTrait
 
     /**
      * Creates a HEAD route
-     *
-     * @param string $path
-     * @param callable|array|string $handler
-     * @param array $constraints
-     * @return Route
      */
     public function head(string $path, callable|array|string $handler, array $constraints = []): Route
     {
@@ -92,11 +62,6 @@ trait RouteTrait
 
     /**
      * Creates a OPTIONS route
-     *
-     * @param string $path
-     * @param callable|array|string $handler
-     * @param array $constraints
-     * @return Route
      */
     public function options(string $path, callable|array|string $handler, array $constraints = []): Route
     {

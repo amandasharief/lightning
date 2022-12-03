@@ -298,37 +298,6 @@ final class RouterTest extends TestCase
         $router->dispatch(new ServerRequest('GET', '/articles'));
     }
 
-    // Test with ResponseObject params as well
-    public function testAutowireMethod(): void
-    {
-        $router = new Router(null, new Autowire(), new Response());
-        $router->get('/articles', ['Lightning\Test\Router\DummyController','autowire']);
-
-        $response = $router->dispatch(new ServerRequest('GET', '/articles'));
-        $this->assertInstanceOf(ResponseInterface::class, $response);
-    }
-
-    public function testAutowireFunction(): void
-    {
-        $router = new Router(null, new Autowire(), new Response());
-        $router->get('/articles', function (ServerRequestInterface $request, ResponseInterface $response, ApcuCache $class) {
-            return new Response(200, [], 'ok');
-        });
-
-        $response = $router->dispatch(new ServerRequest('GET', '/articles'));
-        $this->assertInstanceOf(ResponseInterface::class, $response);
-    }
-
-
-    public function testAutowireActionController(): void
-    {
-        $router = new Router(null, new Autowire(), new Response());
-        $router->get('/articles', SingleActionController::class);
-
-        $response = $router->dispatch(new ServerRequest('GET', '/articles'));
-        $this->assertInstanceOf(ResponseInterface::class, $response);
-    }
-
     public function testVariablesWereAdded(): void
     {
         $router = new Router();
