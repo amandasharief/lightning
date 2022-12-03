@@ -38,7 +38,6 @@ class Router implements RequestHandlerInterface, RoutesInterface
 
     protected ?ContainerInterface $container;
     protected ?ResponseInterface $emptyResponse ;
-    protected ?Autowire $autowire;
 
     protected RouteCollection $routes;
     protected array $groups = [];
@@ -48,20 +47,18 @@ class Router implements RequestHandlerInterface, RoutesInterface
      */
     public function __construct(
         ?ContainerInterface $container = null,
-        ?Autowire $autowire = null,
         ?ResponseInterface $emptyResponse = null
-        ) {
+    ) {
         $this->container = $container;
         $this->emptyResponse = $emptyResponse;
-        $this->autowire = $autowire;
         $this->routes = $this->createRouteCollection();
     }
 
     /**
-    * Create a group to organize your routes
-    *
-    * @param string $path e.g. /admin
-        */
+     * Create a group to organize your routes
+     *
+     * @param string $path e.g. /admin
+     */
     public function group(string $path, callable $callable): RouteCollection
     {
         $path = sprintf('/%s', trim($path, '/'));
@@ -135,7 +132,7 @@ class Router implements RequestHandlerInterface, RoutesInterface
     private function createMiddlewareStack(?Route $route, callable $callable): array
     {
         $middleware = $route ? $route->getMiddlewares() : $this->middlewares; # Important: to add Router main middlewares
-        array_push($middleware, new DispatcherMiddleware($callable, $this->emptyResponse, $this->autowire));
+        array_push($middleware, new DispatcherMiddleware($callable, $this->emptyResponse));
 
         return $middleware;
     }

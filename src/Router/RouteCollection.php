@@ -31,8 +31,6 @@ class RouteCollection implements RoutesInterface
 
     /**
      * Prefix
-     *
-     * @param string|null $prefix
      */
     public function __construct(string $prefix = null, callable $callback = null)
     {
@@ -45,9 +43,6 @@ class RouteCollection implements RoutesInterface
 
     /**
      * Checks if the route group is match
-     *
-     * @param string $uri
-     * @return boolean
      */
     public function matchPrefix(string $uri): bool
     {
@@ -56,12 +51,6 @@ class RouteCollection implements RoutesInterface
 
     /**
      * Creates the regular expression and add to routes
-     *
-     * @param string $method
-     * @param string $path
-     * @param callable|array|string $handler
-     * @param array $constraints
-     * @return Route
      */
     public function map(string $method, string $path, callable|array|string $handler, array $constraints): Route
     {
@@ -72,12 +61,6 @@ class RouteCollection implements RoutesInterface
 
     /**
      * Factory method
-     *
-     * @param string $method
-     * @param string $path
-     * @param callable|array|string $handler
-     * @param array $constraints
-     * @return Route
      */
     private function createRoute(string $method, string $path, callable|array|string $handler, array $constraints = []): Route
     {
