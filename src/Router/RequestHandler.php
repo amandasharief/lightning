@@ -21,7 +21,7 @@ class RequestHandler implements RequestHandlerInterface
     /**
      * @var \Psr\Http\Server\MiddlewareInterface[] $middleware
      */
-    private $middleware = [];
+    private array $middleware = [];
 
     /**
      * Constructor

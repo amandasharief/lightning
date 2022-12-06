@@ -57,7 +57,7 @@ When you need to get a value from the URL
 $router->get('/articles/:id', 'App\Controller\ArticlesController::show');
 ```
 
-This will be added to the ``ServerRequestInterface` object.
+This will be added to the `ServerRequestInterface` object.
 
 ```php
 $id = (int) $request->getAttribute('id')

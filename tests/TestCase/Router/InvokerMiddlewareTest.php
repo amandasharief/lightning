@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Lightning\Router\Middleware\DispatcherMiddleware;
+use Lightning\Router\Middleware\InvokerMiddleware;
 
 class Foo
 {
@@ -43,14 +43,14 @@ class DummyRequestHandler implements RequestHandlerInterface
     }
 }
 
-final class DispatcherMiddlewareTest extends TestCase
+final class InvokerMiddlewareTest extends TestCase
 {
     public function testProcess(): void
     {
         $route = new Route('get', '/articles/:id', [new PostsController(),'index']);
         $route->match('GET', '/articles/1234');
 
-        $middleware = new DispatcherMiddleware($route->getCallable());
+        $middleware = new InvokerMiddleware($route->getCallable());
         $request = new ServerRequest('GET', '/not-relevant');
         $response = $middleware->process($request, new DummyRequestHandler($request));
         $this->assertEquals('ok', (string) $response->getBody());

@@ -30,11 +30,6 @@ class Route
 
     /**
      * Constructor
-     *
-     * @param string $method
-     * @param string $path
-     * @param callable|array|string $handler
-     * @param array $constraints
      */
     public function __construct(string $method, string $path, callable|array|string $handler, array $constraints = [])
     {
@@ -50,10 +45,6 @@ class Route
 
     /**
      * Matches a route and params to this object
-     *
-     * @param string $method
-     * @param string $uri
-     * @return boolean
      */
     public function match(string $method, string $uri): bool
     {
@@ -90,10 +81,7 @@ class Route
 
     /**
      * Gets the handler for this Route, if it is using a proxy it will be resolved.
-     *
-     * @internal this was in the Middleware, then moved to router, and now is here. Still not sure
-     *
-     *
+     * 
      * @return callable|string callable or proxy
      */
     public function getHandler()
@@ -103,8 +91,6 @@ class Route
 
     /**
      * Gets the Method for this Route
-     *
-     * @return string
      */
     public function getMethod(): string
     {
@@ -113,8 +99,6 @@ class Route
 
     /**
      * Gets the Path for this Route
-     *
-     * @return string
      */
     public function getPath(): string
     {
@@ -123,8 +107,6 @@ class Route
 
     /**
      * Gets the matched URI
-     *
-     * @return string|null
      */
     public function getUri(): ?string
     {
@@ -133,8 +115,6 @@ class Route
 
     /**
      * Get the Route vars
-     *
-     * @return array
      */
     public function getVariables(): array
     {
@@ -143,8 +123,6 @@ class Route
 
     /**
      * Gets the Constraints
-     *
-     * @return array
      */
     public function getConstraints(): array
     {
@@ -153,8 +131,6 @@ class Route
 
     /**
      * Gets the callable for this route (must be invoked first)
-     *
-     * @return callable
      */
     public function getCallable(): callable
     {
@@ -167,9 +143,6 @@ class Route
 
     /**
      * Invokes the handler for the route
-     *
-     * @param ContainerInterface|null $container
-     * @return callable
      */
     public function __invoke(?ContainerInterface $container = null): callable
     {
@@ -198,11 +171,8 @@ class Route
 
     /**
      * Resolves the class, if it is not in the container then the container will be passed.
-     *
-     * @param string $class
-     * @return object
      */
-    private function resolve(string $class, ?ContainerInterface $container = null)
+    private function resolve(string $class, ?ContainerInterface $container = null) :object
     {
         if ($container && $container->has($class)) {
             return $container->get($class);

@@ -13,23 +13,20 @@ namespace Lightning\Router\Middleware;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;
-use Lightning\Router\ControllerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Lightning\Router\Exception\RouterException;
 
-class DispatcherMiddleware implements MiddlewareInterface
+class InvokerMiddleware implements MiddlewareInterface
 {
     private $callable;
-    private ?ResponseInterface $response;
 
     /**
      * Constructor
      */
-    public function __construct(callable $callable, ?ResponseInterface $response = null)
+    public function __construct(callable $callable)
     {
         $this->callable = $callable;
-        $this->response = $response;
     }
 
     /**
@@ -39,7 +36,7 @@ class DispatcherMiddleware implements MiddlewareInterface
     {
         $callable = $this->callable;
 
-        $response = $callable($request, $this->response);
+        $response = $callable($request);
 
         if (! $response instanceof ResponseInterface) {
             throw new RouterException('No response was returned');

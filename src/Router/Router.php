@@ -17,7 +17,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Lightning\Http\Exception\NotFoundException;
-use Lightning\Router\Middleware\DispatcherMiddleware;
+use Lightning\Router\Middleware\InvokerMiddleware;
 
 /**
  * Router
@@ -37,7 +37,6 @@ class Router implements RequestHandlerInterface, RoutesInterface
     public const NUMERIC = '[0-9]+';
 
     protected ?ContainerInterface $container;
-    protected ?ResponseInterface $emptyResponse ;
 
     protected RouteCollection $routes;
     protected array $groups = [];
@@ -45,12 +44,8 @@ class Router implements RequestHandlerInterface, RoutesInterface
     /**
      * Constructor
      */
-    public function __construct(
-        ?ContainerInterface $container = null,
-        ?ResponseInterface $emptyResponse = null
-    ) {
+    public function __construct(?ContainerInterface $container = null) {
         $this->container = $container;
-        $this->emptyResponse = $emptyResponse;
         $this->routes = $this->createRouteCollection();
     }
 
@@ -132,7 +127,7 @@ class Router implements RequestHandlerInterface, RoutesInterface
     private function createMiddlewareStack(?Route $route, callable $callable): array
     {
         $middleware = $route ? $route->getMiddlewares() : $this->middlewares; # Important: to add Router main middlewares
-        array_push($middleware, new DispatcherMiddleware($callable, $this->emptyResponse));
+        array_push($middleware, new InvokerMiddleware($callable));
 
         return $middleware;
     }

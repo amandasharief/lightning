@@ -52,6 +52,7 @@ $ vendor/bin/phpunit
 - setters and getters, set,Get. If setter does not return a bool, instead of void return the object.
 - accesibility, main methods on object should be public even if they are not supposed to be called from outside. e.g. controller render, console command output.
 - GET should be used for single items
+- Property promotion should not be used in classes which are designed to be extended, e.g. controler, this makes it clearear for user then to call parent::__construct
 
 
 To think about
