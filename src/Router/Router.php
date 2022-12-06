@@ -11,7 +11,6 @@
 
 namespace Lightning\Router;
 
-use Lightning\Autowire\Autowire;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -119,9 +118,8 @@ class Router implements RequestHandlerInterface, RoutesInterface
             };
         }
 
-        $response = (new RequestHandler($this->createMiddlewareStack($route, $callable)))->handle($request);
 
-        return $response;
+        return (new RequestHandler($this->createMiddlewareStack($route, $callable)))->handle($request);
     }
 
     private function createMiddlewareStack(?Route $route, callable $callable): array
