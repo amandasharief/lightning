@@ -49,39 +49,39 @@ class ValidationRules
     }
 
     /**
-     * Checks that a value is an empty string
+     * Checks that a value is an empty
      */
     public function empty(mixed $value): bool
     {
-        if (is_null($value)) {
-            return true;
-        }
-
-        if (is_string($value)) {
-            return trim($value) === '';
-        }
-
-        if (is_array($value) || is_countable($value)) {
-            return count($value) === 0;
-        }
-
-        return false;
+        return !$this->notEmpty($value);
     }
 
     /**
-     * Value must not be null or empty string or empty array
+     * Value must not be null or empty array and string must have a length greater than 0
      */
     public function notEmpty(mixed $value): bool
     {
-        return ! $this->empty($value);
+        if (is_array($value) || is_countable($value)) {
+            return count($value) > 0;
+        }
+
+        if (is_null($value) || !is_scalar($value)) {
+            return false;
+        }
+
+        return is_bool($value) || mb_strlen((string) $value) > 0;
     }
 
     /**
-     * Value must not be null or empty string
+     * Value must not be null and the trimmed length is greater than 0
      */
     public function notBlank(mixed $value): bool
     {
-        return ! is_null($value) && is_string($value) && trim($value) !== '';
+        if (is_null($value) || !is_scalar($value)) {
+            return false;
+        }
+
+        return trim((string) $value) !== '';
     }
 
     /**
@@ -314,11 +314,11 @@ class ValidationRules
     }
 
     /**
-     * A string value must match a pattern
+     * A a value must match the pattern
      */
     public function regularExpression(mixed $value, string $pattern): bool
     {
-        return is_string($value) && (bool) preg_match($pattern, $value);
+        return is_scalar($value) && (bool) preg_match($pattern, (string) $value);
     }
 
     /**

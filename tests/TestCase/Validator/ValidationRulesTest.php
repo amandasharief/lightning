@@ -57,7 +57,7 @@ final class ValidationRulesTest extends TestCase
         $validation = new ValidationRules();
 
         $this->assertTrue($validation->empty(null));
-        $this->assertTrue($validation->empty('  '));
+        $this->assertFalse($validation->empty('  '));
         $this->assertTrue($validation->empty(''));
         $this->assertFalse($validation->empty(false));
 
