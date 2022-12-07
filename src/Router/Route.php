@@ -119,17 +119,9 @@ class Route
     }
 
     /**
-     * Gets the handler for this route
+     * Gets the Handler for this route
      */
-    public function getHandler()
-    {
-        return $this->handler;
-    }
-
-    /**
-     * Invokes the handler for the route
-     */
-    public function __invoke(?ContainerInterface $container = null): callable
+    public function getHandler(?ContainerInterface $container = null): callable
     {
         $handler = $this->handler;
 

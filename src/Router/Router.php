@@ -89,8 +89,6 @@ class Router implements RequestHandlerInterface, RoutesInterface
                     $route->prependMiddleware($middleware); // Insert so route specific middleware are last
                 }
 
-                $route($this->container);
-
                 return $route;
             }
         }
@@ -111,27 +109,29 @@ class Router implements RequestHandlerInterface, RoutesInterface
             $request = $request->withAttribute($name, $value);
         }
 
-        if ($route) {
-            $callable = $route->getHandler();
-        } else {
-            $callable = function (ServerRequestInterface $request) {
-                throw new NotFoundException(sprintf('The requested URL %s was not found', $request->getRequestTarget()));
-            };
+        if($route){
+            $handler = $route->getHandler($this->container);
+            $middleware =  $route->getMiddlewares();
+        }else{
+            $handler = $this->createErrorRequestHandler($request);
+            $middleware = $this->middlewares;
         }
 
-        return (new RequestHandler($this->createMiddlewareStack($route, $callable)))->handle($request);
+        array_push($middleware, new InvokerMiddleware($handler));
+
+        return (new RequestHandler($middleware))->handle($request);
     }
-
-    private function createMiddlewareStack(?Route $route, callable $callable): array
+    
+    private function createErrorRequestHandler(ServerRequestInterface $request) : callable 
     {
-        $middleware = $route ? $route->getMiddlewares() : $this->middlewares; # Important: to add Router main middlewares
-        array_push($middleware, new InvokerMiddleware($callable));
-
-        return $middleware;
+        return function (ServerRequestInterface $request) {
+            throw new NotFoundException(sprintf('The requested URL %s was not found', $request->getRequestTarget()));
+        };
     }
 
     /**
      * Calls dispatch part of the RequestHandlerInterface
+     * @todo This is important see integration testing
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {

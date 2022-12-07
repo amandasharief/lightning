@@ -1,15 +1,18 @@
 <?php declare(strict_types=1);
 
-namespace Lightning\Test\Router;
+namespace Lightning\Test\TestCase\Router;
 
 use BadMethodCallException;
 use Lightning\Router\Route;
+use Nyholm\Psr7\Response;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface;
 
 class FakeController
 {
-    public function index()
+    public function index() : ResponseInterface
     {
+        return new Response();
     }
 }
 
@@ -60,9 +63,10 @@ final class RouteTest extends TestCase
 
     public function testGetHandler(): void
     {
-        $handler = 'App\Controller\ArticlesController::index';
+        $handler = 'Lightning\Test\TestCase\Router\FakeController::index';
         $route = new Route('GET', '/articles', $handler);
-        $this->assertSame($handler, $route->getHandler());
+   
+        $this->assertInstanceOf(ResponseInterface::class, $route->getHandler()());
 
         $handler = [$this,'testGetHandler'];
         $route = new Route('GET', '/articles', $handler);
@@ -92,9 +96,9 @@ final class RouteTest extends TestCase
 
     public function testInvoke(): void
     {
-        $route = new Route('GET', '/fake', 'Lightning\Test\Router\FakeController::index');
+        $route = new Route('GET', '/fake', 'Lightning\Test\TestCase\Router\FakeController::index');
         $route->match('GET', '/fake');
-        $callable = $route->__invoke();
+        $callable = $route->getHandler();
         $this->assertTrue(is_callable($callable));
     }
 
@@ -102,13 +106,8 @@ final class RouteTest extends TestCase
     {
         $route = new Route('GET', '/fake', InvokeableController::class);
         $route->match('GET', '/fake');
-        $callable = $route->__invoke();
+        $callable = $route->getHandler();
         $this->assertTrue(is_callable($callable));
     }
 
-    public function testGetHandlerNotInvoked(): void
-    {
-        $route = new Route('GET', '/articles/:id/:category', 'App\Controller\ArticlesController::index');
-        $this->assertEquals('App\Controller\ArticlesController::index', $route->getHandler());
-    }
 }

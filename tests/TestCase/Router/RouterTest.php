@@ -235,16 +235,6 @@ final class RouterTest extends TestCase
         $this->assertCount(3, $route->getMiddlewares());
     }
 
-    // public function testParseRequest(): void
-    // {
-    //     $router = new Router();
-    //     $router->get('/articles', ['Lightning\Test\Router\DummyController','index']);
-
-    //     $route = $router->parseRequest(new ServerRequest('GET', '/articles'));
-
-    //     $this->assertInstanceOf(Route::class, $route);
-    //     $this->assertEquals('/articles', $route->getPath());
-    // }
 
     public function testDispatch(): void
     {
@@ -270,10 +260,12 @@ final class RouterTest extends TestCase
     {
         $router = new Router();
         $router->get('/articles', 'FunkyController::action');
+        $route =  $router->match(new ServerRequest('GET', '/articles'));
 
         $this->expectException(RouterException::class);
         $this->expectExceptionMessage('Error resolving `FunkyController`');
-        $router->match(new ServerRequest('GET', '/articles'));
+
+        $route->getHandler();
     }
 
     public function testNotCallable(): void
@@ -283,7 +275,8 @@ final class RouterTest extends TestCase
 
         $this->expectException(RouterException::class);
         $this->expectExceptionMessage('The handler for `GET /articles` is not a callable');
-        $router->match(new ServerRequest('GET', '/articles'));
+        $route = $router->match(new ServerRequest('GET', '/articles'));
+        $route->getHandler();
     }
 
     public function testNoResponse(): void
