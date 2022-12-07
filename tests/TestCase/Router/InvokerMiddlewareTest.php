@@ -50,7 +50,7 @@ final class InvokerMiddlewareTest extends TestCase
         $route = new Route('get', '/articles/:id', [new PostsController(),'index']);
         $route->match('GET', '/articles/1234');
 
-        $middleware = new InvokerMiddleware($route->getCallable());
+        $middleware = new InvokerMiddleware($route->getHandler());
         $request = new ServerRequest('GET', '/not-relevant');
         $response = $middleware->process($request, new DummyRequestHandler($request));
         $this->assertEquals('ok', (string) $response->getBody());

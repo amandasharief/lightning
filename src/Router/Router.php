@@ -43,7 +43,8 @@ class Router implements RequestHandlerInterface, RoutesInterface
     /**
      * Constructor
      */
-    public function __construct(?ContainerInterface $container = null) {
+    public function __construct(?ContainerInterface $container = null)
+    {
         $this->container = $container;
         $this->routes = $this->createRouteCollection();
     }
@@ -111,13 +112,12 @@ class Router implements RequestHandlerInterface, RoutesInterface
         }
 
         if ($route) {
-            $callable = $route->getCallable();
+            $callable = $route->getHandler();
         } else {
             $callable = function (ServerRequestInterface $request) {
                 throw new NotFoundException(sprintf('The requested URL %s was not found', $request->getRequestTarget()));
             };
         }
-
 
         return (new RequestHandler($this->createMiddlewareStack($route, $callable)))->handle($request);
     }

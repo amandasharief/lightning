@@ -106,11 +106,9 @@ final class RouteTest extends TestCase
         $this->assertTrue(is_callable($callable));
     }
 
-    public function testGetCallableNotInvoked(): void
+    public function testGetHandlerNotInvoked(): void
     {
         $route = new Route('GET', '/articles/:id/:category', 'App\Controller\ArticlesController::index');
-        $this->expectException(BadMethodCallException::class);
-        $this->expectExceptionMessage('Route must be invoked first');
-        $route->getCallable();
+        $this->assertEquals('App\Controller\ArticlesController::index', $route->getHandler());
     }
 }

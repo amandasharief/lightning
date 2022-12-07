@@ -11,7 +11,6 @@
 
 namespace Lightning\Router;
 
-use BadMethodCallException;
 use Psr\Container\ContainerInterface;
 use Lightning\Router\Exception\RouterException;
 
@@ -80,16 +79,6 @@ class Route
     }
 
     /**
-     * Gets the handler for this Route, if it is using a proxy it will be resolved.
-     * 
-     * @return callable|string callable or proxy
-     */
-    public function getHandler()
-    {
-        return $this->handler;
-    }
-
-    /**
      * Gets the Method for this Route
      */
     public function getMethod(): string
@@ -130,14 +119,10 @@ class Route
     }
 
     /**
-     * Gets the callable for this route (must be invoked first)
+     * Gets the handler for this route
      */
-    public function getCallable(): callable
+    public function getHandler()
     {
-        if (! is_callable($this->handler)) {
-            throw new BadMethodCallException('Route must be invoked first');
-        }
-
         return $this->handler;
     }
 
@@ -172,7 +157,7 @@ class Route
     /**
      * Resolves the class, if it is not in the container then the container will be passed.
      */
-    private function resolve(string $class, ?ContainerInterface $container = null) :object
+    private function resolve(string $class, ?ContainerInterface $container = null): object
     {
         if ($container && $container->has($class)) {
             return $container->get($class);
