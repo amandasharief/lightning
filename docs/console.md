@@ -28,7 +28,7 @@ class HelloWorldCommand extends Command
         ]);
     }
 
-    protected function execute(Arguments $args, ConsoleIo $io): int
+    protected function execute(Arguments $args): int
     {
         $this->out(sprintf('Hello <yellow>%s</yellow>!', $args->getArgument('name')));
 
@@ -56,37 +56,37 @@ use Lightning\Migration\Command\MigrateDownCommand;
 
 include dirname(__DIR__) . '/config/bootstrap_cli.php';
 
-$io = new ConsoleIo();
+$this->io = new ConsoleIo();
 $pdo = new PDO(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 $migration = new Migration($pdo, dirname(__DIR__) . '/database/migrations');
 
-$application = new ConsoleApplication($io);
+$application = new ConsoleApplication($this->io);
 $application->setName('migrate')
             ->setDescription('Database migration');
             
-$application->add(new MigrateUpCommand($io, $migration));
-$application->add(new MigrateDownCommand($io, $migration));
+$application->add(new MigrateUpCommand($this->io, $migration));
+$application->add(new MigrateDownCommand($this->io, $migration));
 exit($application->run($argv));
 ```
 
 ## ConsoleIO
 
-The ConsoleIO object for input and output.
+The `ConsoleIO` object for input and output.
 
 
 ```php
-$io->out('hello'); // to stdout
-$io->err('opps'); // to stderr
-$io->nl(); // new line
-$io->hr(); // horiziontal rule
+$this->io->out('hello'); // to stdout
+$this->io->err('opps'); // to stderr
+$this->io->nl(); // new line
+$this->io->hr(); // horiziontal rule
 ```
 
 ## Inputs
 
 ```php
-$name = $io->ask();
-$continue = $io->ask('Continue ?','n'); // adds a default 
-$continue = $io->askChoice('Continue ? (name)',['y','n']); 
+$name = $this->io->ask();
+$continue = $this->io->ask('Continue ?','n'); // adds a default 
+$continue = $this->io->askChoice('Continue ? (name)',['y','n']); 
 ```
 
 ### Alerts
@@ -94,10 +94,10 @@ $continue = $io->askChoice('Continue ? (name)',['y','n']);
 Display alerts to users, warning and error will be displayed `stderr`.
 
 ```php
-$io->info('INFO', 'This an info alert');
-$io->success('SUCCESS', 'This is a success alert');
-$io->warning('WARNING', 'This is a warning alert');
-$io->error('ERROR', 'This an error alert');
+$this->io->info('INFO', 'This an info alert');
+$this->io->success('SUCCESS', 'This is a success alert');
+$this->io->warning('WARNING', 'This is a warning alert');
+$this->io->error('ERROR', 'This an error alert');
 ```
 ![Console Alerts](img/console_alerts.png)
 
@@ -107,7 +107,7 @@ $io->error('ERROR', 'This an error alert');
 Display a progress bar to user
 
 ```php
-$io->progressBar(50, 100);
+$this->io->progressBar(50, 100);
 ```
 
 ![Console Alerts](img/console_progress.png)
@@ -119,9 +119,9 @@ Often when running commands you are carrying out multiple tasks, and its nice to
 is where the status method comes in handy, statuses are setup for `ok`, `warning` and `error`.
 
 ```php
-$io->status('ok', 'Delete file');
-$io->status('warning', 'Directory is writable');
-$io->status('error', 'Create directory');
+$this->io->status('ok', 'Delete file');
+$this->io->status('warning', 'Directory is writable');
+$this->io->status('error', 'Create directory');
 ```
 
 ![Console Status](img/console_status.png)
@@ -129,8 +129,8 @@ $io->status('error', 'Create directory');
 You can also add your own status
 
 ```php
-$io->setStatus('skipped','blue');
-$io->setStatus('ignored','yellow');
+$this->io->setStatus('skipped','blue');
+$this->io->setStatus('ignored','yellow');
 ```
 
 
