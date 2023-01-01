@@ -10,6 +10,17 @@ use Lightning\Console\ConsoleArgumentParser;
 use Lightning\Console\Exception\StopException;
 use Lightning\Console\TestSuite\TestConsoleIo;
 
+class NameCommand extends AbstractCommand
+{
+    protected string $name = 'name';
+
+    protected function execute(Arguments $args)
+    {
+        $this->out(sprintf('Hello %s', $this->input('you')));
+    }
+}
+
+
 class HelloCommand extends AbstractCommand
 {
     protected string $name = 'hello';
@@ -133,6 +144,16 @@ final class AbstractCommandTest extends TestCase
         $command = new HelloCommand( $stub);
         $command->out('foo');
         $this->assertStringContainsString('foo', $stub->getStdout());
+    }
+
+    public function testInput(): void
+    {
+        $stub = new TestConsoleIo();
+        $stub->setInput(['jim']);
+
+        $command = new NameCommand( $stub);
+        
+        $this->assertStringContainsString('jim', $command->input());
     }
 
     public function testError(): void

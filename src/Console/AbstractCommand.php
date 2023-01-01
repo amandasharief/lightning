@@ -114,7 +114,16 @@ abstract class AbstractCommand implements CommandInterface
      */
     private function createHelpFormatter(): ConsoleHelpFormatter
     {
-        return new ConsoleHelpFormatter();
+        $help = new ConsoleHelpFormatter();
+        if (! empty($this->description)) {
+            $help->setDescription($this->description);
+        }
+
+        $help->setUsage([$this->parser->generateUsage($this->name)])
+            ->setOptions($this->parser->generateOptions())
+            ->setArguments($this->parser->generateArguments());
+
+        return $help;
     }
 
     /**
@@ -184,13 +193,14 @@ abstract class AbstractCommand implements CommandInterface
         }
 
         if ($arguments->getOption('help') === true) {
-            $this->displayHelp();
+            $helpFormatter = $this->createHelpFormatter();
+            $this->io->out($helpFormatter->generate());
 
             return self::SUCCESS;
         }
 
         try {
-            return $this->execute($arguments, $this->io) ?: self::SUCCESS;
+            return $this->execute($arguments) ?: self::SUCCESS;
         } catch (StopException $exception) {
             return $exception->getCode();
         }
@@ -199,7 +209,7 @@ abstract class AbstractCommand implements CommandInterface
     /**
      * Outputs a message or array of messages to stdout
      */
-    public function out(string|iterable $message = '', int $newLines = 1): static
+    public function out(string|iterable $message, int $newLines = 1): static
     {
         $this->io->out($message, $newLines, ConsoleIo::NORMAL);
 
@@ -209,7 +219,7 @@ abstract class AbstractCommand implements CommandInterface
     /**
      * Outputs a message or array of messages to stderr
      */
-    public function error(string|iterable $message = '', int $newLines = 1): static
+    public function error(string|iterable $message, int $newLines = 1): static
     {
         $this->io->err($message, $newLines);
 
@@ -217,9 +227,17 @@ abstract class AbstractCommand implements CommandInterface
     }
 
     /**
+     * Reads input from STDIN
+     */
+    public function input(?string $default = null): ?string
+    {
+        return $this->io->in($default);
+    }
+
+    /**
      * Outputs a message or array of messages to stdout when verbose option is provided
      */
-    public function verbose(string|iterable $message = '', int $newLines = 1): static
+    public function verbose(string|iterable $message, int $newLines = 1): static
     {
         $this->io->out($message, $newLines, ConsoleIo::VERBOSE);
 
@@ -229,29 +247,14 @@ abstract class AbstractCommand implements CommandInterface
     /**
      * Outputs a message or array of messages to stdout even if quiet option is provided
      */
-    public function quiet(string|iterable $message = '', int $newLines = 1): static
+    public function quiet(string|iterable $message, int $newLines = 1): static
     {
         $this->io->out($message, $newLines, ConsoleIo::QUIET);
 
         return $this;
     }
 
-    /**
-     * Displays the help for this Command
-     */
-    private function displayHelp(): void
-    {
-        $help = $this->createHelpFormatter();
-        if (! empty($this->description)) {
-            $help->setDescription($this->description);
-        }
-
-        $help->setUsage([$this->parser->generateUsage($this->name)])
-            ->setOptions($this->parser->generateOptions())
-            ->setArguments($this->parser->generateArguments());
-
-        $this->out($help->generate());
-    }
+ 
 
     /**
      * Displays a formatted error message and stops the execution

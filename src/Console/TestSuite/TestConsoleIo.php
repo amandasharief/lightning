@@ -67,9 +67,6 @@ final class TestConsoleIo extends ConsoleIo
 
     /**
      * Sets the input
-     *
-     * @param array $input
-     * @return static
      */
     public function setInput(array $input): static
     {
@@ -80,8 +77,6 @@ final class TestConsoleIo extends ConsoleIo
 
     /**
      * Resets the IO object
-     *
-     * @return void
      */
     public function reset(): void
     {
