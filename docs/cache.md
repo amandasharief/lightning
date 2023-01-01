@@ -1,7 +1,6 @@
 # PSR-16 Cache
 
-Simple lightweight PSR cache libraries, `File`, `Redis`, `Apcu` and `Memory`.
-
+Simple lightweight PSR cache libraries, `File`, `Redis`, `Apcu` and `Memory`. There is also a `Null` cache when you want to disable caching in your application.
 
 ## Usage
 
