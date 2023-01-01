@@ -20,7 +20,7 @@ class FooCommand extends AbstractCommand
             'description' => 'name to use'
         ]);
     }
-    protected function execute(Arguments $args, ConsoleIo $io)
+    protected function execute(Arguments $args)
     {
         $this->out('foo:' .  $args->getArgument('name', 'none'));
     }
@@ -30,7 +30,7 @@ class BarCommand extends AbstractCommand
 {
     protected string $name = 'bar';
     protected string $description = 'bar command';
-    protected function execute(Arguments $args, ConsoleIo $io)
+    protected function execute(Arguments $args)
     {
         $this->out('bar');
     }
@@ -80,7 +80,7 @@ final class ConsoleApplicationTest extends TestCase
     {
         $consoleIo = new TestConsoleIo();
         $app = new ConsoleApplication($consoleIo);
-        $this->assertInstanceOf(ConsoleApplication::class, $app->add(new FooCommand(new ConsoleArgumentParser(), $consoleIo)));
+        $this->assertInstanceOf(ConsoleApplication::class, $app->add(new FooCommand($consoleIo)));
     }
 
     /**
@@ -90,8 +90,8 @@ final class ConsoleApplicationTest extends TestCase
     {
         $consoleIo = new TestConsoleIo();
         $app = new ConsoleApplication($consoleIo);
-        $app->add(new FooCommand(new ConsoleArgumentParser(), $consoleIo));
-        $app->add(new BarCommand(new ConsoleArgumentParser(), $consoleIo));
+        $app->add(new FooCommand($consoleIo));
+        $app->add(new BarCommand($consoleIo));
         $this->assertEquals(0, $app->run(['bin/foo']));
 
         $this->assertEquals("<yellow>Usage:</yellow>\n  unkown <command> [options] [arguments]\n\n<yellow>Commands:</yellow>\n  <green>foo     </green>foo command\n  <green>bar     </green>bar command\n\n", $consoleIo->getStdout());
@@ -104,7 +104,7 @@ final class ConsoleApplicationTest extends TestCase
     {
         $consoleIo = new TestConsoleIo();
         $app = new ConsoleApplication($consoleIo);
-        $app->add(new FooCommand(new ConsoleArgumentParser(), $consoleIo));
+        $app->add(new FooCommand($consoleIo));
         $this->assertEquals(0, $app->run(['bin/foo','foo']));
         $this->assertStringContainsString('foo:none', $consoleIo->getStdout());
     }
@@ -116,7 +116,7 @@ final class ConsoleApplicationTest extends TestCase
     {
         $consoleIo = new TestConsoleIo();
         $app = new ConsoleApplication($consoleIo);
-        $app->add(new FooCommand(new ConsoleArgumentParser(), $consoleIo));
+        $app->add(new FooCommand($consoleIo));
         $this->assertEquals(0, $app->run(['bin/foo','foo','bar']));
         $this->assertStringContainsString('foo:bar', $consoleIo->getStdout());
     }

@@ -41,7 +41,7 @@ final class MigrateDownCommandTest extends TestCase
         $this->pdo->query('DROP TABLE IF EXISTS articles_m');
 
         $migration = new Migration($this->pdo, dirname(__DIR__). '/migrations/' . $driver);
-        $command = new MigrateDownCommand(new ConsoleArgumentParser(), new TestConsoleIo(), $migration);
+        $command = new MigrateDownCommand( new TestConsoleIo(), $migration);
         $this->setupIntegrationTesting($command);
     }
 
@@ -54,7 +54,7 @@ final class MigrateDownCommandTest extends TestCase
     {
         // run migrations so we can undom them
         $migration = new Migration($this->pdo, dirname(__DIR__). '/migrations/' . $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
-        $command = new MigrateUpCommand(new ConsoleArgumentParser(), new TestConsoleIo(), $migration);
+        $command = new MigrateUpCommand( new TestConsoleIo(), $migration);
         $command->run([]);
 
         $this->execute();

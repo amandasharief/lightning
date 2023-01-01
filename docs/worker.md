@@ -43,7 +43,7 @@ $logger = new Logger('queue');
 $logger->addHandler(new ConsoleHandler());
 $messageListener->setLogger($logger);
 
-$command = new QueueWorkerCommand(new ConsoleArgumentParser(), new ConsoleIo(), $consumer);
+$command = new QueueWorkerCommand(new ConsoleIo(), $consumer);
 exit($command->run($argv));
 ```
 

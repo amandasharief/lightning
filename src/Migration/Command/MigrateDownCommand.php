@@ -26,18 +26,14 @@ class MigrateDownCommand extends AbstractCommand
 
     /**
      * Constructor
-     *
-     * @param ConsoleArgumentParser $parser
-     * @param ConsoleIo $io
-     * @param Migration $migration
      */
-    public function __construct(ConsoleArgumentParser $parser, ConsoleIo $io, Migration $migration)
+    public function __construct(ConsoleIo $io, Migration $migration)
     {
         $this->migration = $migration;
-        parent::__construct($parser, $io);
+        parent::__construct($io);
     }
 
-    protected function execute(Arguments $args, ConsoleIo $io): int
+    protected function execute(Arguments $args): int
     {
         $this->migration->down(function ($migration) {
             $this->io->out("Rolling back migration <info>{$migration['name']}</info>");

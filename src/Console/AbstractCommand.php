@@ -15,6 +15,9 @@ use Lightning\Console\Exception\StopException;
 
 abstract class AbstractCommand implements CommandInterface
 {
+    protected ConsoleIo $io;
+    protected ConsoleArgumentParser $parser;
+
     /**
      * Default error code.
      */
@@ -39,8 +42,10 @@ abstract class AbstractCommand implements CommandInterface
     /**
      * Constructor
      */
-    public function __construct(protected ConsoleArgumentParser $parser, protected ConsoleIo $io)
+    public function __construct(ConsoleIo $io)
     {
+        $this->io = $io;
+        $this->parser = $this->createConsoleArgumentParser();
     }
 
     /**
@@ -95,6 +100,15 @@ abstract class AbstractCommand implements CommandInterface
         return $this->description;
     }
 
+
+    /**
+     * Factory method
+     */
+    private function createConsoleArgumentParser(): ConsoleArgumentParser
+    {
+        return new ConsoleArgumentParser();
+    }
+
     /**
      * Factory method
      */
@@ -126,7 +140,7 @@ abstract class AbstractCommand implements CommandInterface
     /**
      * Place your command logic here
      */
-    abstract protected function execute(Arguments $args, ConsoleIo $io);
+    abstract protected function execute(Arguments $args);
 
     /**
      * Exits the command without an error
@@ -140,6 +154,8 @@ abstract class AbstractCommand implements CommandInterface
 
     /**
      * Aborts this command
+     *
+     * @throws StopException
      */
     public function abort(int $code = self::ERROR): void
     {
@@ -183,7 +199,7 @@ abstract class AbstractCommand implements CommandInterface
     /**
      * Outputs a message or array of messages to stdout
      */
-    public function out($message = '', int $newLines = 1): static
+    public function out(string|iterable $message = '', int $newLines = 1): static
     {
         $this->io->out($message, $newLines, ConsoleIo::NORMAL);
 
@@ -193,7 +209,7 @@ abstract class AbstractCommand implements CommandInterface
     /**
      * Outputs a message or array of messages to stderr
      */
-    public function error($message = '', int $newLines = 1): static
+    public function error(string|iterable $message = '', int $newLines = 1): static
     {
         $this->io->err($message, $newLines);
 
@@ -203,7 +219,7 @@ abstract class AbstractCommand implements CommandInterface
     /**
      * Outputs a message or array of messages to stdout when verbose option is provided
      */
-    public function verbose($message = '', int $newLines = 1): static
+    public function verbose(string|iterable $message = '', int $newLines = 1): static
     {
         $this->io->out($message, $newLines, ConsoleIo::VERBOSE);
 
@@ -213,7 +229,7 @@ abstract class AbstractCommand implements CommandInterface
     /**
      * Outputs a message or array of messages to stdout even if quiet option is provided
      */
-    public function quiet($message = '', int $newLines = 1): static
+    public function quiet(string|iterable $message = '', int $newLines = 1): static
     {
         $this->io->out($message, $newLines, ConsoleIo::QUIET);
 

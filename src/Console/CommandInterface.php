@@ -15,23 +15,16 @@ interface CommandInterface
 {
     /**
      * Gets the name of the command
-     *
-     * @return string
      */
     public function getName(): string;
 
     /**
      * Gets the description of the command
-     *
-     * @return string
      */
     public function getDescription(): string;
 
     /**
      * Runs the command
-     *
-     * @param array $args
-     * @return integer
      */
-    public function run(array $args): int ;
+    public function run(array $args): int;
 }

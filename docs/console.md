@@ -59,14 +59,13 @@ include dirname(__DIR__) . '/config/bootstrap_cli.php';
 $io = new ConsoleIo();
 $pdo = new PDO(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 $migration = new Migration($pdo, dirname(__DIR__) . '/database/migrations');
-$parser = new ConsoleArgumentParser();
 
 $application = new ConsoleApplication($io);
 $application->setName('migrate')
             ->setDescription('Database migration');
             
-$application->add(new MigrateUpCommand($parser, $io, $migration));
-$application->add(new MigrateDownCommand($parser, $io, $migration));
+$application->add(new MigrateUpCommand($io, $migration));
+$application->add(new MigrateDownCommand($io, $migration));
 exit($application->run($argv));
 ```
 
@@ -154,7 +153,7 @@ final class HelloWordCommandTest extends TestCase
 
     public function setUp(): void 
     {
-        $command = new HelloWorldCommand(new ConsoleArgumentParser(), new TestConsoleIo());
+        $command = new HelloWorldCommand(new TestConsoleIo());
         $this->setupIntegrationTesting($command);
     }
 

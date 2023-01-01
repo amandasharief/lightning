@@ -24,7 +24,12 @@ class HelloCommand extends AbstractCommand
         ]);
     }
 
-    protected function execute(Arguments $args, ConsoleIo $io)
+    public function getParser(): ConsoleArgumentParser
+    {
+        return $this->parser;
+    }
+
+    protected function execute(Arguments $args)
     {
         if ($args->getOption('abort')) {
             $this->abort();
@@ -44,49 +49,48 @@ final class AbstractCommandTest extends TestCase
 {
     public function testGetConsoleIo(): void
     {
-        $command = new HelloCommand(new ConsoleArgumentParser(), new TestConsoleIo());
+        $command = new HelloCommand(new TestConsoleIo());
         $this->assertInstanceOf(ConsoleIo::class, $command->getConsoleIo());
     }
 
     public function testGetName(): void
     {
-        $command = new HelloCommand(new ConsoleArgumentParser(), new TestConsoleIo());
+        $command = new HelloCommand(new TestConsoleIo());
         $this->assertEquals('hello', $command->getName());
     }
 
     public function testGetDescription(): void
     {
-        $command = new HelloCommand(new ConsoleArgumentParser(), new TestConsoleIo());
+        $command = new HelloCommand(new TestConsoleIo());
         $this->assertEquals('hello world', $command->getDescription());
     }
 
     public function testAddOption(): void
     {
-        $parser = new ConsoleArgumentParser();
-        $command = new HelloCommand($parser, new TestConsoleIo());
+        $command = new HelloCommand(new TestConsoleIo());
         $command->addOption('uppercase', ['description' => 'change name to uppercase', 'short' => 'u']);
 
         $this->assertEquals(
             'change name to uppercase',
-            $parser->generateOptions()['-u,--uppercase']
+           $command->getParser()->generateOptions()['-u,--uppercase']
         );
     }
 
     public function testAddArgument(): void
     {
-        $parser = new ConsoleArgumentParser();
-        $command = new HelloCommand($parser, new TestConsoleIo());
+   
+        $command = new HelloCommand( new TestConsoleIo());
         $command->addArgument('name', ['description' => 'name to use', 'default' => 'world']);
 
         $this->assertEquals(
             'name to use (default: "world")',
-            $parser->generateArguments()['name']
+            $command->getParser()->generateArguments()['name']
         );
     }
 
     public function testExit(): void
     {
-        $command = new HelloCommand(new ConsoleArgumentParser(), new TestConsoleIo());
+        $command = new HelloCommand( new TestConsoleIo());
 
         $this->expectException(StopException::class);
         $this->expectExceptionMessage('Command exited');
@@ -97,7 +101,7 @@ final class AbstractCommandTest extends TestCase
 
     public function testAbort(): void
     {
-        $command = new HelloCommand(new ConsoleArgumentParser(), new TestConsoleIo());
+        $command = new HelloCommand( new TestConsoleIo());
 
         $this->expectException(StopException::class);
         $this->expectExceptionMessage('Command aborted');
@@ -109,7 +113,7 @@ final class AbstractCommandTest extends TestCase
     public function testRun(): void
     {
         $stub = new TestConsoleIo();
-        $command = new HelloCommand(new ConsoleArgumentParser(), $stub);
+        $command = new HelloCommand( $stub);
 
         $this->assertEquals(AbstractCommand::SUCCESS, $command->run(['bin/console']));
         $this->assertStringContainsString('Hello world', $stub->getStdout());
@@ -118,7 +122,7 @@ final class AbstractCommandTest extends TestCase
     public function testRunCatchStopException(): void
     {
         $stub = new TestConsoleIo();
-        $command = new HelloCommand(new ConsoleArgumentParser(), $stub);
+        $command = new HelloCommand( $stub);
 
         $this->assertEquals(AbstractCommand::ERROR, $command->run(['bin/console','--abort']));
     }
@@ -126,7 +130,7 @@ final class AbstractCommandTest extends TestCase
     public function testOut(): void
     {
         $stub = new TestConsoleIo();
-        $command = new HelloCommand(new ConsoleArgumentParser(), $stub);
+        $command = new HelloCommand( $stub);
         $command->out('foo');
         $this->assertStringContainsString('foo', $stub->getStdout());
     }
@@ -134,7 +138,7 @@ final class AbstractCommandTest extends TestCase
     public function testError(): void
     {
         $stub = new TestConsoleIo();
-        $command = new HelloCommand(new ConsoleArgumentParser(), $stub);
+        $command = new HelloCommand( $stub);
         $command->error('foo');
         $this->assertStringContainsString('foo', $stub->getStderr());
     }
@@ -142,7 +146,7 @@ final class AbstractCommandTest extends TestCase
     public function testVerbose(): void
     {
         $stub = new TestConsoleIo();
-        $command = new HelloCommand(new ConsoleArgumentParser(), $stub);
+        $command = new HelloCommand( $stub);
         $command->verbose('foo');
         $this->assertEmpty($stub->getStdout());
 
@@ -155,7 +159,7 @@ final class AbstractCommandTest extends TestCase
     public function testQuiet(): void
     {
         $stub = new TestConsoleIo();
-        $command = new HelloCommand(new ConsoleArgumentParser(), $stub);
+        $command = new HelloCommand( $stub);
         $stub->setOutputLevel(ConsoleIo::QUIET);
         $command->out('normal');
         $command->quiet('foo');
@@ -167,7 +171,7 @@ final class AbstractCommandTest extends TestCase
     public function testDisplayHelp(): void
     {
         $stub = new TestConsoleIo();
-        $command = new HelloCommand(new ConsoleArgumentParser(), $stub);
+        $command = new HelloCommand( $stub);
         $command->run(['bin/console', '-h']);
 
         $expected = "hello world\n\n<yellow>Usage:</yellow>\n  hello [options] [name]\n\n<yellow>Arguments:</yellow>\n  <green>name           </green>name to use (default: \"world\")\n\n<yellow>Options:</yellow>\n  <green>-h,--help      </green>Displays this help message\n  <green>-v,--verbose   </green>Displays additional output (if available)\n  <green>-q,--quiet     </green>Does not display output\n  <green>-u,--uppercase </green>change name to uppercase\n  <green>--abort        </green>\n\n";
@@ -178,7 +182,7 @@ final class AbstractCommandTest extends TestCase
     public function testThrowError(): void
     {
         $stub = new TestConsoleIo();
-        $command = new HelloCommand(new ConsoleArgumentParser(), $stub);
+        $command = new HelloCommand( $stub);
         $stub->setOutputMode(ConsoleIo::RAW);
         $this->expectException(StopException::class);
         $this->expectExceptionMessage('Opps error');

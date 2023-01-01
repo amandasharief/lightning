@@ -56,7 +56,6 @@ final class QueueWorkerCommandTest extends TestCase
         $this->messageConsumer = new MessageConsumer($this->messageQueue, 'default');
 
         $command = new QueueWorkerCommand(
-            new ConsoleArgumentParser(),
             new TestConsoleIo(),
             $this->messageConsumer
         );

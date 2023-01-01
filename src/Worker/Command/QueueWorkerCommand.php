@@ -32,9 +32,9 @@ class QueueWorkerCommand extends AbstractCommand
     /**
      * Constructor
      */
-    public function __construct(ConsoleArgumentParser $parser, ConsoleIo $io, protected MessageConsumer $consumer)
+    public function __construct( ConsoleIo $io, protected MessageConsumer $consumer)
     {
-        parent::__construct($parser, $io);
+        parent::__construct($io);
 
         if (extension_loaded('pcntl')) {
             pcntl_async_signals(true);
@@ -64,7 +64,7 @@ class QueueWorkerCommand extends AbstractCommand
     /**
      * Command logic is here
      */
-    protected function execute(Arguments $args, ConsoleIo $io): int
+    protected function execute(Arguments $args): int
     {
         if ($source = $args->getArgument('queue')) {
             $this->consumer->setSource($source);

@@ -15,8 +15,6 @@ use InvalidArgumentException;
 
 /**
  * ConsoleIO
- *
- * @internal on formatting
  */
 class ConsoleIo
 {
@@ -65,8 +63,6 @@ class ConsoleIo
 
     /**
      * Array of styles that can be used
-     *
-     * @var array
      */
     protected array $styles = [
         // levels
@@ -141,10 +137,6 @@ class ConsoleIo
 
     /**
      * Constructor
-     *
-     * @param resource $stdout
-     * @param resource $stderr
-     * @param resource $stdin
      */
     public function __construct($stdout = STDOUT, $stderr = STDERR, $stdin = STDIN)
     {
@@ -162,9 +154,6 @@ class ConsoleIo
 
     /**
      * Sets the output level
-     *
-     * @param integer $level self::QUIET, self::NORMAL, self::VERBOSE
-     * @return static
      */
     public function setOutputLevel(int $level): static
     {
@@ -179,9 +168,6 @@ class ConsoleIo
 
     /**
      * Sets the output mode
-     *
-     * @param integer $mode
-     * @return static
      */
     public function setOutputMode(int $mode): static
     {
@@ -197,12 +183,10 @@ class ConsoleIo
     /**
      * Sets a style
      *
-     * @param string $name
      * @param array $options The following options are supported:
      *  - foreground: e.g white
      *  - background: e.g. lightRed
      *  - bold: true
-     * @return static
      */
     public function setStyle(string $name, array $options): static
     {
@@ -213,10 +197,6 @@ class ConsoleIo
 
     /**
      * Sets a status
-     *
-     * @param string $name
-     * @param string $color
-     * @return static
      */
     public function setStatus(string $name, string $color): static
     {
@@ -227,13 +207,8 @@ class ConsoleIo
 
     /**
      * Writes to stdout
-     *
-     * @param string|array $message
-     * @param int $newLines
-     * @param int $outputLevel
-     * @return static
      */
-    public function out($message, int $newLines = 1, int $outputLevel = self::NORMAL): static
+    public function out(string|array $message, int $newLines = 1, int $outputLevel = self::NORMAL): static
     {
         if ($outputLevel <= $this->outputLevel) {
             if (is_array($message)) {
@@ -247,12 +222,8 @@ class ConsoleIo
 
     /**
      * Writes to stderr
-     *
-     * @param string|array $message
-     * @param int $newLines
-     * @return static
      */
-    public function err($message, int $newLines = 1): static
+    public function err(string|array $message, int $newLines = 1): static
     {
         if (is_array($message)) {
             $message = implode(PHP_EOL, $message);
@@ -265,9 +236,6 @@ class ConsoleIo
 
     /**
      * Gets input from stdin
-     *
-     * @param string|null $default
-     * @return string|null
      */
     public function in(?string $default = null): ?string
     {
@@ -278,8 +246,6 @@ class ConsoleIo
 
     /**
      * Outputs a new line
-     *
-     * @return static
      */
     public function nl(int $lines = 1): static
     {
@@ -290,8 +256,6 @@ class ConsoleIo
 
     /**
      * Outputs a horiztonal rule
-     *
-     * @return static
      */
     public function hr(): static
     {
@@ -302,10 +266,6 @@ class ConsoleIo
 
     /**
      * Asks for input
-     *
-     * @param string $message
-     * @param string|null $default
-     * @return string|null
      */
     public function ask(string $message, ?string $default = null): ?string
     {
@@ -320,10 +280,6 @@ class ConsoleIo
 
     /**
      * Asks a question with available choices
-     *
-     * @param string $message
-     * @param array $choices
-     * @return string
      */
     public function askChoice(string $message, array $choices): string
     {
@@ -338,10 +294,6 @@ class ConsoleIo
 
     /**
      * Displays an info alert
-     *
-     * @param string $secondary
-     * @param array $options
-     * @return static
      */
     public function info(string $text, ?string $secondary = null, array $options = []): static
     {
@@ -354,10 +306,6 @@ class ConsoleIo
 
     /**
      * Displays a success alert
-     *
-     * @param string $secondary
-     * @param array $options
-     * @return static
      */
     public function success(string $text, ?string $secondary = null, array $options = []): static
     {
@@ -370,10 +318,6 @@ class ConsoleIo
 
     /**
      * Displays a warning alert (stderr)
-     *
-     * @param string $secondary
-     * @param array $options
-     * @return static
     */
     public function warning(string $text, ?string $secondary = null, array $options = []): static
     {
@@ -386,10 +330,6 @@ class ConsoleIo
 
     /**
      * Displays an error alert (stderr)
-     *
-     * @param string $secondary
-     * @param array $options
-     * @return static
      */
     public function error(string $text, ?string $secondary = null, array $options = []): static
     {
@@ -402,10 +342,6 @@ class ConsoleIo
 
     /**
      * Displays a status [ OK ] Something
-     *
-     * @param string $status
-     * @param string $message
-     * @return static
      */
     public function status(string $status, string $message): static
     {
@@ -420,11 +356,6 @@ class ConsoleIo
 
     /**
      * Draws a progress bar.
-     *
-     * @param integer $value
-     * @param integer $max
-     * @param array $options
-     * @return void
      * @see http://ascii-table.com/ansi-escape-sequences-vt-100.php
      */
     public function progressBar(int $value, int $max, array $options = []): void
@@ -460,9 +391,6 @@ class ConsoleIo
 
     /**
      * Writes to stream
-     *
-     * @param string $data
-     * @return void
      */
     protected function writeStdout(string $data): void
     {
@@ -471,20 +399,12 @@ class ConsoleIo
 
     /**
      * Writes to stream
-     *
-     * @param string $data
-     * @return void
      */
     protected function writeStderr(string $data): void
     {
         fwrite($this->stderr, $data);
     }
 
-    /**
-     * Reads
-     *
-     * @return string
-     */
     protected function readStdin(): string
     {
         return fread($this->stdin, 8192);
@@ -492,10 +412,6 @@ class ConsoleIo
 
     /**
      * Colorizes the text using an array of settings
-     *
-     * @param string $text
-     * @param array $options
-     * @return string
      */
     protected function colorize(string $text, array $options = []): string
     {
@@ -514,9 +430,6 @@ class ConsoleIo
      * Replaces tags as per output mode
      *
      * @internal This is not intented to handle nested tags
-     *
-     * @param string $text
-     * @return string
      */
     protected function format(string $text): string
     {
@@ -542,9 +455,6 @@ class ConsoleIo
 
     /**
      * Strips tags
-     *
-     * @param string $message
-     * @return string
      */
     private function stripTags(string $message): string
     {
@@ -555,9 +465,6 @@ class ConsoleIo
 
     /**
      * Create an ANSI style from an array
-     *
-     * @param array $options
-     * @return string
      */
     private function createAnsiStyle(array $options): string
     {

@@ -17,9 +17,9 @@ class DummyCommand extends AbstractCommand
     protected string $name = 'hello';
     protected string $description = 'hello world';
 
-    public function __construct(ConsoleArgumentParser $parser, ConsoleIo $io, ?object $object = null)
+    public function __construct(ConsoleIo $io, ?object $object = null)
     {
-        parent::__construct($parser, $io);
+        parent::__construct($io);
 
         if ($object) {
             $this->out('object:' . get_class($object));
@@ -37,7 +37,7 @@ class DummyCommand extends AbstractCommand
         ]);
     }
 
-    protected function execute(Arguments $args, ConsoleIo $io)
+    protected function execute(Arguments $args)
     {
         if ($args->hasOption('display')) {
             $this->out($args->getOption('display'));
@@ -81,7 +81,7 @@ final class ConsoleIntegrationTestTraitTest extends TestCase
 
     public function testExitSuccesss(): void
     {
-        $command = new DummyCommand(new ConsoleArgumentParser(), new TestConsoleIo());
+        $command = new DummyCommand( new TestConsoleIo());
         $this->setupIntegrationTesting($command);
 
         $this->assertTrue($this->execute());
@@ -90,7 +90,7 @@ final class ConsoleIntegrationTestTraitTest extends TestCase
 
     public function testExitError(): void
     {
-        $command = new DummyCommand(new ConsoleArgumentParser(), new TestConsoleIo(), new Result());
+        $command = new DummyCommand( new TestConsoleIo(), new Result());
         $this->setupIntegrationTesting($command);
 
         $this->assertFalse($this->execute(['--abort']));
@@ -99,7 +99,7 @@ final class ConsoleIntegrationTestTraitTest extends TestCase
 
     public function testExitCode(): void
     {
-        $command = new DummyCommand(new ConsoleArgumentParser(), new TestConsoleIo(), new Result());
+        $command = new DummyCommand( new TestConsoleIo(), new Result());
         $this->setupIntegrationTesting($command);
 
         $this->execute(['--abort']);
@@ -109,7 +109,7 @@ final class ConsoleIntegrationTestTraitTest extends TestCase
 
     public function testOutputContains(): void
     {
-        $command = new DummyCommand(new ConsoleArgumentParser(), new TestConsoleIo(), new Result());
+        $command = new DummyCommand( new TestConsoleIo(), new Result());
         $this->setupIntegrationTesting($command);
 
         $this->execute();
@@ -122,7 +122,7 @@ final class ConsoleIntegrationTestTraitTest extends TestCase
      */
     public function testOutputNotContains(): void
     {
-        $command = new DummyCommand(new ConsoleArgumentParser(), new TestConsoleIo(), new Result());
+        $command = new DummyCommand( new TestConsoleIo(), new Result());
         $this->setupIntegrationTesting($command);
 
         $this->execute();
@@ -134,7 +134,7 @@ final class ConsoleIntegrationTestTraitTest extends TestCase
 
     public function testOutputEmpty(): void
     {
-        $command = new DummyCommand(new ConsoleArgumentParser(), new TestConsoleIo(), new Result());
+        $command = new DummyCommand( new TestConsoleIo(), new Result());
         $this->setupIntegrationTesting($command);
 
         $this->execute();
@@ -146,7 +146,7 @@ final class ConsoleIntegrationTestTraitTest extends TestCase
 
     public function testOutputNotEmpty(): void
     {
-        $command = new DummyCommand(new ConsoleArgumentParser(), new TestConsoleIo(), new Result());
+        $command = new DummyCommand( new TestConsoleIo(), new Result());
         $this->setupIntegrationTesting($command);
 
         $this->execute();
@@ -156,7 +156,7 @@ final class ConsoleIntegrationTestTraitTest extends TestCase
 
     public function testOutputMatchesRegularExpression(): void
     {
-        $command = new DummyCommand(new ConsoleArgumentParser(), new TestConsoleIo(), new Result());
+        $command = new DummyCommand( new TestConsoleIo(), new Result());
         $this->setupIntegrationTesting($command);
 
         $this->execute();
@@ -166,7 +166,7 @@ final class ConsoleIntegrationTestTraitTest extends TestCase
 
     public function testOutputDoesNotMatchRegularExpression(): void
     {
-        $command = new DummyCommand(new ConsoleArgumentParser(), new TestConsoleIo(), new Result());
+        $command = new DummyCommand( new TestConsoleIo(), new Result());
         $this->setupIntegrationTesting($command);
 
         $this->execute();
@@ -178,7 +178,7 @@ final class ConsoleIntegrationTestTraitTest extends TestCase
 
     public function testErrorContains(): void
     {
-        $command = new DummyCommand(new ConsoleArgumentParser(), new TestConsoleIo(), new Result());
+        $command = new DummyCommand( new TestConsoleIo(), new Result());
         $this->setupIntegrationTesting($command);
 
         $this->execute();
@@ -191,7 +191,7 @@ final class ConsoleIntegrationTestTraitTest extends TestCase
      */
     public function testErrorNotContains(): void
     {
-        $command = new DummyCommand(new ConsoleArgumentParser(), new TestConsoleIo(), new Result());
+        $command = new DummyCommand( new TestConsoleIo(), new Result());
         $this->setupIntegrationTesting($command);
 
         $this->execute();
@@ -203,7 +203,7 @@ final class ConsoleIntegrationTestTraitTest extends TestCase
 
     public function testErrorEmpty(): void
     {
-        $command = new DummyCommand(new ConsoleArgumentParser(), new TestConsoleIo(), new Result());
+        $command = new DummyCommand( new TestConsoleIo(), new Result());
         $this->setupIntegrationTesting($command);
 
         $this->execute();
@@ -215,7 +215,7 @@ final class ConsoleIntegrationTestTraitTest extends TestCase
 
     public function testErrorNotEmpty(): void
     {
-        $command = new DummyCommand(new ConsoleArgumentParser(), new TestConsoleIo(), new Result());
+        $command = new DummyCommand( new TestConsoleIo(), new Result());
         $this->setupIntegrationTesting($command);
 
         $this->execute();
@@ -225,7 +225,7 @@ final class ConsoleIntegrationTestTraitTest extends TestCase
 
     public function testErrorMatchesRegularExpression(): void
     {
-        $command = new DummyCommand(new ConsoleArgumentParser(), new TestConsoleIo(), new Result());
+        $command = new DummyCommand( new TestConsoleIo(), new Result());
         $this->setupIntegrationTesting($command);
 
         $this->execute();
@@ -235,7 +235,7 @@ final class ConsoleIntegrationTestTraitTest extends TestCase
 
     public function testErrorDoesNotMatchRegularExpression(): void
     {
-        $command = new DummyCommand(new ConsoleArgumentParser(), new TestConsoleIo(), new Result());
+        $command = new DummyCommand( new TestConsoleIo(), new Result());
         $this->setupIntegrationTesting($command);
 
         $this->execute();
