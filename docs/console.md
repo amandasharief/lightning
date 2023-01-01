@@ -71,12 +71,14 @@ exit($application->run($argv));
 
 ## ConsoleIO
 
-The `ConsoleIO` object for input and output.
+The `ConsoleIO` object is for input and output, the `AbstractCommand` has 5 convience methods which are `out`, `error`, `input`, `verbose` and `quiet`. To use other `ConsoleIO` methods you will need to call from the `io` object.
 
 
 ```php
 $this->io->out('hello'); // to stdout
 $this->io->err('opps'); // to stderr
+$input = $this->io->in(); // get input
+
 $this->io->nl(); // new line
 $this->io->hr(); // horiziontal rule
 ```
