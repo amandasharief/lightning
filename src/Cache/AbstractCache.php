@@ -96,9 +96,10 @@ abstract class AbstractCache implements CacheInterface
     protected function addPrefix(string $key): string
     {
         $length = mb_strlen($key);
-        if (!($length > 0 && $length <= 64)  || ! preg_match('/^[A-Za-z0-9_\.]+$/i', $key)) {
+        if (! ($length > 0 && $length <= 64) || ! preg_match('/^[a-z0-9_\.]+$/i', $key)) {
             throw new InvalidArgumentException(sprintf('Invalid key `%s`', $key));
         }
+
         return $this->prefix . $key;
     }
 
