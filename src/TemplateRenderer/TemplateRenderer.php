@@ -91,7 +91,7 @@ class TemplateRenderer
     public function withPath(string $path): static
     {
         $template = clone $this;
-        $template->templatePath = $path;
+        $template->path = $path;
 
         return $template;
     }
