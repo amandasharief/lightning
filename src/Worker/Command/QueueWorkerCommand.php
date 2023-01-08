@@ -14,6 +14,8 @@ namespace Lightning\Worker\Command;
 use Lightning\Console\Console;
 use Lightning\Console\Arguments;
 use Lightning\Console\AbstractCommand;
+use Lightning\Console\Formatter\OutputFormatter;
+use Lightning\Console\Formatter\StyleFormatter;
 use Lightning\MessageQueue\MessageConsumer;
 
 /**
@@ -31,9 +33,11 @@ class QueueWorkerCommand extends AbstractCommand
     /**
      * Constructor
      */
-    public function __construct(Console $console, protected MessageConsumer $consumer)
+    public function __construct(Console $console, protected MessageConsumer $consumer, protected OutputFormatter $formatter)
     {
         parent::__construct($console);
+
+        $this->formatter->enableAnsi($console->stdout->isatty());
 
         if (extension_loaded('pcntl')) {
             pcntl_async_signals(true);
@@ -83,8 +87,10 @@ class QueueWorkerCommand extends AbstractCommand
 
     public function stopDaemon(): void
     {
-        $this->out();
-        $this->out('<green>> </green><white>Gracefully stopping... (press </white><yellow>Ctrl+C</yellow><white> again to force)</white>');
+        $this->console->out('');
+        $this->console->out(
+            $this->formatter->format( '<green>> </green><white>Gracefully stopping... (press </white><yellow>Ctrl+C</yellow><white> again to force)</white>')
+        );
         $this->consumer->stop();
     }
 }

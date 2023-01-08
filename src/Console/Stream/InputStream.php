@@ -24,7 +24,7 @@ class InputStream
     {
         $this->resource = fopen($handle, $mode);
         if (! $this->resource) {
-            throw new InvalidArgumentException(sprintf('Error opening `%s`'));
+            throw new InvalidArgumentException(sprintf('Error opening `%s`', $handle));
         }
     }
 
