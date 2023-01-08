@@ -11,11 +11,10 @@
 
 namespace Lightning\Migration\Command;
 
+use Lightning\Console\Console;
 use Lightning\Console\Arguments;
-use Lightning\Console\ConsoleIo;
 use Lightning\Migration\Migration;
 use Lightning\Console\AbstractCommand;
-use Lightning\Console\ConsoleArgumentParser;
 
 class MigrateUpCommand extends AbstractCommand
 {
@@ -24,15 +23,12 @@ class MigrateUpCommand extends AbstractCommand
 
     protected int $count = 0;
 
-    protected Migration $migration;
-
     /**
      * Constructor
      */
-    public function __construct( ConsoleIo $io, Migration $migration)
+    public function __construct(Console $console, protected Migration $migration)
     {
-        $this->migration = $migration;
-        parent::__construct($io);
+        parent::__construct($console);
     }
 
     /**
@@ -40,17 +36,19 @@ class MigrateUpCommand extends AbstractCommand
      */
     protected function execute(Arguments $args): int
     {
-        $this->migration->up(function ($migration) {
-            $this->io->out("Running migration <info>{$migration['name']}</info>");
+        $console = $this->getConsole();
+
+        $this->migration->up(function ($migration) use ($console) {
+            $console->out("Running migration <info>{$migration['name']}</info>");
 
             foreach ($migration['statements'] as $sql) {
-                $this->io->out(sprintf('<green> > </green> %s', $sql));
-                $this->io->nl();
+                $console->out(sprintf('<green> > </green> %s', $sql));
+                $console->out('');
             }
             $this->count++;
         });
 
-        $this->out(sprintf('Ran %d migration(s)', $this->count));
+        $console->out(sprintf('Ran %d migration(s)', $this->count));
 
         return self::SUCCESS;
     }

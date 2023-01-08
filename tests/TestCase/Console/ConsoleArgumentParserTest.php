@@ -32,7 +32,7 @@ final class ConsoleArgumentParserTest extends TestCase
 
         $this->assertEquals(
             ['foo' => true],
-           $result->getOptions()
+            $result->getOptions()
         );
     }
 

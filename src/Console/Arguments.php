@@ -30,8 +30,6 @@ class Arguments
 
     /**
      * Get the value of arguments
-     *
-     * @return array
      */
     public function getArguments(): array
     {
@@ -40,9 +38,6 @@ class Arguments
 
     /**
      * Set the value of arguments
-     *
-     * @param array $arguments
-     * @return static
      */
     public function setArguments(array $arguments): static
     {
@@ -53,8 +48,6 @@ class Arguments
 
     /**
      * Get the value of options
-     *
-     * @return array
      */
     public function getOptions(): array
     {
@@ -63,9 +56,6 @@ class Arguments
 
     /**
      * Set the value of options
-     *
-     * @param array $options
-     * @return static
      */
     public function setOptions(array $options): static
     {
@@ -76,10 +66,6 @@ class Arguments
 
     /**
      * Gets an option that was provided to the command line script
-     *
-     * @param string $option
-     * @param mixed $default
-     * @return mixed
      */
     public function getOption(string $option, mixed $default = null): mixed
     {
@@ -88,10 +74,6 @@ class Arguments
 
     /**
      * Gets an argument that was provided to the command line script
-     *
-     * @param string $argument
-     * @param mixed $default
-     * @return mixed
      */
     public function getArgument(string $argument, mixed $default = null): mixed
     {
@@ -100,9 +82,6 @@ class Arguments
 
     /**
      * Checks if an option is defined and not null
-     *
-     * @param string $name
-     * @return boolean
      */
     public function hasOption(string $name): bool
     {
@@ -111,9 +90,6 @@ class Arguments
 
     /**
      * Checks if an argument exists
-     *
-     * @param string $name
-     * @return boolean
      */
     public function hasArgument(string $name): bool
     {

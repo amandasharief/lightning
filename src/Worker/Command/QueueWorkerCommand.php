@@ -11,11 +11,10 @@
 
 namespace Lightning\Worker\Command;
 
+use Lightning\Console\Console;
 use Lightning\Console\Arguments;
-use Lightning\Console\ConsoleIo;
 use Lightning\Console\AbstractCommand;
 use Lightning\MessageQueue\MessageConsumer;
-use Lightning\Console\ConsoleArgumentParser;
 
 /**
  * QueueWorkerCommand
@@ -32,9 +31,9 @@ class QueueWorkerCommand extends AbstractCommand
     /**
      * Constructor
      */
-    public function __construct( ConsoleIo $io, protected MessageConsumer $consumer)
+    public function __construct(Console $console, protected MessageConsumer $consumer)
     {
-        parent::__construct($io);
+        parent::__construct($console);
 
         if (extension_loaded('pcntl')) {
             pcntl_async_signals(true);

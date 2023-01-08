@@ -2,13 +2,14 @@
 
 namespace Lightning\Test\Console;
 
+use Lightning\Console\ANSI;
+use Lightning\Console\Console;
 use PHPUnit\Framework\TestCase;
 use Lightning\Console\Arguments;
-use Lightning\Console\ConsoleIo;
 use Lightning\Console\AbstractCommand;
 use Lightning\Console\ConsoleApplication;
-use Lightning\Console\ConsoleArgumentParser;
-use Lightning\Console\TestSuite\TestConsoleIo;
+use Lightning\Console\TestSuite\InputStreamStub;
+use Lightning\Console\TestSuite\OutputStreamStub;
 
 class FooCommand extends AbstractCommand
 {
@@ -22,7 +23,9 @@ class FooCommand extends AbstractCommand
     }
     protected function execute(Arguments $args)
     {
-        $this->out('foo:' .  $args->getArgument('name', 'none'));
+        $console = $this->getConsole();
+
+        $console->out('foo:' .  $args->getArgument('name', 'none'));
     }
 }
 
@@ -32,16 +35,29 @@ class BarCommand extends AbstractCommand
     protected string $description = 'bar command';
     protected function execute(Arguments $args)
     {
-        $this->out('bar');
+        $console = $this->getConsole();
+        $console->out('bar');
     }
 }
 
 final class ConsoleApplicationTest extends TestCase
 {
+    private ?OutputStreamStub $stdout = null;
+    private ?OutputStreamStub  $stderr = null;
+    private ?InputStreamStub $stdin = null;
+    private ?Console $console = null;
+
+    public function setUp(): void
+    {
+        $this->stdout = new OutputStreamStub('php://memory');
+        $this->stderr = new OutputStreamStub('php://memory');
+        $this->stdin = new InputStreamStub('php://memory');
+        $this->console = new Console($this->stdout, $this->stderr, $this->stdin);
+    }
+
     public function testGetName(): void
     {
-        $consoleIo = new TestConsoleIo();
-        $app = new ConsoleApplication($consoleIo);
+        $app = new ConsoleApplication($this->console);
         $this->assertEquals('unkown', $app->getName());
     }
 
@@ -50,8 +66,7 @@ final class ConsoleApplicationTest extends TestCase
      */
     public function testSetName(): void
     {
-        $consoleIo = new TestConsoleIo();
-        $app = new ConsoleApplication($consoleIo);
+        $app = new ConsoleApplication($this->console);
         $this->assertInstanceOf(ConsoleApplication::class, $app->setName('foo'));
 
         $this->assertEquals('foo', $app->getName());
@@ -59,8 +74,7 @@ final class ConsoleApplicationTest extends TestCase
 
     public function testGetDescription(): void
     {
-        $consoleIo = new TestConsoleIo();
-        $app = new ConsoleApplication($consoleIo);
+        $app = new ConsoleApplication($this->console);
         $this->assertEquals('', $app->getDescription());
     }
 
@@ -69,18 +83,15 @@ final class ConsoleApplicationTest extends TestCase
      */
     public function testSetDescription(): void
     {
-        $consoleIo = new TestConsoleIo();
-        $app = new ConsoleApplication($consoleIo);
+        $app = new ConsoleApplication($this->console);
         $this->assertInstanceOf(ConsoleApplication::class, $app->setDescription('foo'));
-
         $this->assertEquals('foo', $app->getDescription());
     }
 
     public function testAdd(): void
     {
-        $consoleIo = new TestConsoleIo();
-        $app = new ConsoleApplication($consoleIo);
-        $this->assertInstanceOf(ConsoleApplication::class, $app->add(new FooCommand($consoleIo)));
+        $app = new ConsoleApplication($this->console);
+        $this->assertInstanceOf(ConsoleApplication::class, $app->add(new FooCommand($this->console)));
     }
 
     /**
@@ -88,13 +99,18 @@ final class ConsoleApplicationTest extends TestCase
         */
     public function testDisplayHelp(): void
     {
-        $consoleIo = new TestConsoleIo();
-        $app = new ConsoleApplication($consoleIo);
-        $app->add(new FooCommand($consoleIo));
-        $app->add(new BarCommand($consoleIo));
-        $this->assertEquals(0, $app->run(['bin/foo']));
+        $app = new ConsoleApplication($this->console);
+        $app->add(new FooCommand($this->console));
+        $app->add(new BarCommand($this->console));
+        $this->assertEquals(0, $app->run(['bin/foo'], $this->console));
 
-        $this->assertEquals("<yellow>Usage:</yellow>\n  unkown <command> [options] [arguments]\n\n<yellow>Commands:</yellow>\n  <green>foo     </green>foo command\n  <green>bar     </green>bar command\n\n", $consoleIo->getStdout());
+        $yellow = ANSI::FG_YELLOW;
+        $reset = ANSI::RESET;
+        $green = ANSI::FG_GREEN;
+
+        $expected = "{$yellow}Usage:{$reset}\n  unkown <command> [options] [arguments]\n\n{$yellow}Commands:{$reset}\n  {$green}foo     {$reset}foo command\n  {$green}bar     {$reset}bar command\n\n";
+
+        $this->assertEquals($expected, $this->stdout->getContents());
     }
 
     /**
@@ -102,11 +118,10 @@ final class ConsoleApplicationTest extends TestCase
      */
     public function testRun(): void
     {
-        $consoleIo = new TestConsoleIo();
-        $app = new ConsoleApplication($consoleIo);
-        $app->add(new FooCommand($consoleIo));
-        $this->assertEquals(0, $app->run(['bin/foo','foo']));
-        $this->assertStringContainsString('foo:none', $consoleIo->getStdout());
+        $app = new ConsoleApplication($this->console);
+        $app->add(new FooCommand($this->console));
+        $this->assertEquals(0, $app->run(['bin/foo','foo'], $this->console));
+        $this->assertStringContainsString('foo:none', $this->stdout->getContents());
     }
 
     /**
@@ -114,10 +129,9 @@ final class ConsoleApplicationTest extends TestCase
     */
     public function testRunWithArgs(): void
     {
-        $consoleIo = new TestConsoleIo();
-        $app = new ConsoleApplication($consoleIo);
-        $app->add(new FooCommand($consoleIo));
-        $this->assertEquals(0, $app->run(['bin/foo','foo','bar']));
-        $this->assertStringContainsString('foo:bar', $consoleIo->getStdout());
+        $app = new ConsoleApplication($this->console);
+        $app->add(new FooCommand($this->console));
+        $this->assertEquals(0, $app->run(['bin/foo','foo','bar'], $this->console));
+        $this->assertStringContainsString('foo:bar', $this->stdout->getContents());
     }
 }

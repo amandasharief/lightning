@@ -1,5 +1,8 @@
 # Console
 
+
+> Checkout [Command Line Interface Guidelines](https://clig.dev/#arguments-and-flags) for information on naming and best practices.
+
 The console component is to make console utilities and applications, there is no plan for a command runner.
 
 ## Command
@@ -12,8 +15,9 @@ Create a `Command` in your `app\Command` folder.
 namespace App\Command;
 
 use Lightning\Console\Arguments;
-use Lightning\Console\ConsoleIo;
+use Lightning\Console\Console;
 use Lightning\Console\AbstractCommand as Command;
+
 
 class HelloWorldCommand extends Command
 {
@@ -30,16 +34,57 @@ class HelloWorldCommand extends Command
 
     protected function execute(Arguments $args): int
     {
-        $this->out(sprintf('Hello <yellow>%s</yellow>!', $args->getArgument('name')));
+        $console = $this->getConsole();
+
+        $console->out('Hello %s!', $args->getArgument('name'));
 
         return self::SUCCESS;
     }
 }
 ```
 
+Create a file `bin/hello`  and run `chmod +x bin/hello`
+
+```bash
+#!/usr/bin/env php
+<?php
+
+use App\Command\DevCommand;
+use Lightning\Console\Console;
+use Lightning\Console\Formatter\OutputFormatter;
+
+include dirname(__DIR__) . '/config/bootstrap_cli.php';
+
+$command = new HelloCommand(new Console());
+exit($command->run($argv));
+```
+## Output Formatters
+
+```php
+$formatter = new StyleFormatter();
+$formatter-format('Hello');
+$formatter-format('Hello %s', $name);
+```
+
+There are two output formatters both which use sprintf and strip ANSI escape sequences when ANSI is disabled. The `StyleFormatter` extends the `OutputFormatter` and allows you to setup your own ANSI styles then use them easily with tags.
+
+
+```php
+$formatter = new StyleFormatter();
+$formatter-format('Hello <green>Jim</green>');
+$formatter-format('Hello <green>%s</green>', $name);
+
+$formatter->setStyle('emergency', [ANSI::FG_WHITE, ANSI::BOLD, ANSI::BG:RED]);
+$formatter->format('<emergency>Something went wrong>');
+```
+
+If you want to use one of the output formatters, you can add this to the constructor of your command then set this up in bash file to autodetect.
+
+```php
+$formatter = (new OutputFormatter())->setAnsiMode(posix_isatty(STDOUT)); 
+```
 
 ## Console Application
-
 
 To create a Console Application 
 
@@ -56,39 +101,43 @@ use Lightning\Migration\Command\MigrateDownCommand;
 
 include dirname(__DIR__) . '/config/bootstrap_cli.php';
 
-$this->io = new ConsoleIo();
+
 $pdo = new PDO(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 $migration = new Migration($pdo, dirname(__DIR__) . '/database/migrations');
 
-$application = new ConsoleApplication($this->io);
+$console = new Console();
+$application = new ConsoleApplication($console);
 $application->setName('migrate')
             ->setDescription('Database migration');
             
-$application->add(new MigrateUpCommand($this->io, $migration));
-$application->add(new MigrateDownCommand($this->io, $migration));
+$application->add(new MigrateUpCommand($console, $migration));
+$application->add(new MigrateDownCommand($console, $migration));
 exit($application->run($argv));
 ```
 
-## ConsoleIO
+## Console
 
-The `ConsoleIO` object is for input and output, the `AbstractCommand` has 5 convience methods which are `out`, `error`, `input`, `verbose` and `quiet`. To use other `ConsoleIO` methods you will need to call from the `io` object.
+The `Console` object allows you to access output and input on the console device.
 
 
 ```php
-$this->io->out('hello'); // to stdout
-$this->io->err('opps'); // to stderr
-$input = $this->io->in(); // get input
-
-$this->io->nl(); // new line
-$this->io->hr(); // horiziontal rule
+$console->out('hello'); // to stdout
+$console->out('hello %s', 'Amanda'); // to stdout
+$console->error('opps'); // to stderr
+$console->error('An error occured in %s', get_class(__FILE__)); // to stderr
+$input = $console->readLine(); // reads a line from stdin
+$password = $console->readPassword(); // reads a line from stdin with echoing disabled
 ```
+
+## Helpers
 
 ## Inputs
 
 ```php
-$name = $this->io->ask();
-$continue = $this->io->ask('Continue ?','n'); // adds a default 
-$continue = $this->io->askChoice('Continue ? (name)',['y','n']); 
+$helper = new InputHelper($console);
+$name = $helper->ask();
+$continue = $helper->ask('Continue ?','n'); // adds a default 
+$continue = $helper->askChoice('Continue ? (name)',['y','n']); 
 ```
 
 ### Alerts
@@ -96,10 +145,11 @@ $continue = $this->io->askChoice('Continue ? (name)',['y','n']);
 Display alerts to users, warning and error will be displayed `stderr`.
 
 ```php
-$this->io->info('INFO', 'This an info alert');
-$this->io->success('SUCCESS', 'This is a success alert');
-$this->io->warning('WARNING', 'This is a warning alert');
-$this->io->error('ERROR', 'This an error alert');
+$helper = new AlertHelper($console);
+$helper->info('INFO', 'This an info alert');
+$helper->success('SUCCESS', 'This is a success alert');
+$helper->warning('WARNING', 'This is a warning alert');
+$helper->error('ERROR', 'This an error alert');
 ```
 ![Console Alerts](img/console_alerts.png)
 
@@ -109,21 +159,35 @@ $this->io->error('ERROR', 'This an error alert');
 Display a progress bar to user
 
 ```php
-$this->io->progressBar(50, 100);
+$helper = new ProgressBarHelper($console);
+
+$helper->setMaximum(10)
+        ->start();
+
+$helper->increment();
+
+$helper->complete(); // displays at 100% and adds new line
+```
+
+You can also manually set
+
+```php
+$helper->setValue(100);
+$helper->increment(mb_strlen($chunk)); 
 ```
 
 ![Console Alerts](img/console_progress.png)
 
 
-### Status
+### StatusList
 
 Often when running commands you are carrying out multiple tasks, and its nice to show these to the user. This
-is where the status method comes in handy, statuses are setup for `ok`, `warning` and `error`.
+is where the status method comes in handy, statuses are setup for `ok` and `error`.
 
 ```php
-$this->io->status('ok', 'Delete file');
-$this->io->status('warning', 'Directory is writable');
-$this->io->status('error', 'Create directory');
+$status = new StatusListBarHelper($console);
+$status->out('ok', 'Configuration file found');
+$status->out('error', 'Could not create directory /tmp');
 ```
 
 ![Console Status](img/console_status.png)
@@ -131,14 +195,13 @@ $this->io->status('error', 'Create directory');
 You can also add your own status
 
 ```php
-$this->io->setStatus('skipped','blue');
-$this->io->setStatus('ignored','yellow');
+$helper->setStatus('warning', [ANSI::FG_YELLOW, ANSI::FG_BOLD]);
 ```
 
 
 ## Testing
 
-Create your PHP test file and add the `ConsoleIntegrationTestTrait`, then create the `Command` object using the `TestConsoleIo` and call the `setupIntegrationTesting` function.
+Create your PHP test file and add the `ConsoleIntegrationTestTrait`, then create the `Command` object using the `TestConsole` and call the `setupIntegrationTesting` function.
 
 
 ```php
@@ -155,7 +218,7 @@ final class HelloWordCommandTest extends TestCase
 
     public function setUp(): void 
     {
-        $command = new HelloWorldCommand(new TestConsoleIo());
+        $command = new HelloWorldCommand(new TestConsole());
         $this->setupIntegrationTesting($command);
     }
 

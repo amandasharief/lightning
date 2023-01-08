@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace Lightning\Test\TestCase\Console;
+namespace Lightning\Test\TestCase\Console\Stream;
 
 use PHPUnit\Framework\TestCase;
-use Lightning\Console\InputStream;
+use Lightning\Console\Stream\InputStream;
 
 final class InputStreamTest extends TestCase
 {

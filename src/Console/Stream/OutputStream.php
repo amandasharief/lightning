@@ -9,7 +9,9 @@
  * @license     https://opensource.org/licenses/LGPL-3.0 LGPL-3.0
  */
 
-namespace Lightning\Console;
+namespace Lightning\Console\Stream;
+
+use InvalidArgumentException;
 
 class OutputStream
 {
@@ -18,9 +20,12 @@ class OutputStream
     /**
      * Constructor
      */
-    public function __construct(string $handle = 'php://stdout')
+    public function __construct(string $handle, string $mode = 'w')
     {
-        $this->resource = fopen($handle, 'w');
+        $this->resource = fopen($handle, $mode);
+        if (! $this->resource) {
+            throw new InvalidArgumentException(sprintf('Error opening `%s`'));
+        }
     }
 
     /**
@@ -29,6 +34,30 @@ class OutputStream
     public function write(string $output): int
     {
         return (int) fwrite($this->resource, $output);
+    }
+
+    /**
+     * Gets the stream
+     */
+    public function getStream()
+    {
+        return $this->resource;
+    }
+
+    /**
+     * Is this stream an interactive terminal (a TTY)
+     */
+    public function isatty(): bool
+    {
+        return $this->resource && stream_isatty($this->resource);
+    }
+
+    /**
+     * Closes the stream
+     */
+    public function close(): bool
+    {
+        return fclose($this->resource);
     }
 
     /**

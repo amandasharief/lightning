@@ -16,36 +16,26 @@ class ConsoleApplication implements CommandInterface
     /**
      * Name of this command, when working with sub commands you can use spaces for example
      * `migrate up` this will then show up in the help and allow you to use this properly
-     *
-     * @var string
      */
     protected string $name = 'unkown';
 
     /**
      * Description for this command
-     *
-     * @var string
      */
     protected string $description = '';
 
     /**
      * Default error code.
-     *
-     * @var int
      */
     public const ERROR = 1;
 
     /**
      * Default success code.
-     *
-     * @var int
      */
     public const SUCCESS = 0;
 
     /**
      * List of commands with description
-     *
-     * @var array
      */
     protected array $commands = [];
 
@@ -54,22 +44,12 @@ class ConsoleApplication implements CommandInterface
      */
     protected array $instances = [];
 
-    protected ConsoleIo $io;
-
-    /**
-     * Console IO
-     *
-     * @param ConsoleIo $io
-     */
-    public function __construct(ConsoleIo $io)
+    public function __construct(protected Console $console)
     {
-        $this->io = $io;
     }
 
     /**
     * Gets the name of this Command
-    *
-    * @return string
     */
     public function getName(): string
     {
@@ -78,8 +58,6 @@ class ConsoleApplication implements CommandInterface
 
     /**
      * Gets the description for this Command
-     *
-     * @return string
      */
     public function getDescription(): string
     {
@@ -88,8 +66,6 @@ class ConsoleApplication implements CommandInterface
 
     /**
      * Factory method
-     *
-     * @return ConsoleHelpFormatter
      */
     private function createHelpFormatter(): ConsoleHelpFormatter
     {
@@ -98,9 +74,6 @@ class ConsoleApplication implements CommandInterface
 
     /**
      * Sets the name
-     *
-     * @param string $name
-     * @return static
      */
     public function setName(string $name): static
     {
@@ -111,9 +84,6 @@ class ConsoleApplication implements CommandInterface
 
     /**
      * Sets the description
-     *
-     * @param string $description
-     * @return static
      */
     public function setDescription(string $description): static
     {
@@ -124,9 +94,6 @@ class ConsoleApplication implements CommandInterface
 
     /**
      * Adds a command
-     *
-     * @param CommandInterface $command
-     * @return static
      */
     public function add(CommandInterface $command): static
     {
@@ -141,9 +108,6 @@ class ConsoleApplication implements CommandInterface
 
     /**
      * Runs the Console Application with the arguments
-     *
-     * @param array $args
-     * @return integer
      */
     public function run(array $args): int
     {
@@ -151,13 +115,13 @@ class ConsoleApplication implements CommandInterface
 
         $subCommand = array_shift($args);
         if (! $subCommand || substr($subCommand, 0, 1) === '-') {
-            $this->displayHelp();
+            $this->console->out($this->getHelp());
 
             return self::SUCCESS;
         }
 
         if (! isset($this->commands[$subCommand])) {
-            $this->io->err(sprintf('`%s` is not a %s command', $subCommand, $this->name));
+            $this->console->error('`%s` is not a %s command', $subCommand, $this->name);
 
             return self::ERROR;
         }
@@ -169,19 +133,17 @@ class ConsoleApplication implements CommandInterface
 
     /**
      * Displays the HELP
-     *
-     * @return void
      */
-    private function displayHelp(): void
-    {
-        $help = $this->createHelpFormatter();
-        if (! empty($this->description)) {
-            $help->setDescription($this->description);
-        }
+   public function getHelp(): string
+   {
+       $help = $this->createHelpFormatter();
+       if (! empty($this->description)) {
+           $help->setDescription($this->description);
+       }
 
-        $help->setUsage([sprintf('%s <command> [options] [arguments]', $this->name)]);
-        $help->setCommands($this->commands);
+       $help->setUsage([sprintf('%s <command> [options] [arguments]', $this->name)]);
+       $help->setCommands($this->commands);
 
-        $this->io->out($help->generate());
-    }
+       return $help->generate();
+   }
 }

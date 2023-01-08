@@ -12,54 +12,65 @@
 namespace Lightning\Console\TestSuite;
 
 use RuntimeException;
+use Lightning\Console\Console;
 use Lightning\Console\AbstractCommand;
 
 trait ConsoleIntegrationTestTrait
 {
-    private ?TestConsoleIo $io = null;
+    /**
+     * setupIntegrationTesting creates
+     */
+    private ?OutputStreamStub $stdout = null;
+
+    /**
+     * Created by setupIntegrationTesting
+     */
+    private ?OutputStreamStub  $stderr = null;
+
+    /**
+     * Created by setupIntegrationTesting
+     */
+    private ?InputStreamStub $stdin = null;
+
+    private ?TestConsole $console = null;
+
     private ?AbstractCommand $command = null;
     private ?int $commandExitCode = null;
 
     /**
-     * Sets up the integration testing
-     *
-     * @param AbstractCommand $command
-     * @return void
+     * Sets up the integration testing by setting the command extracting streams
      */
     public function setupIntegrationTesting(AbstractCommand $command): void
     {
         $this->command = $command;
-        $this->setConsoleIo($command->getConsoleIo());
+        $this->console = $command->getConsole(); // Command should be setup with test console
+        $this->stdout = $this->console->stdout;
+        $this->stderr = $this->console->stderr;
+        $this->stdin = $this->console->stdin;
     }
 
     /**
-     * Creates a Console IO stub
-     *
-     * @return TestConsoleIo
+     * Creates the TestConsole object
      */
-    protected function createConsoleIo(): TestConsoleIo
+    public function createTestConsole(): TestConsole
     {
-        return new TestConsoleIo();
+        return new TestConsole();
     }
 
     /**
-     * Gets the Console IO Stub object
-     *
-     * @return TestConsoleIo
+     * Gets the console
      */
-    protected function getConsoleIo(): TestConsoleIo
+    public function getTestConsole(): TestConsole
     {
-        if (! isset($this->io)) {
-            throw new RuntimeException('Console IO stub not set');
+        if (! isset($this->console)) {
+            throw new RuntimeException('Integration testing not Setup');
         }
 
-        return $this->io;
+        return $this->console;
     }
 
     /**
     * Gets the Console IO Stub object
-    *
-    * @return AbstractCommand
     */
     protected function getCommand(): AbstractCommand
     {
@@ -71,28 +82,14 @@ trait ConsoleIntegrationTestTrait
     }
 
     /**
-     * Sets the Console IO object to be used by the assertation methods
-     *
-     * @param TestConsoleIo $io
-     * @return static
-     */
-    public function setConsoleIo(TestConsoleIo $io): static
-    {
-        $this->io = $io;
-
-        return $this;
-    }
-
-    /**
      * Executes a command
-     *
-     * @param array $args
-     * @param array $input
-     * @return boolean
      */
     public function execute(array $args = [], array $input = []): bool
     {
-        array_unshift($args, 'bin/console');
+        array_unshift($args, 'bin/run');
+
+        $this->stdin->setInput($input);
+
         $this->commandExitCode = $this->getCommand()->run($args);
 
         return $this->commandExitCode === AbstractCommand::SUCCESS;
@@ -100,8 +97,6 @@ trait ConsoleIntegrationTestTrait
 
     /**
      * Asserts the exit code was a success
-     *
-     * @return void
      */
     public function assertExitSuccess(): void
     {
@@ -110,8 +105,6 @@ trait ConsoleIntegrationTestTrait
 
     /**
      * Asserts the exit code was an error
-     *
-     * @return void
      */
     public function assertExitError(): void
     {
@@ -120,8 +113,6 @@ trait ConsoleIntegrationTestTrait
 
     /**
      * Asserts an exit code
-     *
-     * @return void
      */
     public function assertExitCode(int $code): void
     {
@@ -130,129 +121,97 @@ trait ConsoleIntegrationTestTrait
 
     /**
      * Assert Output contains
-     *
-     * @param string $message
-     * @return void
      */
     public function assertOutputContains(string $message): void
     {
-        $this->assertStringContainsString($message, $this->getConsoleIo()->getStdout());
+        $this->assertStringContainsString($message, $this->stdout->getContents());
     }
 
     /**
     * Assert Output does not contains
-    *
-    * @param string $message
-    * @return void
     */
     public function assertOutputNotContains(string $message): void
     {
-        $this->assertStringNotContainsString($message, $this->getConsoleIo()->getStdout());
+        $this->assertStringNotContainsString($message, $this->stdout->getContents());
     }
 
     /**
      * Asserts that the output was empty
-     *
-     * @return void
      */
     public function assertOutputEmpty(): void
     {
-        $this->assertEmpty($this->getConsoleIo()->getStdout());
+        $this->assertEmpty($this->stdout->getContents());
     }
 
     /**
-    * Asserts that the output was empty
-    *
-    * @return void
-    */
+     * Asserts that the output was empty
+     */
     public function assertOutputNotEmpty(): void
     {
-        $this->assertNotEmpty($this->getConsoleIo()->getStdout());
+        $this->assertNotEmpty($this->stdout->getContents());
     }
 
     /**
      * Asserts that output matches a regualar expression
-     *
-     * @param string $pattern
-     * @return void
      */
     public function assertOutputMatchesRegularExpression(string $pattern): void
     {
-        $this->assertMatchesRegularExpression($pattern, $this->getConsoleIo()->getStdout());
+        $this->assertMatchesRegularExpression($pattern, $this->stdout->getContents());
     }
 
     /**
      * Asserts that the output does not match a regular expression
-     *
-     * @param string $pattern
-     * @return void
      */
     public function assertOutputDoesNotMatchRegularExpression(string $pattern): void
     {
-        $this->assertDoesNotMatchRegularExpression($pattern, $this->getConsoleIo()->getStdout());
+        $this->assertDoesNotMatchRegularExpression($pattern, $this->stdout->getContents());
     }
 
     /**
      * Assert Error contains
-     *
-     * @param string $message
-     * @return void
      */
     public function assertErrorContains(string $message): void
     {
-        $this->assertStringContainsString($message, $this->getConsoleIo()->getStderr());
+        $this->assertStringContainsString($message, $this->stderr->getContents());
     }
 
     /**
     * Assert error output does not contains
-    *
-    * @param string $message
-    * @return void
     */
     public function assertErrorNotContains(string $message): void
     {
-        $this->assertStringNotContainsString($message, $this->getConsoleIo()->getStderr());
+        $this->assertStringNotContainsString($message, $this->stderr->getContents());
     }
 
     /**
      * Asserts that the error output was empty
-     *
-     * @return void
      */
     public function assertErrorEmpty(): void
     {
-        $this->assertEmpty($this->getConsoleIo()->getStderr());
+        $this->assertEmpty($this->stderr->getContents());
     }
 
     /**
-    * Asserts that the error output was empty
-    *
-    * @return void
+     * Asserts that the error output was empty
     */
     public function assertErrorNotEmpty(): void
     {
-        $this->assertNotEmpty($this->getConsoleIo()->getStderr());
+        $this->assertNotEmpty($this->stderr->getContents());
     }
 
     /**
      * Asserts that error output matches a regualar expression
-     *
-     * @param string $pattern
-     * @return void
      */
     public function assertErrorMatchesRegularExpression(string $pattern): void
     {
-        $this->assertMatchesRegularExpression($pattern, $this->getConsoleIo()->getStderr());
+        $this->assertMatchesRegularExpression($pattern, $this->stderr->getContents());
     }
 
     /**
-     * Asserts that the error output does not match a regular expression
-     *
-     * @param string $pattern
-     * @return void
+     * Asserts that the error output does not match a regular expressionattern
      */
     public function assertErrorDoesNotMatchRegularExpression(string $pattern): void
     {
-        $this->assertDoesNotMatchRegularExpression($pattern, $this->getConsoleIo()->getStderr());
+        $this->assertDoesNotMatchRegularExpression($pattern, $this->stderr->getContents());
     }
 }

@@ -8,8 +8,6 @@ use PHPUnit\Framework\TestCase;
 use Lightning\Fixture\FixtureManager;
 use Lightning\MessageQueue\MessageConsumer;
 use Lightning\MessageQueue\MessageProducer;
-use Lightning\Console\ConsoleArgumentParser;
-use Lightning\Console\TestSuite\TestConsoleIo;
 use Lightning\MessageQueue\MemoryMessageQueue;
 use Lightning\Worker\Command\QueueWorkerCommand;
 use Lightning\MessageQueue\MessageQueueInterface;
@@ -56,7 +54,7 @@ final class QueueWorkerCommandTest extends TestCase
         $this->messageConsumer = new MessageConsumer($this->messageQueue, 'default');
 
         $command = new QueueWorkerCommand(
-            new TestConsoleIo(),
+            $this->createTestConsole(),
             $this->messageConsumer
         );
 

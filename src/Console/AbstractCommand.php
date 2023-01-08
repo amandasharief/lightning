@@ -15,7 +15,6 @@ use Lightning\Console\Exception\StopException;
 
 abstract class AbstractCommand implements CommandInterface
 {
-    protected ConsoleIo $io;
     protected ConsoleArgumentParser $parser;
 
     /**
@@ -42,9 +41,8 @@ abstract class AbstractCommand implements CommandInterface
     /**
      * Constructor
      */
-    public function __construct(ConsoleIo $io)
+    public function __construct(protected Console $console)
     {
-        $this->io = $io;
         $this->parser = $this->createConsoleArgumentParser();
     }
 
@@ -57,21 +55,6 @@ abstract class AbstractCommand implements CommandInterface
             'name' => 'help',
             'short' => 'h',
             'description' => 'Displays this help message',
-            'type' => 'boolean',
-            'required' => false
-        ]);
-
-        $this->addOption('verbose', [
-            'name' => 'verbose',
-            'short' => 'v',
-            'description' => 'Displays additional output (if available)',
-            'type' => 'boolean',
-            'required' => false
-        ]);
-
-        $this->addOption('quiet', ['name' => 'quiet',
-            'short' => 'q',
-            'description' => 'Does not display output',
             'type' => 'boolean',
             'required' => false
         ]);
@@ -100,6 +83,13 @@ abstract class AbstractCommand implements CommandInterface
         return $this->description;
     }
 
+    /**
+     * Gets the Console object
+     */
+    public function getConsole(): Console
+    {
+        return $this->console;
+    }
 
     /**
      * Factory method
@@ -110,9 +100,9 @@ abstract class AbstractCommand implements CommandInterface
     }
 
     /**
-     * Factory method
+     * Generates the help for this command
      */
-    private function createHelpFormatter(): ConsoleHelpFormatter
+    public function getHelp(): string
     {
         $help = new ConsoleHelpFormatter();
         if (! empty($this->description)) {
@@ -123,7 +113,7 @@ abstract class AbstractCommand implements CommandInterface
             ->setOptions($this->parser->generateOptions())
             ->setArguments($this->parser->generateArguments());
 
-        return $help;
+        return $help->generate();
     }
 
     /**
@@ -148,6 +138,7 @@ abstract class AbstractCommand implements CommandInterface
 
     /**
      * Place your command logic here
+     * @return int|null
      */
     abstract protected function execute(Arguments $args);
 
@@ -173,6 +164,9 @@ abstract class AbstractCommand implements CommandInterface
 
     /**
      * Runs the command
+     *
+     * Some option names are reserved and if they are enabled by use they will reconfigure the console. e.g. no-input, no-color, quiet
+     * @see https://clig.dev
      */
     public function run(array $args): int
     {
@@ -184,17 +178,8 @@ abstract class AbstractCommand implements CommandInterface
         // Parse arguments
         $arguments = $this->parser->parse($args);
 
-        if ($arguments->getOption('verbose')) {
-            $this->io->setOutputLevel(ConsoleIo::VERBOSE);
-        }
-
-        if ($arguments->getOption('quiet')) {
-            $this->io->setOutputLevel(ConsoleIo::QUIET);
-        }
-
         if ($arguments->getOption('help') === true) {
-            $helpFormatter = $this->createHelpFormatter();
-            $this->io->out($helpFormatter->generate());
+            $this->console->out($this->getHelp());
 
             return self::SUCCESS;
         }
@@ -204,73 +189,5 @@ abstract class AbstractCommand implements CommandInterface
         } catch (StopException $exception) {
             return $exception->getCode();
         }
-    }
-
-    /**
-     * Outputs a message or array of messages to stdout
-     */
-    public function out(string|iterable $message, int $newLines = 1): static
-    {
-        $this->io->out($message, $newLines, ConsoleIo::NORMAL);
-
-        return $this;
-    }
-
-    /**
-     * Outputs a message or array of messages to stderr
-     */
-    public function error(string|iterable $message, int $newLines = 1): static
-    {
-        $this->io->err($message, $newLines);
-
-        return $this;
-    }
-
-    /**
-     * Reads input from STDIN
-     */
-    public function input(?string $default = null): ?string
-    {
-        return $this->io->in($default);
-    }
-
-    /**
-     * Outputs a message or array of messages to stdout when verbose option is provided
-     */
-    public function verbose(string|iterable $message, int $newLines = 1): static
-    {
-        $this->io->out($message, $newLines, ConsoleIo::VERBOSE);
-
-        return $this;
-    }
-
-    /**
-     * Outputs a message or array of messages to stdout even if quiet option is provided
-     */
-    public function quiet(string|iterable $message, int $newLines = 1): static
-    {
-        $this->io->out($message, $newLines, ConsoleIo::QUIET);
-
-        return $this;
-    }
-
- 
-
-    /**
-     * Displays a formatted error message and stops the execution
-     */
-    public function throwError(string $title, string $message = null, int $code = self::ERROR): void
-    {
-        $this->io->err("\n<alert> ERROR </alert> <lightYellow>{$title}</lightYellow>\n" . $message);
-
-        throw new StopException($title, $code);
-    }
-
-    /**
-     * Get the ConsoleIO object
-     */
-    public function getConsoleIo(): ConsoleIo
-    {
-        return $this->io;
     }
 }

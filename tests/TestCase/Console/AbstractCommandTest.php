@@ -2,24 +2,28 @@
 
 namespace Lightning\Test\Console;
 
+use Lightning\Console\ANSI;
+use Lightning\Console\Console;
 use PHPUnit\Framework\TestCase;
 use Lightning\Console\Arguments;
-use Lightning\Console\ConsoleIo;
 use Lightning\Console\AbstractCommand;
 use Lightning\Console\ConsoleArgumentParser;
 use Lightning\Console\Exception\StopException;
-use Lightning\Console\TestSuite\TestConsoleIo;
+use Lightning\Console\TestSuite\InputStreamStub;
+use Lightning\Console\TestSuite\OutputStreamStub;
 
 class NameCommand extends AbstractCommand
 {
     protected string $name = 'name';
 
-    protected function execute(Arguments $args)
+    protected function execute(Arguments $args): int
     {
-        $this->out(sprintf('Hello %s', $this->input('you')));
+        $console = $this->getConsole();
+        $console->out(sprintf('Hello %s', $console->readLine('you')));
+
+        return static::SUCCESS;
     }
 }
-
 
 class HelloCommand extends AbstractCommand
 {
@@ -42,6 +46,8 @@ class HelloCommand extends AbstractCommand
 
     protected function execute(Arguments $args)
     {
+        $console = $this->getConsole();
+
         if ($args->getOption('abort')) {
             $this->abort();
         }
@@ -52,45 +58,51 @@ class HelloCommand extends AbstractCommand
             $name = strtoupper($name);
         }
 
-        $this->out(sprintf('Hello %s', $args->getArgument('name')));
+        $console->out(sprintf('Hello %s', $args->getArgument('name')));
     }
 }
 
 final class AbstractCommandTest extends TestCase
 {
-    public function testGetConsoleIo(): void
+    private ?OutputStreamStub $stdout = null;
+    private ?OutputStreamStub  $stderr = null;
+    private ?InputStreamStub $stdin = null;
+    private ?Console $console = null;
+
+    public function setUp(): void
     {
-        $command = new HelloCommand(new TestConsoleIo());
-        $this->assertInstanceOf(ConsoleIo::class, $command->getConsoleIo());
+        $this->stdout = new OutputStreamStub('php://memory');
+        $this->stderr = new OutputStreamStub('php://memory');
+        $this->stdin = new InputStreamStub('php://memory');
+        $this->console = new Console($this->stdout, $this->stderr, $this->stdin);
     }
 
     public function testGetName(): void
     {
-        $command = new HelloCommand(new TestConsoleIo());
+        $command = new HelloCommand($this->console);
         $this->assertEquals('hello', $command->getName());
     }
 
     public function testGetDescription(): void
     {
-        $command = new HelloCommand(new TestConsoleIo());
+        $command = new HelloCommand($this->console);
         $this->assertEquals('hello world', $command->getDescription());
     }
 
     public function testAddOption(): void
     {
-        $command = new HelloCommand(new TestConsoleIo());
+        $command = new HelloCommand($this->console);
         $command->addOption('uppercase', ['description' => 'change name to uppercase', 'short' => 'u']);
 
         $this->assertEquals(
             'change name to uppercase',
-           $command->getParser()->generateOptions()['-u,--uppercase']
+            $command->getParser()->generateOptions()['-u,--uppercase']
         );
     }
 
     public function testAddArgument(): void
     {
-   
-        $command = new HelloCommand( new TestConsoleIo());
+        $command = new HelloCommand($this->console);
         $command->addArgument('name', ['description' => 'name to use', 'default' => 'world']);
 
         $this->assertEquals(
@@ -101,7 +113,7 @@ final class AbstractCommandTest extends TestCase
 
     public function testExit(): void
     {
-        $command = new HelloCommand( new TestConsoleIo());
+        $command = new HelloCommand($this->console);
 
         $this->expectException(StopException::class);
         $this->expectExceptionMessage('Command exited');
@@ -112,7 +124,7 @@ final class AbstractCommandTest extends TestCase
 
     public function testAbort(): void
     {
-        $command = new HelloCommand( new TestConsoleIo());
+        $command = new HelloCommand($this->console);
 
         $this->expectException(StopException::class);
         $this->expectExceptionMessage('Command aborted');
@@ -123,97 +135,29 @@ final class AbstractCommandTest extends TestCase
 
     public function testRun(): void
     {
-        $stub = new TestConsoleIo();
-        $command = new HelloCommand( $stub);
+        $command = new HelloCommand($this->console);
 
-        $this->assertEquals(AbstractCommand::SUCCESS, $command->run(['bin/console']));
-        $this->assertStringContainsString('Hello world', $stub->getStdout());
+        $this->assertEquals(AbstractCommand::SUCCESS, $command->run(['bin/console'], $this->console));
+        $this->assertStringContainsString('Hello world', $this->stdout->getContents());
     }
 
     public function testRunCatchStopException(): void
     {
-        $stub = new TestConsoleIo();
-        $command = new HelloCommand( $stub);
-
-        $this->assertEquals(AbstractCommand::ERROR, $command->run(['bin/console','--abort']));
-    }
-
-    public function testOut(): void
-    {
-        $stub = new TestConsoleIo();
-        $command = new HelloCommand( $stub);
-        $command->out('foo');
-        $this->assertStringContainsString('foo', $stub->getStdout());
-    }
-
-    public function testInput(): void
-    {
-        $stub = new TestConsoleIo();
-        $stub->setInput(['jim']);
-
-        $command = new NameCommand( $stub);
-        
-        $this->assertStringContainsString('jim', $command->input());
-    }
-
-    public function testError(): void
-    {
-        $stub = new TestConsoleIo();
-        $command = new HelloCommand( $stub);
-        $command->error('foo');
-        $this->assertStringContainsString('foo', $stub->getStderr());
-    }
-
-    public function testVerbose(): void
-    {
-        $stub = new TestConsoleIo();
-        $command = new HelloCommand( $stub);
-        $command->verbose('foo');
-        $this->assertEmpty($stub->getStdout());
-
-        $stub->setOutputLevel(ConsoleIo::VERBOSE);
-        $command->verbose('foo');
-
-        $this->assertStringContainsString('foo', $stub->getStdout());
-    }
-
-    public function testQuiet(): void
-    {
-        $stub = new TestConsoleIo();
-        $command = new HelloCommand( $stub);
-        $stub->setOutputLevel(ConsoleIo::QUIET);
-        $command->out('normal');
-        $command->quiet('foo');
-
-        $this->assertStringNotContainsString('normal', $stub->getStdout());
-        $this->assertStringContainsString('foo', $stub->getStdout());
+        $command = new HelloCommand($this->console);
+        $this->assertEquals(AbstractCommand::ERROR, $command->run(['bin/console','--abort'], $this->console));
     }
 
     public function testDisplayHelp(): void
     {
-        $stub = new TestConsoleIo();
-        $command = new HelloCommand( $stub);
-        $command->run(['bin/console', '-h']);
+        $command = new HelloCommand($this->console);
+        $command->run(['bin/console', '-h'], $this->console);
 
-        $expected = "hello world\n\n<yellow>Usage:</yellow>\n  hello [options] [name]\n\n<yellow>Arguments:</yellow>\n  <green>name           </green>name to use (default: \"world\")\n\n<yellow>Options:</yellow>\n  <green>-h,--help      </green>Displays this help message\n  <green>-v,--verbose   </green>Displays additional output (if available)\n  <green>-q,--quiet     </green>Does not display output\n  <green>-u,--uppercase </green>change name to uppercase\n  <green>--abort        </green>\n\n";
+        $yellow = ANSI::FG_YELLOW;
+        $reset = ANSI::RESET;
+        $green = ANSI::FG_GREEN;
 
-        $this->assertEquals($expected, $stub->getStdout());
-    }
+        $expected = "hello world\n\n{$yellow}Usage:{$reset}\n  hello [options] [name]\n\n{$yellow}Arguments:{$reset}\n  {$green}name           {$reset}name to use (default: \"world\")\n\n{$yellow}Options:{$reset}\n  {$green}-h,--help      {$reset}Displays this help message\n  {$green}-u,--uppercase {$reset}change name to uppercase\n  {$green}--abort        {$reset}\n\n";
 
-    public function testThrowError(): void
-    {
-        $stub = new TestConsoleIo();
-        $command = new HelloCommand( $stub);
-        $stub->setOutputMode(ConsoleIo::RAW);
-        $this->expectException(StopException::class);
-        $this->expectExceptionMessage('Opps error');
-
-        try {
-            $command->throwError('Opps error', 'message');
-        } catch (StopException $exception) {
-            $this->assertStringContainsString("<alert> ERROR </alert> <lightYellow>Opps error</lightYellow>\nmessage\n", $stub->getStderr());
-
-            throw $exception;
-        }
+        $this->assertEquals($expected, $this->stdout->getContents());
     }
 }
