@@ -28,7 +28,7 @@ class ProgressBarHelper
     /**
      * Constructor
      */
-    public function __construct(private Console $console, private int $minimum = 0, private int $maximum = 100, private int $step = 1)
+    public function __construct(private Console $console, private int $minimum = 0, private int $maximum = 100)
     {
         $this->isatty = $this->console->stdout->isatty();
         $this->color = $this->isatty && ! getenv('NO_COLOR');;

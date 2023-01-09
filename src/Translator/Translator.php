@@ -24,7 +24,7 @@ class Translator implements TranslatorInterface
     /**
      * Constructor
      *
-     * @param ResourceBundle $resourceBundle the resource bundle for the default locale
+     * @param ResourceBundleFactoryInterface $resourceBundle the resource bundle for the default locale
      */
     public function __construct(protected ResourceBundleFactoryInterface $bundleFactory, string $defaultLocale = 'en_US')
     {
