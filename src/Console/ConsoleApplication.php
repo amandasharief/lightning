@@ -121,7 +121,7 @@ class ConsoleApplication implements CommandInterface
         }
 
         if (! isset($this->commands[$subCommand])) {
-            $this->console->error('`%s` is not a %s command', $subCommand, $this->name);
+            $this->console->err('`%s` is not a %s command', $subCommand, $this->name);
 
             return self::ERROR;
         }

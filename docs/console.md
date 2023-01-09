@@ -123,10 +123,9 @@ The `Console` object allows you to access output and input on the console device
 ```php
 $console->out('hello'); // to stdout
 $console->out('hello %s', 'Amanda'); // to stdout
-$console->error('opps'); // to stderr
-$console->error('An error occured in %s', get_class(__FILE__)); // to stderr
-$input = $console->readLine(); // reads a line from stdin
-$password = $console->readPassword(); // reads a line from stdin with echoing disabled
+$console->err('opps'); // to stderr
+$console->err('An error occured in %s', get_class(__FILE__)); // to stderr
+$input = $console->in('What is your name?');
 ```
 
 ## Helpers

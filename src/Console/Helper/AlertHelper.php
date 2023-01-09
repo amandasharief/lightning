@@ -60,7 +60,7 @@ class AlertHelper
         */
     public function warning(string $text, ?string $secondary = null, array $ansiEscapeSequences = [ANSI::BG_YELLOW, ANSI::FG_WHITE, ANSI::BOLD]): static
     {
-        $this->console->error($this->render($text, $secondary, $ansiEscapeSequences));
+        $this->console->err($this->render($text, $secondary, $ansiEscapeSequences));
 
         return $this;
     }
@@ -70,7 +70,7 @@ class AlertHelper
      */
     public function error(string $text, ?string $secondary = null, array $ansiEscapeSequences = [ANSI::BG_RED, ANSI::FG_WHITE, ANSI::BOLD]): static
     {
-        $this->console->error($this->render($text, $secondary, $ansiEscapeSequences));
+        $this->console->err($this->render($text, $secondary, $ansiEscapeSequences));
 
         return $this;
     }

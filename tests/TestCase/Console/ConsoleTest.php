@@ -39,7 +39,7 @@ final class ConsoleTest extends TestCase
     public function testError(): void
     {
         $console = new Console($this->out, $this->err, $this->in);
-        $console->error('This is a test');
+        $console->err('This is a test');
         $this->assertStringContainsString('This is a test', $this->err->getContents());
         $this->assertStringNotContainsString('This is a test', $this->out->getContents());
     }
@@ -47,30 +47,21 @@ final class ConsoleTest extends TestCase
     public function testErrorWithArgs(): void
     {
         $console = new Console($this->out, $this->err, $this->in);
-        $console->error('Hello %s', 'Amanda');
+        $console->err('Hello %s', 'Amanda');
         $this->assertStringContainsString('Hello Amanda', $this->err->getContents());
         $this->assertStringNotContainsString('Hello Amanda', $this->out->getContents());
     }
 
-    /**
+      /**
      * @todo no idea how to test stty -echo without messing arounbd
      */
-    public function testReadPassword(): void
+    public function testInput(): void
     {
         $console = new Console($this->out, $this->err, $this->in);
-        $this->in->setInput(['secret']);
-        $this->assertEquals('secret', $console->readPassword());
-    }
+        $this->in->setInput(['bar']);
 
-     /**
-     * @todo no idea how to test stty -echo without messing arounbd
-     */
-    public function testReadPasswordWithMessage(): void
-    {
-        $console = new Console($this->out, $this->err, $this->in);
-        $this->in->setInput(['secret']);
-        $this->assertEquals('secret', $console->readPassword('Enter a password:'));
-        $this->assertStringContainsString('Enter a password:', $this->out->getContents());
-        $this->assertStringNotContainsString('Enter a password:', $this->err->getContents());
+        $this->assertEquals('bar', $console->in('What is foo?'));
+        $this->assertStringContainsString('What is foo? ', $this->out->getContents());
+        $this->assertStringNotContainsString('What is foo? ', $this->err->getContents());
     }
 }

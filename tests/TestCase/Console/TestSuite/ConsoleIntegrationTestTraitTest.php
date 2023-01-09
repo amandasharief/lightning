@@ -51,7 +51,7 @@ class DummyCommand extends AbstractCommand
         }
 
         $console->out('Hello world');
-        $console->error('an error has occured');
+        $console->err('an error has occured');
 
         return self::SUCCESS;
     }

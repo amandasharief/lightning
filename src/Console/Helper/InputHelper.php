@@ -31,15 +31,21 @@ class InputHelper
             $message = sprintf('%s [%s]', $message, (string) $default);
         }
 
-        return $this->console->readLine($message . Console::LF . '> ') ?: $default;
+        return $this->console->in($message . Console::LF . '> ') ?: $default;
     }
 
     /**
-     * Ask for input of something secret like a password or passphrase
+     * Ask for input of something secret like a password or passphrase, echoing is disabled. NIX only
      */
     public function askSecret(string $message): ?string
     {
-        return $this->console->readPassword($message . Console::LF . '> ');
+        $this->console->out($message . Console::LF . '> ');
+
+        shell_exec('stty -echo');
+        $result = $this->console->stdin->read();
+        shell_exec('stty echo');
+
+        return $result;
     }
 
     /**

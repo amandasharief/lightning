@@ -18,8 +18,10 @@ use Lightning\Console\Stream\OutputStream;
 /**
  * Console
  *
- * @internal stdout, stderr, stdin intenionally left as public properties. Keeping this object to the minium, output levels etc kept seperate
- * me think. By default sending output should work similar to console.log in JS (additional arguments are treated as an sprintf string).
+ * @internal stdout, stderr, stdin intenionally left as public properties. Keeping this object to the minimum, output
+ * levels etc kept seperate me think. By default sending output should work similar to console.log in JS (additional
+ * arguments are treated as an sprintf string). Whilst sometimes there is need to write output without LF, this should
+ * be done manually by calling the output stream or by creating a helper.
  */
 class Console
 {
@@ -51,7 +53,7 @@ class Console
     /**
      * Writes a formatted string to the "standard" error output stream with a newline added
      */
-    public function error(string $message, mixed ...$args): static
+    public function err(string $message, mixed ...$args): static
     {
         $this->stderr->write(($args ? sprintf($message, ...$args) : $message) . static::LF);
 
@@ -61,36 +63,14 @@ class Console
     /**
      * Reads a line from the "standard" input stream with a space added
      */
-    public function readLine(?string $message = null, mixed ...$args): ?string
+    public function in(string $message = null, mixed ...$args): ?string
     {
         if (! $this->stdin->isatty()) {
             throw new RuntimeException('Trying to get input on a non terminal device');
         }
 
-        if ($message) {
-            $this->stdout->write(($args ? sprintf($message, ...$args) : $message . ' '));
-        }
+        $this->stdout->write(($args ? sprintf($message, ...$args) : $message . ' '));
 
         return $this->stdin->read();
-    }
-
-    /**
-     * Reads a line from the "standard" input stream with a space added and echoing disabled
-     */
-    public function readPassword(?string $message = null, mixed ...$args): ?string
-    {
-        if (! $this->stdin->isatty()) {
-            throw new RuntimeException('Trying to get input on a non terminal device');
-        }
-
-        if ($message) {
-            $this->stdout->write(($args ? sprintf($message, ...$args) : $message) . ' ');
-        }
-
-        shell_exec('stty -echo');
-        $result = $this->stdin->read();
-        shell_exec('stty echo');
-
-        return $result;
     }
 }

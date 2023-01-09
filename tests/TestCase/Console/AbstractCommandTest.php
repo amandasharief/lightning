@@ -19,7 +19,7 @@ class NameCommand extends AbstractCommand
     protected function execute(Arguments $args): int
     {
         $console = $this->getConsole();
-        $console->out(sprintf('Hello %s', $console->readLine('you')));
+        $console->out(sprintf('Hello %s', $console->in('you')));
 
         return static::SUCCESS;
     }
