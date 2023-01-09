@@ -184,9 +184,10 @@ final class ProgressBarHelperTest extends TestCase
         /**
          * @todo Think about no color where to be, i dont want in stream or console but makes it hard to test
          */
-        (new ReflectionClass($pb))
-            ->getProperty('color')
-            ->setValue($pb, false);
+        $property = (new ReflectionClass($pb))->getProperty('color');
+        $property->setAccessible(true);
+        $property->setValue($pb, false);
+
         $pb->setEmptyBarCharacter('░'); // fix due code being in constructor
 
         $pb->start();
@@ -204,9 +205,10 @@ final class ProgressBarHelperTest extends TestCase
         /**
          * @todo Think about no color where to be, i dont want in stream or console but makes it hard to test
          */
-        (new ReflectionClass($pb))
-            ->getProperty('color')
-            ->setValue($pb, false);
+        $property = (new ReflectionClass($pb))->getProperty('color');
+        $property->setAccessible(true);
+        $property->setValue($pb, false);
+
         $pb->setEmptyBarCharacter('░'); // fix due code being in constructor
 
         $pb->setMaximum(10)->start(5);
@@ -224,9 +226,10 @@ final class ProgressBarHelperTest extends TestCase
         /**
          * @todo Think about no color where to be, i dont want in stream or console but makes it hard to test
          */
-        (new ReflectionClass($pb))
-            ->getProperty('color')
-            ->setValue($pb, false);
+        $property = (new ReflectionClass($pb))->getProperty('color');
+        $property->setAccessible(true);
+        $property->setValue($pb, false);
+        
         $pb->setEmptyBarCharacter('░'); // fix due code being in constructor
 
         $pb->start(5, 25);
@@ -244,9 +247,10 @@ final class ProgressBarHelperTest extends TestCase
         /**
          * @todo Think about no color where to be, i dont want in stream or console but makes it hard to test
          */
-        (new ReflectionClass($pb))
-            ->getProperty('color')
-            ->setValue($pb, false);
+        $property = (new ReflectionClass($pb))->getProperty('color');
+        $property->setAccessible(true);
+        $property->setValue($pb, false);
+        
         $pb->setEmptyBarCharacter('░'); // fix due code being in constructor
 
         $pb->setMaximum(10)->start()->increment();
@@ -264,9 +268,10 @@ final class ProgressBarHelperTest extends TestCase
         /**
          * @todo Think about no color where to be, i dont want in stream or console but makes it hard to test
          */
-        (new ReflectionClass($pb))
-            ->getProperty('color')
-            ->setValue($pb, false);
+        $property = (new ReflectionClass($pb))->getProperty('color');
+        $property->setAccessible(true);
+        $property->setValue($pb, false);
+        
         $pb->setEmptyBarCharacter('░'); // fix due code being in constructor
 
         $pb->setMaximum(10)->start()->increment(5);
@@ -284,9 +289,10 @@ final class ProgressBarHelperTest extends TestCase
         /**
          * @todo Think about no color where to be, i dont want in stream or console but makes it hard to test
          */
-        (new ReflectionClass($pb))
-            ->getProperty('color')
-            ->setValue($pb, false);
+        $property = (new ReflectionClass($pb))->getProperty('color');
+        $property->setAccessible(true);
+        $property->setValue($pb, false);
+        
         $pb->setEmptyBarCharacter('░'); // fix due code being in constructor
 
         $pb->start(10)->complete();
