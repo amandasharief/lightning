@@ -94,7 +94,7 @@ To create a Console Application
 ```bash
 #!/usr/bin/env php
 <?php
-use Lightning\Console\ConsoleIo;
+use Lightning\Console\Console;
 use function Lightning\Dotenv\env;
 use Lightning\Migration\Migration;
 use Lightning\Console\ConsoleApplication;

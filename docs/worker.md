@@ -17,7 +17,7 @@ Create a file `bin/queue-worker` and run `chmod +x` on it.
 namespace App\Command;
 
 use Lightning\Logger\Logger;
-use Lightning\Console\ConsoleIo;
+use Lightning\Console\Console;
 use Lightning\Worker\MessageListener;
 use Lightning\MessageQueue\MessageConsumer;
 use Lightning\MessageQueue\MessageProducer;
@@ -43,7 +43,7 @@ $logger = new Logger('queue');
 $logger->addHandler(new ConsoleHandler());
 $messageListener->setLogger($logger);
 
-$command = new QueueWorkerCommand(new ConsoleIo(), $consumer);
+$command = new QueueWorkerCommand(new Console(), $consumer);
 exit($command->run($argv));
 ```
 
