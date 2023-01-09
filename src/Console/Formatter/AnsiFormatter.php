@@ -12,39 +12,32 @@
 namespace Lightning\Console\Formatter;
 
 /**
- * OutputFormatter
- * @internal Formatters should be independant of Console
+ * AnsiFormatter provides interpolation of strings and if no ansi mode is enabled then escape sequences are stripped automatically.
  */
-class OutputFormatter
+class AnsiFormatter
 {
-    protected bool $ansi = true;
+    protected bool $terminalSupportsAnsi = true;
 
     /**
-     * Enables ANSI output in this formatter
-     * @todo Think of better name
-     */
-    public function enableAnsi(bool $ansi): static
-    {
-        $this->ansi = $ansi;
-
-        return $this;
-    }
-
-    public function isAnsiEnabled(): bool
-    {
-        return $this->ansi;
-    }
-
-  /**
-     * Formats a string
+     * Format
      */
     public function format(string $message, array $context = []): string
     {
-        if (! $this->ansi) {
+        if (! $this->terminalSupportsAnsi) {
             $message = $this->stripAnsiEscapeSequences($message);
         }
 
         return $context ? $this->interpolate($message, $context) : $message;
+    }
+
+    /**
+     * Disables ANSI output
+     */
+    public function noAnsi(): static
+    {
+        $this->terminalSupportsAnsi = false;
+
+        return $this;
     }
 
     /**

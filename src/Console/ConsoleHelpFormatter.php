@@ -86,6 +86,21 @@ class ConsoleHelpFormatter
 
     public const WIDTH = 72;
 
+    private ?string $color1 = null;
+    private ?string $color2 = null;
+    private ?string $reset = null;
+
+    /**
+     * 
+     */
+    public function __construct(private bool $useColor = true)
+    {
+        if($useColor){
+            $this->color1 = ANSI::FG_YELLOW;
+            $this->color2 = ANSI::FG_GREEN;
+            $this->reset = ANSI::RESET;
+        }
+    }
     /**
      * Generates the help
      */
@@ -99,32 +114,32 @@ class ConsoleHelpFormatter
         }
 
         if ($this->usage) {
-            $out[] = ANSI::FG_YELLOW . 'Usage:' . ANSI::RESET;
+            $out[] = $this->color1 .  'Usage:' . $this->reset;
             $out[] = $this->usage;
             $out[] = '';
         }
 
         $maxWidth = $this->calculateWidth();
         if ($this->commands) {
-            $out[] = ANSI::FG_YELLOW . 'Commands:' . ANSI::RESET;
+            $out[] = $this->color1 .  'Commands:' . $this->reset;
             $out[] = $this->createTable($this->commands, $maxWidth);
             $out[] = '';
         }
 
         if ($this->arguments) {
-            $out[] = ANSI::FG_YELLOW . 'Arguments:' . ANSI::RESET;
+            $out[] = $this->color1 .  'Arguments:' . $this->reset;
             $out[] = $this->createTable($this->arguments, $maxWidth);
             $out[] = '';
         }
 
         if ($this->options) {
-            $out[] = ANSI::FG_YELLOW . 'Options:' . ANSI::RESET;
+            $out[] = $this->color1 .  'Options:' . $this->reset;
             $out[] = $this->createTable($this->options, $maxWidth);
             $out[] = '';
         }
 
         if ($this->help) {
-            $out[] = ANSI::FG_YELLOW . 'Help:' . ANSI::RESET;
+            $out[] = $this->color1 .  'Help:' . $this->reset;
             $out[] = $this->help;
             $out[] = '';
         }
@@ -250,7 +265,7 @@ class ConsoleHelpFormatter
                 $right = [$right];
             }
             foreach ($right as $row) {
-                $out[] = ANSI::FG_GREEN . $left . ANSI::RESET . $row;
+                $out[] = $this->color2 . $left . $this->reset . $row;
                 $left = str_repeat(' ', strlen($left)); // Only show once
             }
         }

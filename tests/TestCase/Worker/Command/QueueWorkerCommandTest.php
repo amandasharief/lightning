@@ -3,7 +3,7 @@
 namespace Lightning\Test\TestCase\Worker\Command;
 
 use Lightning\Console\Formatter\OutputFormatter;
-use Lightning\Console\Formatter\StyleFormatter;
+use Lightning\Console\Formatter\AnsiStyleFormatter;
 use PDO;
 use PHPUnit\Framework\TestCase;
 

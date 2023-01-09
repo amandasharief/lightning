@@ -13,7 +13,10 @@ namespace Lightning\Console\Formatter;
 
 use Lightning\Console\ANSI;
 
-class StyleFormatter extends OutputFormatter
+/**
+ * ANSI Style Formatter formats strings with ANSI styles, if the formatter
+ */
+class AnsiStyleFormatter extends AnsiFormatter
 {
     /**
     * Styles for this formatter
@@ -63,12 +66,10 @@ class StyleFormatter extends OutputFormatter
             $message = $this->interpolate($message, $context);
         }
 
-        if (! $this->ansi) {
+        if (! $this->terminalSupportsAnsi) {
             $tags = array_keys($this->styles);
 
-            $message = preg_replace('/<\/?(' . implode('|', $tags) . ')>/', '', $message); // remove tags
-
-            return $this->stripAnsiEscapeSequences($message);
+            return preg_replace('/<\/?(' . implode('|', $tags) . ')>/', '', $message); // remove tags
         }
 
         return $this->convertTags($message);

@@ -63,7 +63,7 @@ class Console
     /**
      * Reads a line from the "standard" input stream with a space added
      */
-    public function in(string $message = null, mixed ...$args): ?string
+    public function in(string $message, mixed ...$args): ?string
     {
         if (! $this->stdin->isatty()) {
             throw new RuntimeException('Trying to get input on a non terminal device');

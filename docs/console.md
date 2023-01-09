@@ -58,30 +58,33 @@ include dirname(__DIR__) . '/config/bootstrap_cli.php';
 $command = new HelloCommand(new Console());
 exit($command->run($argv));
 ```
-## Output Formatters
+## Console Formatters
+
+### ANSI Formatter
+
+This is a basic formatter provides string interpolation and if `no ansi` is enabled, then formatter will remove any ANSI escape sequences, which is handy when the console output is not a terminal or the user has requested `no-color`.
 
 ```php
-$formatter = new StyleFormatter();
+$formatter = new AnsiFormatter();
 $formatter-format('Hello');
-$formatter-format('Hello %s', $name);
+$formatter-format('Hello \033[32m{name}\033[0m', ['name' => 'Amanda']);
+
+if(!posix_isatty(STDOUT) || getenv('NO-COLOR')){
+    $formatter->noAnsi();
+}
 ```
 
-There are two output formatters both which use sprintf and strip ANSI escape sequences when ANSI is disabled. The `StyleFormatter` extends the `OutputFormatter` and allows you to setup your own ANSI styles then use them easily with tags.
+### ANSI Style Formatter
 
+The `ANSI Style Formatter` allows you to setup your own ANSI styles then use them easily with tags.
 
 ```php
 $formatter = new StyleFormatter();
 $formatter-format('Hello <green>Jim</green>');
-$formatter-format('Hello <green>%s</green>', $name);
+$formatter-format('Hello <green>{name}</green>', ['name' => 'amanda']);
 
 $formatter->setStyle('emergency', [ANSI::FG_WHITE, ANSI::BOLD, ANSI::BG:RED]);
-$formatter->format('<emergency>Something went wrong>');
-```
-
-If you want to use one of the output formatters, you can add this to the constructor of your command then set this up in bash file to autodetect.
-
-```php
-$formatter = (new OutputFormatter())->setAnsiMode(posix_isatty(STDOUT)); 
+$formatter->format('<emergency>Something went wrong</emergency>');
 ```
 
 ## Console Application

@@ -15,7 +15,7 @@ use Lightning\Console\Console;
 use Lightning\Console\Arguments;
 use Lightning\Console\AbstractCommand;
 use Lightning\Console\Formatter\OutputFormatter;
-use Lightning\Console\Formatter\StyleFormatter;
+use Lightning\Console\Formatter\AnsiStyleFormatter;
 use Lightning\MessageQueue\MessageConsumer;
 
 /**

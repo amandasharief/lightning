@@ -232,7 +232,7 @@ final class ProgressBarHelperTest extends TestCase
         $property = (new ReflectionClass($pb))->getProperty('color');
         $property->setAccessible(true);
         $property->setValue($pb, false);
-        
+
         $pb->setEmptyBarCharacter('░'); // fix due code being in constructor
 
         $pb->start(5, 25);
@@ -253,7 +253,7 @@ final class ProgressBarHelperTest extends TestCase
         $property = (new ReflectionClass($pb))->getProperty('color');
         $property->setAccessible(true);
         $property->setValue($pb, false);
-        
+
         $pb->setEmptyBarCharacter('░'); // fix due code being in constructor
 
         $pb->setMaximum(10)->start()->increment();
@@ -274,7 +274,7 @@ final class ProgressBarHelperTest extends TestCase
         $property = (new ReflectionClass($pb))->getProperty('color');
         $property->setAccessible(true);
         $property->setValue($pb, false);
-        
+
         $pb->setEmptyBarCharacter('░'); // fix due code being in constructor
 
         $pb->setMaximum(10)->start()->increment(5);
@@ -295,7 +295,7 @@ final class ProgressBarHelperTest extends TestCase
         $property = (new ReflectionClass($pb))->getProperty('color');
         $property->setAccessible(true);
         $property->setValue($pb, false);
-        
+
         $pb->setEmptyBarCharacter('░'); // fix due code being in constructor
 
         $pb->start(10)->complete();
