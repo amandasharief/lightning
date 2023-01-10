@@ -195,9 +195,9 @@ Often when running commands you are carrying out multiple tasks, and its nice to
 is where the status method comes in handy, statuses are setup for `ok` and `error`.
 
 ```php
-$status = new StatusListBarHelper($console);
-$status->out('ok', 'Configuration file found');
-$status->out('error', 'Could not create directory /tmp');
+$status = new StatusListHelper($console);
+$status->status('ok', 'Configuration file found');
+$status->status('error', 'Could not create directory /tmp');
 ```
 
 ![Console Status](img/console_status.png)
