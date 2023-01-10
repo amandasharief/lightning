@@ -166,7 +166,6 @@ abstract class AbstractCommand implements CommandInterface
     /**
      * Runs the command
      *
-     * Some option names are reserved and if they are enabled by use they will reconfigure the console. e.g. no-input, no-color, quiet
      * @see https://clig.dev
      */
     public function run(array $args): int

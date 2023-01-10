@@ -2,19 +2,17 @@
 
 namespace Lightning\Test\TestCase\Worker\Command;
 
-use Lightning\Console\Formatter\OutputFormatter;
-use Lightning\Console\Formatter\AnsiStyleFormatter;
 use PDO;
 use PHPUnit\Framework\TestCase;
-
 use Lightning\Fixture\FixtureManager;
 use Lightning\MessageQueue\MessageConsumer;
+
 use Lightning\MessageQueue\MessageProducer;
+use Lightning\Console\Formatter\AnsiStyleFormatter;
 use Lightning\MessageQueue\MemoryMessageQueue;
 use Lightning\Worker\Command\QueueWorkerCommand;
 use Lightning\MessageQueue\MessageQueueInterface;
 use Lightning\Console\TestSuite\ConsoleIntegrationTestTrait;
-
 
 class Message
 {
@@ -59,7 +57,7 @@ final class QueueWorkerCommandTest extends TestCase
         $command = new QueueWorkerCommand(
             $this->createTestConsole(),
             $this->messageConsumer,
-            new OutputFormatter()
+            new AnsiStyleFormatter()
         );
 
         $this->setupIntegrationTesting($command);

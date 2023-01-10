@@ -51,7 +51,6 @@ Create a file `bin/hello`  and run `chmod +x bin/hello`
 
 use App\Command\DevCommand;
 use Lightning\Console\Console;
-use Lightning\Console\Formatter\OutputFormatter;
 
 include dirname(__DIR__) . '/config/bootstrap_cli.php';
 
@@ -60,18 +59,21 @@ exit($command->run($argv));
 ```
 ## Console Formatters
 
+
 ### ANSI Formatter
 
-This is a basic formatter provides string interpolation and if `no ansi` is enabled, then formatter will remove any ANSI escape sequences, which is handy when the console output is not a terminal or the user has requested `no-color`.
+This is a basic formatter provides string interpolation and if `no ansi` is enabled, then formatter will remove any ANSI escape sequences, which is handy when using manual ANSI escape sequences and the console output is not a terminal or the user has requested [no color](https://no-color.org/).
 
 ```php
 $formatter = new AnsiFormatter();
-$formatter-format('Hello');
-$formatter-format('Hello \033[32m{name}\033[0m', ['name' => 'Amanda']);
+$formatter->format('Hello');
+$formatter->format("Hello \033[32m{name}\033[0m", ['name' => 'Amanda']);
+```
 
-if(!posix_isatty(STDOUT) || getenv('NO-COLOR')){
-    $formatter->noAnsi();
-}
+To have all ANSI escape sequences removed from the formatting.
+
+```php
+$formater->noAnsi();
 ```
 
 ### ANSI Style Formatter
@@ -85,6 +87,12 @@ $formatter-format('Hello <green>{name}</green>', ['name' => 'amanda']);
 
 $formatter->setStyle('emergency', [ANSI::FG_WHITE, ANSI::BOLD, ANSI::BG:RED]);
 $formatter->format('<emergency>Something went wrong</emergency>');
+```
+
+To have all ANSI styles removed from the formatting.
+
+```php
+$formater->noAnsi();
 ```
 
 ## Console Application
@@ -161,14 +169,14 @@ $helper->error('ERROR', 'This an error alert');
 Display a progress bar to user
 
 ```php
-$helper = new ProgressBarHelper($console);
+$progressBar = new ProgressBarHelper($console);
 
-$helper->setMaximum(10)
+$progressBar->setMaximum(10)
         ->start();
 
-$helper->increment();
+$progressBar->increment();
 
-$helper->complete(); // displays at 100% and adds new line
+$progressBar->complete(); // displays at 100% and adds new line
 ```
 
 You can also manually set
