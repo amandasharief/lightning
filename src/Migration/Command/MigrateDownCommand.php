@@ -35,8 +35,8 @@ class MigrateDownCommand extends AbstractCommand
         $console = $this->getConsole();
 
         $this->migration->down(function ($migration) use ($console) {
-            $console->out("Rolling back migration <info>{$migration['name']}</info>");
-            $console->out('');;
+            $console->out('Rolling back migration <info>%s</info>', $migration['name']);
+            $console->out('');
 
             foreach ($migration['statements'] as $sql) {
                 $console->out(sprintf('<green> > </green> %s', $sql));

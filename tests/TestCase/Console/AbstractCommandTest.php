@@ -65,7 +65,7 @@ class HelloCommand extends AbstractCommand
 final class AbstractCommandTest extends TestCase
 {
     private ?OutputStreamStub $stdout = null;
-    private ?OutputStreamStub  $stderr = null;
+    private ?OutputStreamStub $stderr = null;
     private ?InputStreamStub $stdin = null;
     private ?Console $console = null;
 
