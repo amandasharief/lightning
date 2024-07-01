@@ -33,6 +33,7 @@ return $config->setRules([
     'return_type_declaration' => ['space_before' => 'none'],
     'single_quote' => true,
     'trailing_comma_in_multiline' => false,
-    'trim_array_spaces' => true
+    'trim_array_spaces' => true,
+    'no_unused_imports' => true
 ])
     ->setFinder($finder);

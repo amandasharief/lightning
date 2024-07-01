@@ -24,6 +24,11 @@ interface CommandInterface
     public function getDescription(): string;
 
     /**
+     * Gets the help string for the command
+     */
+    public function getHelp(): string;
+
+    /**
      * Runs the command
      */
     public function run(array $args): int;

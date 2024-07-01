@@ -29,10 +29,6 @@ class ConsoleArgumentParser
 
     /**
     * Adds an option for this command
-    *
-    * @param string $name
-    * @param array $options
-    * @return static
     */
     public function addOption(string $name, array $options = []): static
     {
@@ -55,10 +51,6 @@ class ConsoleArgumentParser
 
     /**
      * Adds a argument for this command
-     *
-     * @param string $name
-     * @param array $options
-     * @return static
      */
     public function addArgument(string $name, array $options = []): static
     {
@@ -77,9 +69,6 @@ class ConsoleArgumentParser
 
     /**
      * Parse the args
-     *
-     * @param array $args
-     * @return Arguments
      */
     public function parse(array $args): Arguments
     {
@@ -124,20 +113,12 @@ class ConsoleArgumentParser
 
     /**
      * Factory method
-     *
-     * @param array $options
-     * @param array $arguments
-     * @return Arguments
      */
     private function createArguments(array $options = [], array $arguments = []): Arguments
     {
         return new Arguments($options, $arguments);
     }
 
-    /**
-     * @param string $arg
-     * @return array
-     */
     private function getNameAndValue(string $arg): array
     {
         $opt = ltrim($arg, '-');
@@ -150,10 +131,6 @@ class ConsoleArgumentParser
         return [$opt, $value];
     }
 
-    /**
-     * @param string $arg
-     * @return void
-     */
     private function parseOption(string $arg): void
     {
         list($opt, $value) = $this->getNameAndValue($arg);
@@ -187,10 +164,6 @@ class ConsoleArgumentParser
         }
     }
 
-    /**
-     * @param string $opt
-     * @return string
-     */
     private function getNextArgumentFor(string $opt): string
     {
         $value = array_shift($this->args);
@@ -213,9 +186,6 @@ class ConsoleArgumentParser
 
     /**
      * Generates the usage
-     *
-     * @param string $command
-     * @return string
      */
     public function generateUsage(string $command): string
     {
@@ -244,8 +214,6 @@ class ConsoleArgumentParser
 
     /**
      * Generates the option info for help
-     *
-     * @return array
      */
     public function generateOptions(): array
     {

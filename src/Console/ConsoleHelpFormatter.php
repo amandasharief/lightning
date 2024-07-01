@@ -44,53 +44,41 @@ $formatter->setEpilog([
 'nonummy diam.'
 ]);
 
+@todo I think the no-color should always be handled by individual item not a whole
 
 $help = $formatter->generate();
 */
-
 class ConsoleHelpFormatter
 {
     /**
      * Output
-     *
-     * @var array
+
      */
     protected $out = [];
     /**
      * Description
-     *
-     * @var string
      */
     protected $description = null;
     /**
       * Usage
-      *
-      * @var string
       */
     protected $usage = null;
 
     /**
      * Commands
-     *
-     * @var array
      */
     protected $commands = [];
     /**
      * Arguments
-     *
-     * @var array
      */
     protected $arguments = [];
     /**
      * Options
-     *
-     * @var array
+
      */
     protected $options = [];
     /**
      * Epilog
-     *
-     * @var string
      */
     protected $epilog = null;
 
@@ -98,10 +86,23 @@ class ConsoleHelpFormatter
 
     public const WIDTH = 72;
 
+    private ?string $color1 = null;
+    private ?string $color2 = null;
+    private ?string $reset = null;
+
+    /**
+     * 
+     */
+    public function __construct(private bool $useColor = true)
+    {
+        if($useColor){
+            $this->color1 = ANSI::FG_YELLOW;
+            $this->color2 = ANSI::FG_GREEN;
+            $this->reset = ANSI::RESET;
+        }
+    }
     /**
      * Generates the help
-     *
-     * @return string
      */
     public function generate(): string
     {
@@ -113,32 +114,32 @@ class ConsoleHelpFormatter
         }
 
         if ($this->usage) {
-            $out[] = '<yellow>Usage:</yellow>';
+            $out[] = $this->color1 .  'Usage:' . $this->reset;
             $out[] = $this->usage;
             $out[] = '';
         }
 
         $maxWidth = $this->calculateWidth();
         if ($this->commands) {
-            $out[] = '<yellow>Commands:</yellow>';
+            $out[] = $this->color1 .  'Commands:' . $this->reset;
             $out[] = $this->createTable($this->commands, $maxWidth);
             $out[] = '';
         }
 
         if ($this->arguments) {
-            $out[] = '<yellow>Arguments:</yellow>';
+            $out[] = $this->color1 .  'Arguments:' . $this->reset;
             $out[] = $this->createTable($this->arguments, $maxWidth);
             $out[] = '';
         }
 
         if ($this->options) {
-            $out[] = '<yellow>Options:</yellow>';
+            $out[] = $this->color1 .  'Options:' . $this->reset;
             $out[] = $this->createTable($this->options, $maxWidth);
             $out[] = '';
         }
 
         if ($this->help) {
-            $out[] = '<yellow>Help:</yellow>';
+            $out[] = $this->color1 .  'Help:' . $this->reset;
             $out[] = $this->help;
             $out[] = '';
         }
@@ -153,8 +154,6 @@ class ConsoleHelpFormatter
 
     /**
      * Calculates the width to be used when generating the help
-     *
-     * @return int
      */
     protected function calculateWidth(): int
     {
@@ -172,11 +171,8 @@ class ConsoleHelpFormatter
 
     /**
      * Adds the description part of help
-     *
-     * @param string|array $description
-     * @return static
      */
-    public function setDescription($description): static
+    public function setDescription(string|array $description): static
     {
         $this->description = $this->toText($description) ;
 
@@ -185,22 +181,17 @@ class ConsoleHelpFormatter
 
     /**
      * Sets the usage
-     *
-     * @param string|array $usage
-     * @return static
      */
-    public function setUsage($usage): static
+    public function setUsage(string|array $usage): static
     {
         $usage = $this->toText($usage, "\n  ");
         $this->usage = $this->wrapText($usage, 2) ;
 
         return $this;
     }
+
     /**
      * Sets the commands to be used
-     *
-     * @param array $commands
-     * @return static
      */
     public function setCommands(array $commands): static
     {
@@ -211,9 +202,6 @@ class ConsoleHelpFormatter
 
     /**
      * Sets the options
-     *
-     * @param array $options
-     * @return static
      */
     public function setOptions(array $options): static
     {
@@ -224,9 +212,6 @@ class ConsoleHelpFormatter
 
     /**
      * Sets the arguments
-     *
-     * @param array $arguments
-     * @return static
      */
     public function setArguments(array $arguments): static
     {
@@ -237,9 +222,6 @@ class ConsoleHelpFormatter
 
     /**
      * Sets the epilog
-     *
-     * @param string|array $epilog
-     * @return static
      */
     public function setEpilog($epilog): static
     {
@@ -250,9 +232,6 @@ class ConsoleHelpFormatter
 
     /**
      * Sets the help text
-     *
-     * @param string|array $help
-     * @return static
      */
     public function setHelp($help): static
     {
@@ -264,10 +243,6 @@ class ConsoleHelpFormatter
 
     /**
      * Normalizes text to string
-     *
-     * @param string|array $mixed
-     * @param string $glue
-     * @return string
      */
     protected function toText($mixed, $glue = "\n"): string
     {
@@ -280,9 +255,6 @@ class ConsoleHelpFormatter
 
     /**
      * Pads columns for a table
-     *
-     * @param array $array
-     * @return string
      */
     protected function createTable(array $array, int $width = 20): string
     {
@@ -293,7 +265,7 @@ class ConsoleHelpFormatter
                 $right = [$right];
             }
             foreach ($right as $row) {
-                $out[] = "<green>{$left}</green>{$row}";
+                $out[] = $this->color2 . $left . $this->reset . $row;
                 $left = str_repeat(' ', strlen($left)); // Only show once
             }
         }
@@ -303,9 +275,6 @@ class ConsoleHelpFormatter
 
     /**
      * Gets the maximum width for each items in the array
-     *
-     * @param array $array
-     * @return int
      */
     protected function getMaxWidth(array $array): int
     {
@@ -322,10 +291,6 @@ class ConsoleHelpFormatter
 
     /**
      * Only use for descriptions etc due to colors
-     *
-     * @param string $string
-     * @param integer $indent
-     * @return string
      */
     protected function wrapText(string $string, int $indent = 0): string
     {
@@ -339,10 +304,6 @@ class ConsoleHelpFormatter
 
     /**
      * Indents text
-     *
-     * @param string $string
-     * @param integer $indent
-     * @return string
      */
     protected function indentText(string $string, int $indent): string
     {

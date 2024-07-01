@@ -4,16 +4,17 @@ namespace App\Command;
 
 use PDO;
 use PHPUnit\Framework\TestCase;
+
 use function Lightning\Dotenv\env;
-use Lightning\Test\PersistentPdoFactory;
+
 use Lightning\Migration\Migration;
 use Lightning\Fixture\FixtureManager;
-use Lightning\Console\ConsoleArgumentParser;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\Test\Fixture\MigrationsFixture;
 
-use Lightning\Console\TestSuite\TestConsoleIo;
 use Lightning\Migration\Command\MigrateUpCommand;
 use Lightning\Console\TestSuite\ConsoleIntegrationTestTrait;
+use Lightning\Console\TestSuite\TestConsole;
 
 final class MigrateUpCommandTest extends TestCase
 {
@@ -41,11 +42,11 @@ final class MigrateUpCommandTest extends TestCase
         $this->pdo->query('DROP TABLE IF EXISTS articles_m');
 
         $migration = new Migration($this->pdo, dirname(__DIR__). '/migrations/' . $driver);
-        $command = new MigrateUpCommand(new TestConsoleIo(), $migration);
+        $command = new MigrateUpCommand(new TestConsole(), $migration);
         $this->setupIntegrationTesting($command);
     }
 
-    public function tearDown(): void 
+    public function tearDown(): void
     {
         unset($this->pdo);
     }
@@ -63,7 +64,7 @@ final class MigrateUpCommandTest extends TestCase
     public function testMigrateNothing(): void
     {
         $migration = new Migration($this->pdo, dirname(__DIR__). '/migrations/' . $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
-        $command = new MigrateUpCommand(new TestConsoleIo(), $migration);
+        $command = new MigrateUpCommand($this->createTestConsole(), $migration);
         $command->run([]);
 
         $this->execute();

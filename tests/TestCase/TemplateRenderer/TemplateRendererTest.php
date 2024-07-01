@@ -43,6 +43,15 @@ final class TemplateRendererTest extends TestCase
         $this->assertEquals('/tmp', $templateRenderer->setPath('/tmp')->getPath());
     }
 
+    public function testWithPath(): void 
+    {
+        $templateRenderer = new TemplateRenderer('/tmp1', 'php', $this->cachedPath);
+
+        $this->assertEquals('/tmp', $templateRenderer->withPath('/tmp')->getPath());
+        $this->assertEquals('/tmp1', $templateRenderer->getPath());
+       
+    }
+
     public function testSetGetLayout(): void
     {
         $templateRenderer = new TemplateRenderer(__DIR__ .'/views', 'php', $this->cachedPath);

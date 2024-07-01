@@ -370,7 +370,7 @@ class Collection implements ArrayAccess, Countable, JsonSerializable, IteratorAg
 
     public function unserialize(string $data)
     {
-        return unserialize($data);
+        unserialize($data);
     }
 
     public function __serialize(): array
