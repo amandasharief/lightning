@@ -1,8 +1,7 @@
 <?php declare(strict_types=1);
 
-namespace Lightning\Test\TestCase\Router;
+namespace Lightning\Test\Router;
 
-use BadMethodCallException;
 use Lightning\Router\Route;
 use Nyholm\Psr7\Response;
 use PHPUnit\Framework\TestCase;
@@ -63,7 +62,7 @@ final class RouteTest extends TestCase
 
     public function testGetHandler(): void
     {
-        $handler = 'Lightning\Test\TestCase\Router\FakeController::index';
+        $handler = 'Lightning\Test\Router\FakeController::index';
         $route = new Route('GET', '/articles', $handler);
    
         $this->assertInstanceOf(ResponseInterface::class, $route->getHandler()());
@@ -96,7 +95,7 @@ final class RouteTest extends TestCase
 
     public function testInvoke(): void
     {
-        $route = new Route('GET', '/fake', 'Lightning\Test\TestCase\Router\FakeController::index');
+        $route = new Route('GET', '/fake', 'Lightning\Test\Router\FakeController::index');
         $route->match('GET', '/fake');
         $callable = $route->getHandler();
         $this->assertTrue(is_callable($callable));
