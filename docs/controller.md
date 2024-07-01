@@ -5,7 +5,7 @@ A PSR-7 `Controller` with `TemplateRenderer`, and a couple of important methods 
 Create your application controller with the factory method `createResponse`
 
 ```php
-se Lightning\Controller\AbstractController as BaseController;
+use Lightning\Controller\AbstractController as BaseController;
 
 class AppController extends BaseController
 {

@@ -40,7 +40,7 @@ $builder->select(['*'])
         'category <>' => ['Development'],  // NOT IN
         'created_at BETWEEN' => ['2021-01-01 12:00:00', '2021-06-01 12:00:00'], // BETWEEN OR NOT BETWEEN
         'title LIKE' => '%foo', // LIKE or NOT LIKE
-        'id >=' 2000, // arithmetic operators <,>,<=,>=  
+        'id >=' => 2000 // arithmetic operators <,>,<=,>=  
     ]);
 ```
 
