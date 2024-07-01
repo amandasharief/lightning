@@ -5,10 +5,8 @@ namespace Lightning\Test\Router;
 use Nyholm\Psr7\Response;
 use Lightning\Router\Route;
 use Lightning\Router\Router;
-use Lightning\Cache\ApcuCache;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
-use Lightning\Autowire\Autowire;
 use Lightning\Router\RouteCollection;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -17,16 +15,13 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Lightning\Router\Exception\RouterException;
 
-class DummyController
+final class DummyController
 {
     public function index()
     {
-        return new Response(200, [], 'ok');
-    }
-
-    public function autowire(ServerRequestInterface $request, ResponseInterface $response, ApcuCache $class)
-    {
-        return new Response(200, [], 'ok');
+        $response = new Response(); 
+        $response->getBody()->write('ok');
+        return $response;
     }
 }
 
@@ -64,9 +59,7 @@ class LemonLimeMiddleware extends BaseTestMiddleware
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $response = $handler->handle($request);
-
         $response->getBody()->write('lemon');
-
         return $response;
     }
 }
@@ -76,9 +69,7 @@ class GreenAppleMiddleware extends BaseTestMiddleware
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $response = $handler->handle($request);
-
         $response->getBody()->write('apple');
-
         return $response;
     }
 }
