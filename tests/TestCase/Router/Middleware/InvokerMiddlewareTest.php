@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Lightning\Test\Router;
+namespace Lightning\Test\Router\Middleware;
 
 use Nyholm\Psr7\Response;
 use Lightning\Router\Route;
