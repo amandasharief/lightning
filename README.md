@@ -14,22 +14,38 @@ A set of lightweight components that can be used together or seperatley.
 - [ ] Any learning should transportable
 - [ ] Linux based OS (sorry Windoz)
 
-Documentation can be found in the [Docs Folder](docs/) 
-
 ## Setup
 
 Create an `.env` file in the root directory, 
 
-```php
+```bash
 $ cp .env.example .env
 $ docker compose build
 $ docker compose up
+```
+
+From a new terminal window or tab
+
+```bash
 $ docker compose exec app bash
 ```
 
 Then access the database from your desktop using `127.0.0.1`, from inside docker the database host is `mysql`.
 
-Create the `lightning` database and import `database/schema/schema.sql`
+Or you can access from inside the container using the password `root`
+
+```bash
+$ mysql -h mysql -u root -p
+```
+
+```sql
+mysql> CREATE DATABASE lightning;
+mysql> USE lightning;
+mysql> SOURCE /var/www/database/schema/schema.sql
+```
+
+
+Create the `lightning` database and import `tests/schema/schema.sql`
 
 Then you can run tests from within docker
 

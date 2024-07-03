@@ -9,7 +9,3 @@ node_modules/
 .idea/
 coverage/
 public/debugbar
-
-# Temporary
-app/
-bin/
