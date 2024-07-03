@@ -23,6 +23,7 @@ use Lightning\Http\Auth\IdentityServiceInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Lightning\DataMapper\DataSource\DatabaseDataSource;
 use Lightning\Http\Auth\IdentityService\PdoIdentityService;
+use Lightning\TemplateRenderer\TemplateRendererInterface;
 
 /**
  * Here you register the services. Each time a service is requested is recreated unless you use the share method or pass an existing object.
@@ -48,13 +49,12 @@ use Lightning\Http\Auth\IdentityService\PdoIdentityService;
      PDO::class => function (ContainerInterface $container) {
          return (new PdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
      },
-     TemplateRenderer::class => function (ContainerInterface $container) {
-
+     TemplateRendererInterface::class => function (ContainerInterface $container) {
         // __DIR__ . '/../tmp/cache')
          return new TemplateRenderer(__DIR__ . '/../app/View');
      },
      TranslatorInterface::class => function (ContainerInterface $container) {
-         $bundleFactory = new ResourceBundleFactory(__DIR__ .'/../app/Locales');
+         $bundleFactory = new ResourceBundleFactory(__DIR__ .'/../app/Locale');
 
          return new Translator($bundleFactory, 'en_US');
      },
