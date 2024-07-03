@@ -57,7 +57,7 @@ Here is an example of using the `foreach` within a template
 
 ## Template Inheritance (Layouts)
 
-Create a template that you want to use as a layout, and make sure to echo the `content` variable. You can only extend one template, TemplateRender does not support multiple inheritance.
+Create a template that you want to use as a layout, and make sure to echo the `content` variable. You can only extend one template, `TemplateRender` does not support multiple inheritance.
 
 ```php
 <?php
@@ -90,3 +90,31 @@ $this->extend('layouts/default');
 ?>
 <h1>Hello World</h1>
 ```
+
+## Rendering Partial Templates
+
+Occasionally you might need to break up some code into smaller reusuable pieces that can be called from other templates. 
+
+You can render another template from inside a template by calling the `render` method, providing that it **does not extend** another template.
+
+```php
+<!-- logged_in_users.php -->
+<ul>
+<?php foreach ($users as $user): ?>
+  <li>{{ $user->name }}</li>
+<?php endforeach; ?>
+</ul>
+```
+
+```php
+<!-- index.php -->
+<?php
+/**
+ * @var \Lightning\TemplateRenderer\TemplateRenderer $this
+ */
+$this->extend('layouts/default');
+?>
+<h1>Dashboard</h1>
+<?= $this->render('widgets/logged_in_users.php') ?>
+```
+
