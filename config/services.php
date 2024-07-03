@@ -53,11 +53,12 @@ use Lightning\TemplateRenderer\TemplateRendererInterface;
         // __DIR__ . '/../tmp/cache')
          return new TemplateRenderer(__DIR__ . '/../app/View');
      },
-     TranslatorInterface::class => function (ContainerInterface $container) {
-         $bundleFactory = new ResourceBundleFactory(__DIR__ .'/../app/Locale');
+    // This will cause error
+    //  TranslatorInterface::class => function (ContainerInterface $container) {
+    //      $bundleFactory = new ResourceBundleFactory(__DIR__ .'/../app/Locale');
 
-         return new Translator($bundleFactory, 'en_US');
-     },
+    //      return new Translator($bundleFactory, 'en_US');
+    //  },
      DataSourceInterface::class => DatabaseDataSource::class,
      ResponseFactoryInterface::class => Psr17Factory::class,
      IdentityServiceInterface::class => function (ContainerInterface $container) {
