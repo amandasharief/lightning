@@ -30,10 +30,20 @@ class Router implements RequestHandlerInterface, RoutesInterface
     use RouteTrait;
     use MiddlewareTrait;
 
-    public const ALPHA = '[a-fA-F]+';
-    public const ALPHANUMERIC = '\w+';
-    public const HEX = '[a-fA-F0-9]+';
-    public const NUMERIC = '[0-9]+';
+    // /**
+    //  * Can contain letter, number or underscore
+    //  */
+    // public const PATTERN_SLUG = '/^[a-zA-Z0-9_]+$/'; // e.g. [a-zA-Z0-9_]
+
+    // /**
+    //  * Can contain letters only
+    //  */
+    // public const PATTERN_WORD = '/^[a-zA-Z+]+$/';
+
+    //  /**
+    //  * Must be a number
+    //  */
+    // public const PATTERN_NUMBER = '/^[0-9]+$/';
 
     protected ?ContainerInterface $container;
 

@@ -55,7 +55,7 @@ final class RouteTest extends TestCase
 
     public function testMatchConstraints(): void
     {
-        $route = new Route('GET', '/articles/:id', 'App\Controller\ArticlesController::index', ['id' => '[0-9]{3}']);
+        $route = new Route('GET', '/articles/:id', 'App\Controller\ArticlesController::index', ['id' => '/^[0-9]{3}+$/']);
         $this->assertTrue($route->match('GET', '/articles/123'));
         $this->assertFalse($route->match('GET', '/articles/1234567'));
     }

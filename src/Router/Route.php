@@ -68,7 +68,7 @@ class Route
 
         // process constriants
         foreach ($this->constraints as $attribute => $pattern) {
-            if (isset($variables[$attribute]) && ! preg_match('#^' . $pattern . '$#', (string) $variables[$attribute])) {
+            if (isset($variables[$attribute]) && ! preg_match($pattern, (string) $variables[$attribute])) {
                 return false;
             };
         }

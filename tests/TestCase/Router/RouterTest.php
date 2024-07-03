@@ -289,7 +289,7 @@ final class RouterTest extends TestCase
             $this->assertEquals('1234', $request->getAttribute('id'));
 
             return new Response();
-        }, ['id' => '[0-9]+']);
+        }, ['id' => '/^[0-9]+$/']);
 
         $response = $router->handle(new ServerRequest('GET', '/foo/1234'));
         $this->assertInstanceOf(ResponseInterface::class, $response);
