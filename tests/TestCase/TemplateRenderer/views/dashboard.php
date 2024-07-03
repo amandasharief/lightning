@@ -2,6 +2,6 @@
 /**
  * @var \Lightning\TemplateRender\TemplateRenderer $this
  */
-$this->extend('layouts/default');
+$this->extend('layouts/div');
 ?>
-<h1>Home</h1>
+<h1>Dashboard</h1>

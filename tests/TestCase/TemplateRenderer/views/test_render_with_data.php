@@ -1,0 +1,1 @@
+<h1>Articles #<?= $id ?> : {{ $title }}</h1><p>{{ $body }}</p>

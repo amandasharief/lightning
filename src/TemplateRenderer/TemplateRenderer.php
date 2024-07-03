@@ -11,68 +11,69 @@
 
 namespace Lightning\TemplateRenderer;
 
+use Throwable;
 use Lightning\TemplateRenderer\Exception\TemplateRendererException;
 
-class TemplateRenderer
+class TemplateRenderer implements TemplateRendererInterface
 {
-    private ?string $cachePath;
+    private string $charset;
+    private string $cachePath;
+    private ?string $fileExtension;
 
-    private array $attributes = [];
+    private array $variables = [];
+    protected ?string $extends = null;
 
-    private bool $inRender = false;
-    private string $encoding;
-
-    protected ?string $layout = null;
+    private int $obCurrentLevel = 0;
+    private ?int $obStartLevel = null;
 
     /**
-     * Constructor
+     * @param string $path template folder path
+     * @param array $options The following options are supported
+     * - charset: default:UTF-8
+     * - cachePath: directory where complied templates are stored
+     * - fileExtension: default: php set to null if you prefer to specifcy templates with their extension
      */
-    public function __construct(
-        private string $path,
-        private ?string $fileExtension = 'php', 
-        ?string $cachePath = null
-        )
+    public function __construct(private string $path, array $options = [])
     {
-        $this->encoding = mb_internal_encoding() ?: 'UTF-8';
+        $options += [
+            'charset' => 'UTF-8',
+            'cachePath' => sys_get_temp_dir() . '/tr_compiled',
+            'fileExtension' => 'php'
+        ];
 
-        $this->cachePath = $cachePath ?: sys_get_temp_dir() . '/templates';
+        $this->charset = $options['charset'];
+        $this->cachePath = $options['cachePath'];
+        $this->fileExtension = $options['fileExtension'];
 
         if (! is_dir($this->cachePath)) {
             mkdir($this->cachePath, 0775, true);
         }
-
-        $this->initialize();
     }
 
     /**
-     * This is a hook that is called when this object is created
+     * Sets a variable that can be used in the template
      */
-    protected function initialize(): void
+    public function set(string $name, mixed $value): static
     {
-    }
-
-    /**
-     * Sets a view attribute
-
-     */
-    public function setAttribute(string $name, mixed $value): static
-    {
-        $this->attributes[$name] = $value;
+        $this->variables[$name] = $value;
 
         return $this;
     }
 
     /**
-     * Gets an attribute from the view
+     * Gets a variable value from the template
      */
-    public function getAttribute(string $name): mixed
+    public function get(string $name): mixed
     {
-        return $this->attributes[$name] ?? null;
+        return $this->variables[$name] ?? null;
     }
 
-    /**
-     * Sets the path
-     */
+   /**
+    * Sets the template path
+    *
+    * @param string $path
+    * @return static
+    */
     public function setPath(string $path): static
     {
         $this->path = $path;
@@ -80,13 +81,18 @@ class TemplateRenderer
         return $this;
     }
 
+    /**
+     * Gets thet template path
+     *
+     * @return string
+     */
     public function getPath(): string
     {
         return $this->path;
     }
 
     /**
-     * An immutable setter, returns a new view instance with the new path set
+     * An immutable setter, returns a new instance with the new path set
      */
     public function withPath(string $path): static
     {
@@ -97,48 +103,25 @@ class TemplateRenderer
     }
 
     /**
-     * Sets the layout
+     * Sets the default file extension, e.g .php .ctp or null if you want to specificy the name
+     * yourself (e.g index.php)
+     *
+     * @param string|null $extension
+     * @return static
      */
-    public function setLayout(string $layout): static
-    {
-        $this->layout = $layout;
-
-        return $this;
-    }
-
-    /**
-     * Gets the layout
-     */
-    public function getLayout(): ?string
-    {
-        return $this->layout;
-    }
-
-    /**
-     * An immutable setter, returns a new view instance with the new layout setting
-     */
-    public function withLayout(?string $layout): static
-    {
-        $template = clone $this;
-        $template->layout = $layout;
-        $this->layout = $layout;
-
-        return $template;
-    }
-
-    /**
-     * Sets the default file extension, e.g .php .ctp or null if you want to specificy the name yourself
-     */
-    public function setFileExtension(?string $extension) : static 
+    public function setFileExtension(?string $extension): static
     {
         $this->fileExtension = $extension;
+
         return $this;
     }
 
     /**
      * Gets the defualt file extension
+     *
+     * @return string|null
      */
-    public function getFileExtension(): ?string 
+    public function getFileExtension(): ?string
     {
         return $this->fileExtension;
     }
@@ -146,47 +129,76 @@ class TemplateRenderer
     /**
      * Returns a new instance with the new extension
      */
-    public function withFileExtension(?string $extension) : static 
+    public function withFileExtension(?string $extension): static
     {
         $template = clone $this;
         $template->fileExtension = $extension;
+
         return $template;
     }
 
     /**
-     * Renders a view and returns a response
+     * Extend another template. Single inheritance only. This is ignored when using
+     * the render function within 
      *
-     * @param string $path articles/index or /var/www/app/resources/views/articles/index.php
-
+     * @param string $template
+     * @return void
      */
-    public function render(string $path, array $variables = []): string
+    protected function extend(string $template): void
     {
-        $path = strncmp($path, '/', 1) === 0 ? $path : $this->path . '/' . trim($path, '/') . ($this->fileExtension ? '.' . $this->fileExtension : null);
-
-        $content = $this->renderTemplate($path, $variables);
-
-        if ($this->layout && ! $this->inRender) {
-            $content = $this->renderTemplate(
-                $this->path . '/' . trim($this->layout, '/') .  ($this->fileExtension ? '.' . $this->fileExtension : null),
-                ['content' => $content] + $variables
-            );
-        }
-
-        return $content;
+        if($this->obStartLevel && $this->obCurrentLevel === $this->obStartLevel){
+            $this->extends = $template;
+        } 
     }
 
     /**
-     * Renders a partial template (without a layout), this can be used inside views
+     * Renders a template and returns a response string
+     *
+     * @param string $path articles/index or /var/www/app/resources/views/articles/index.php
      */
-    private function renderTemplate(string $path, array $variables = []): string
+    public function render(string $template, array $variables = [], array $options = []): string
     {
-        if (! is_readable($path)) {
-            throw new TemplateRendererException(sprintf('File `%s` not found', ltrim(str_replace($this->path, '', $path), '/')));
+        /**
+         * Determine output buffer starting and current positions
+         */
+        $this->obCurrentLevel = ob_get_level();
+        if ($this->obStartLevel === null) {
+            $this->obStartLevel = $this->obCurrentLevel;
         }
 
-        $output = $this->doRender($this->compile($path), $variables);
+        $content = $this->renderTemplate($template, $variables);
 
-        return $output;
+        // Reset first time calling if all complete
+        if ($this->obStartLevel === ob_get_level()) {
+            $this->obStartLevel = null;
+        }
+
+        /**
+         * Only render the extended if it is the main render call
+         */
+        if ($this->extends && $this->obStartLevel === null) {
+            $content = $this->renderTemplate($this->extends, ['content' => $content] + $variables);
+            $this->extends = null;
+        }
+       
+        return $content;
+    }
+
+  /**
+   * Renders a template (without inheritance)
+   * @note this was renderPartial but since render is now functional from within templates this has been benched.
+   * @param string $path
+   * @param array $variables
+   * @return string
+   */
+    private function renderTemplate(string $template, array $variables = []): string
+    {
+        $path = strncmp($template, '/', 1) === 0 ? $template : $this->path . '/' . trim($template, '/') . ($this->fileExtension ? '.' . $this->fileExtension : null);
+
+        if (! is_readable($path)) {
+            throw new TemplateRendererException(sprintf('Template `%s` not found', ltrim(str_replace($this->path, '', $path), '/')));
+        }
+        return $this->doRender($this->compile($path), $variables);
     }
 
     /**
@@ -194,18 +206,24 @@ class TemplateRenderer
      */
     private function doRender(string $__filename__, array $__variables__ = []): string
     {
-        extract($this->attributes); # First
+        extract($this->variables); # First
         extract($__variables__);
+
+        $outputBufferLevel = ob_get_level();
 
         ob_start();
 
-        $this->inRender = true;
+        try {
+            include $__filename__;
+        } catch (Throwable $exception) {
+            while (ob_get_level() > $outputBufferLevel) {
+                ob_end_clean();
+            }
 
-        require $__filename__;
+            throw $exception;
+        }
 
-        $this->inRender = false;
-
-        return ob_get_clean();
+        return (string) ob_get_clean();
     }
 
     /**
@@ -213,11 +231,11 @@ class TemplateRenderer
      */
     protected function escape(mixed $value): string
     {
-        return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, $this->encoding);
+        return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, $this->charset);
     }
 
     /**
-     * Gets the compiled view filename, if the view has been changed or the compiled version does not exist
+     * Gets the compiled templates filename, if the view has been changed or the compiled version does not exist
      * then it will be compiled.
      */
     private function compile(string $path): string
