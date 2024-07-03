@@ -100,50 +100,16 @@ final class TemplateRendererTest extends TestCase
         );
     }
 
-  /**
-     * 1. Wrapped in Div  layout
-     * 2. Load JS script
-     * 3. Heading
-     * 4. CSS
-     *
-     * @return void
-     */
-    public function testRenderWithinTemplateExtend(): void
+    public function testRenderWithinTemplateExtended(): void
     {
         $templateRenderer = new TemplateRenderer(__DIR__ .'/views', ['cachePath' => $this->cachedPath]);
 
         $this->assertEquals(
-            "<div class=\"content\"><script src=\"application.js\"></script><h1>Render Within Template<h1>\n<link rel=\"stylesheet\" href=\"application.css\"></div>", $templateRenderer->render('test_render_within_template_extend')
+            "<div class=\"content\"><script src=\"application.js\"></script><h1>Render Within Template<h1>\n<link rel=\"stylesheet\" href=\"application.css\"></div>", $templateRenderer->render('test_render_within_template_extended')
         );
     }
 
-    /**
-     * This test uses a template which extends another template then tries to render another template which extends. Since
-     * multiple inherhitance is not supported, the correct behavior should be that the last
-     *
-     * @return void
-     */
-    public function testRenderWithinTemplateExtendFail(): void
-    {
-        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', ['cachePath' => $this->cachedPath]);
-
-        $this->expectException(TemplateRendererException::class);
-        $this->expectExceptionMessage('Template Renderer does not support multiple inheritance, `extend` can only be called once.');
-        $templateRenderer->render('test_render_within_template_extend_fail');
-    }
-
-    public function testRenderWithinExtendedTemplate(): void 
-    {
-        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', ['cachePath' => $this->cachedPath]);
-
-        $this->assertEquals(
-            '<h1>Render template with extend</h1>\n<script src="application.js"></script><h1>Home</h1><link rel="stylesheet" href="application.css">',
-            $templateRenderer->render('test_render_within_extended')
-        );
- 
-    }
-
-    public function testRenderExtends(): void
+    public function testRenderExtend(): void
     {
         $templateRenderer = new TemplateRenderer(__DIR__ .'/views', ['cachePath' => $this->cachedPath]);
 
@@ -152,6 +118,33 @@ final class TemplateRendererTest extends TestCase
             $templateRenderer->render('index')
         );
     }
+
+    /**
+     * If in the chain extend is called multiple times then throw an error
+     */
+    public function testRenderExtendError(): void
+    {
+        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', ['cachePath' => $this->cachedPath]);
+
+        $this->expectException(TemplateRendererException::class);
+        $this->expectExceptionMessage('Cannot extend `layouts/default`');
+
+        $templateRenderer->render('test_render_extend_error');
+    }
+
+    /**
+     * Test the behavior when using the extend in a child render process
+     */
+    public function testRenderExtendDeep(): void
+    {
+        $templateRenderer = new TemplateRenderer(__DIR__ .'/views', ['cachePath' => $this->cachedPath]);
+
+        $this->expectException(TemplateRendererException::class);
+        $this->expectExceptionMessage('Cannot extend `layouts/default`');
+
+        $templateRenderer->render('test_render_extend_error');
+    }
+
 
     public function testRenderFileNotFound(): void
     {

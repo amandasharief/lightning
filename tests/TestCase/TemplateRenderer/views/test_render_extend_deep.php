@@ -1,0 +1,1 @@
+<out><?= $this->render('index') ?></out>

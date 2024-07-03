@@ -138,17 +138,24 @@ class TemplateRenderer implements TemplateRendererInterface
     }
 
     /**
-     * Extend another template. Single inheritance only. This is ignored when using
-     * the render function within 
+     * Extend another template during the call of the render function. If the templates call render
+     * from within a template to another template that extends then it will throw an error.
      *
      * @param string $template
      * @return void
      */
     protected function extend(string $template): void
-    {
-        if($this->obStartLevel && $this->obCurrentLevel === $this->obStartLevel){
-            $this->extends = $template;
-        } 
+    {        
+        /**
+         * Catch when script is trying  render a template inside another template which uses extend
+         * to prevent unpredicable results
+         */
+        if($this->obCurrentLevel !== $this->obStartLevel){
+            throw new TemplateRendererException(sprintf('Cannot extend `%s`',$template));
+        }
+        
+        $this->extends = $template;
+       
     }
 
     /**
@@ -158,9 +165,6 @@ class TemplateRenderer implements TemplateRendererInterface
      */
     public function render(string $template, array $variables = [], array $options = []): string
     {
-        /**
-         * Determine output buffer starting and current positions
-         */
         $this->obCurrentLevel = ob_get_level();
         if ($this->obStartLevel === null) {
             $this->obStartLevel = $this->obCurrentLevel;
@@ -168,15 +172,12 @@ class TemplateRenderer implements TemplateRendererInterface
 
         $content = $this->renderTemplate($template, $variables);
 
-        // Reset first time calling if all complete
         if ($this->obStartLevel === ob_get_level()) {
             $this->obStartLevel = null;
         }
 
-        /**
-         * Only render the extended if it is the main render call
-         */
-        if ($this->extends && $this->obStartLevel === null) {
+
+        if ($this->obStartLevel === null && $this->extends) {
             $content = $this->renderTemplate($this->extends, ['content' => $content] + $variables);
             $this->extends = null;
         }
@@ -191,7 +192,7 @@ class TemplateRenderer implements TemplateRendererInterface
    * @param array $variables
    * @return string
    */
-    private function renderTemplate(string $template, array $variables = []): string
+    protected function renderTemplate(string $template, array $variables = []): string
     {
         $path = strncmp($template, '/', 1) === 0 ? $template : $this->path . '/' . trim($template, '/') . ($this->fileExtension ? '.' . $this->fileExtension : null);
 
