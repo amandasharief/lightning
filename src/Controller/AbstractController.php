@@ -13,8 +13,7 @@ namespace Lightning\Controller;
 
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Lightning\TemplateRenderer\TemplateRenderer;
+use Lightning\TemplateRenderer\TemplateRendererInterface;
 
 /**
  * Abstract Controller
@@ -24,64 +23,15 @@ use Lightning\TemplateRenderer\TemplateRenderer;
  */
 abstract class AbstractController
 {
-    protected TemplateRenderer $templateRenderer;
-    protected ?ServerRequestInterface $request;
-    protected ?ResponseInterface $response;
-
-    protected ?string $layout = null;
-
     /**
-     * Default settings for the renderJson method
+     * Constructor - if you override this make sure still call this
+     * @param TemplateRenderInterface $view This has been called view for easy
      */
-    protected const JSON_FLAGS = 0;
-
-    /**
-     * Constructor
-     */
-    public function __construct(TemplateRenderer $templateRenderer)
+    public function __construct(protected TemplateRendererInterface $view)
     {
-        $this->templateRenderer = $templateRenderer;
-
-        $this->initialize();
-    }
-
-    /**
-     * Hook is called when the Controller object is created
-     */
-    protected function initialize(): void
-    {
-    }
-
-    /**
-     * Before render hook
-     */
-    protected function beforeRender(): ?ResponseInterface
-    {
-        return null;
-    }
-
-    /**
-     * After render hook
-     */
-    protected function afterRender(ResponseInterface $response): ResponseInterface
-    {
-        return $response;
-    }
-
-    /**
-     * Before Redirect hook
-     */
-    protected function beforeRedirect(string $url): ?ResponseInterface
-    {
-        return null;
-    }
-
-    /**
-     * After Redirect hook
-     */
-    protected function afterRedirect(ResponseInterface $response): ResponseInterface
-    {
-        return $response;
+        if ($this instanceof ControllerLifecycleInterface) {
+            $this->initialize();
+        }
     }
 
     /**
@@ -89,85 +39,47 @@ abstract class AbstractController
      *
      * @param string $template e.g. articles/index
      */
-    protected function render(string $template, array $data = [], int $statusCode = 200): ResponseInterface
+    public function render(string $template, array $data = [], int $statusCode = 200): ResponseInterface
     {
-        if ($response = $this->beforeRender()) {
+        if ($this instanceof ControllerLifecycleInterface && $response = $this->beforeRender()) {
             return $response;
         }
 
-        $response = $this->buildResponse(
-            $this->templateRenderer->withLayout($this->layout ?? null)->render($template, $data), 'text/html', $statusCode
+        $response = $this->createResponse()
+            ->withHeader('Content-Type', 'text/html')
+            ->withStatus($statusCode);
+
+        $response->getBody()->write(
+            $this->templateRenderer->render($template, $data)
         );
 
-        return $this->response = $this->afterRender($response);
+        return $this instanceof ControllerLifecycleInterface ? $this->afterRender($response) : $response;
     }
 
     /**
      * Renders a JSON response
      */
-    protected function renderJson($payload, int $statusCode = 200, int $jsonFlags = self::JSON_FLAGS): ResponseInterface
+    public function renderJson($payload, int $statusCode = 200, int $jsonFlags = 0): ResponseInterface
     {
-        if ($response = $this->beforeRender()) {
+        if ($this instanceof ControllerLifecycleInterface && $response = $this->beforeRender()) {
             return $response;
         }
 
-        $response = $this->buildResponse(
-            json_encode($payload, $jsonFlags), 'application/json', $statusCode
+        $response = $this->createResponse()
+            ->withHeader('Content-Type', 'application/json')
+            ->withStatus($statusCode);
+
+        $response->getBody()->write(
+            json_encode($payload, $jsonFlags)
         );
 
-        return $this->response = $this->afterRender($response);
+        return $this instanceof ControllerLifecycleInterface ? $this->afterRender($response) : $response;
     }
 
     /**
      * Sends a file as a Response
      */
-    protected function renderFile(string $path, array $options = []): ResponseInterface
-    {
-        if ($response = $this->beforeRender()) {
-            return $response;
-        }
-
-        $response = $this->buildFileResponse($path, $options['download'] ?? true);
-
-        return $this->response = $this->afterRender($response);
-    }
-
-    /*
-     * Sets the response as a redirect, return this from your Controller action
-     *
-     * @param string $uri e.g /articles or https://app.test/articles
-     */
-    protected function redirect(string $uri, int $status = 302): ResponseInterface
-    {
-        if ($response = $this->beforeRedirect($uri)) {
-            return $response;
-        }
-
-        $response = $this->createResponse()
-            ->withHeader('Location', $uri)
-            ->withStatus($status);
-
-        return $this->response = $this->afterRedirect($response);
-    }
-
-    /**
-     * Builds the response object
-     */
-    private function buildResponse(string $body, string $contentType, int $statusCode = 200): ResponseInterface
-    {
-        $response = $this->createResponse()
-            ->withHeader('Content-Type', $contentType)
-            ->withStatus($statusCode);
-
-        $response->getBody()->write($body);
-
-        return $response;
-    }
-
-    /**
-     * Builds a reponse for a file
-     */
-    private function buildFileResponse(string $path, bool $isDownload): ResponseInterface
+    public function renderFile(string $path, array $options = []): ResponseInterface
     {
         if (strpos($path, '../') !== false) {
             throw new InvalidArgumentException(sprintf('`%s` is a relative path', $path));
@@ -177,78 +89,44 @@ abstract class AbstractController
             throw new InvalidArgumentException(sprintf('`%s` does not exist or is not a file', $path));
         }
 
-        $name = basename($path);
+        if ($this instanceof ControllerLifecycleInterface && $response = $this->beforeRender()) {
+            return $response;
+        }
 
         $response = $this->createResponse()
             ->withStatus(200)
             ->withHeader('Content-Type', mime_content_type($path))
             ->withHeader('Content-Length', (string) filesize($path) ?: 0);
 
-        if ($isDownload) {
-            $response = $response->withHeader('Content-Disposition', sprintf('attachment; filename="%s"', $name));
+        if ($options['download'] ?? true) {
+            $response = $response->withHeader('Content-Disposition', sprintf('attachment; filename="%s"', $options['name'] ?? basename($path)));
         }
 
         $response->getBody()->write(file_get_contents($path));
 
-        return $response;
+        return $this instanceof ControllerLifecycleInterface ? $this->afterRender($response) : $response;
     }
 
-    /**
-     * Sets the Request object
+    /*
+     * Sets the response as a redirect, return this from your Controller action
+     *
+     * @param string $uri e.g /articles or https://app.test/articles
      */
-    public function setRequest(ServerRequestInterface $request): static
+    public function redirect(string $uri, int $status = 302): ResponseInterface
     {
-        $this->request = $request;
+        if ($this instanceof ControllerLifecycleInterface && $response = $this->beforeRedirect($uri)) {
+            return $response;
+        }
 
-        return $this;
-    }
+        $response = $this->createResponse()
+            ->withHeader('Location', $uri)
+            ->withStatus($status);
 
-    /**
-     * Gets the Request object
-     */
-    public function getRequest(): ?ServerRequestInterface
-    {
-        return $this->request;
+        return  $this instanceof ControllerLifecycleInterface ? $this->afterRedirect($response) : $response;
     }
 
     /**
      * Factory method
      */
     abstract public function createResponse(): ResponseInterface;
-
-    /**
-     * Get the Template Renderer
-     */
-    public function getTemplateRenderer(): TemplateRenderer
-    {
-        return $this->templateRenderer;
-    }
-
-    /**
-     * Set the Template Renderer
-     */
-    public function setTemplateRenderer(TemplateRenderer $templateRenderer): static
-    {
-        $this->templateRenderer = $templateRenderer;
-
-        return $this;
-    }
-
-    /**
-     * Get the Response object if generated
-     */
-    public function getResponse(): ?ResponseInterface
-    {
-        return $this->response;
-    }
-
-    /**
-     * Set the Response object to be returned
-     */
-    public function setResponse(?ResponseInterface $response): static
-    {
-        $this->response = $response;
-
-        return $this;
-    }
 }
