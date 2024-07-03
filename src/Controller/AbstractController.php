@@ -50,7 +50,7 @@ abstract class AbstractController
             ->withStatus($statusCode);
 
         $response->getBody()->write(
-            $this->templateRenderer->render($template, $data)
+            $this->view->render($template, $data)
         );
 
         return $this instanceof ControllerLifecycleInterface ? $this->afterRender($response) : $response;

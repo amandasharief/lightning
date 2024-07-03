@@ -2,11 +2,12 @@
 
 namespace Lightning\Test\TestCase\Controller\TestApp;
 
+use Lightning\Controller\AbstractController;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
-use Lightning\Controller\AbstractController as BaseController;
 
-class ArticlesController extends BaseController
+
+class ArticlesController extends AbstractController
 {
     public function index(): ResponseInterface
     {

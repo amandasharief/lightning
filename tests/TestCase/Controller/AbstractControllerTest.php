@@ -9,7 +9,9 @@ use PHPUnit\Framework\TestCase;
 
 use Psr\Http\Message\ResponseInterface;
 use Lightning\Controller\AbstractController;
+use Lightning\Controller\ControllerLifecycleInterface;
 use Lightning\TemplateRenderer\TemplateRenderer;
+use Lightning\TemplateRenderer\TemplateRendererInterface;
 use Lightning\Test\TestCase\Controller\TestApp\ArticlesController;
 
 class ApiController extends AbstractController
@@ -43,33 +45,33 @@ class ApiController extends AbstractController
         return new Response();
     }
 
-    protected function initialize(): void
+    public function initialize(): void
     {
         $this->wasCalled('initialize');
     }
 
-    protected function beforeRender(): ?ResponseInterface
+    public function beforeRender(): ?ResponseInterface
     {
         $this->wasCalled('beforeRender');
 
         return null;
     }
 
-    protected function afterRender(ResponseInterface $response): ResponseInterface
+    public function afterRender(ResponseInterface $response): ResponseInterface
     {
         $this->wasCalled('afterRender');
 
         return $response;
     }
 
-    protected function beforeRedirect(string $url): ?ResponseInterface
+    public function beforeRedirect(string $url): ?ResponseInterface
     {
         $this->wasCalled('beforeRedirect');
 
         return null;
     }
 
-    protected function afterRedirect(ResponseInterface $response): ResponseInterface
+    public function afterRedirect(ResponseInterface $response): ResponseInterface
     {
         $this->wasCalled('afterRedirect');
 
@@ -87,44 +89,17 @@ class ApiController extends AbstractController
     }
 }
 
+class ApiWithLifeCycleController extends ApiController implements ControllerLifecycleInterface
+{
+
+}
+
 final class AbstractControllerTest extends TestCase
 {
-    public function testSetRequest(): void
-    {
-        $controller = $this->createController();
-        $this->assertInstanceOf(
-            ArticlesController::class,
-            $controller->setRequest(new ServerRequest('GET', '/'))
-        );
-    }
-
-    public function testGetRequest(): void
-    {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-        $controller->setRequest($request);
-        $this->assertEquals($request, $controller->getRequest());
-    }
-
-    public function testGetTemplateRenderer(): void
-    {
-        $controller = $this->createController();
-
-        $this->assertInstanceOf(TemplateRenderer::class, $this->createController()->getTemplateRenderer());
-    }
-
-    public function testSetTemplateRenderer(): void
-    {
-        $controller = $this->createController();
-        $templateRender = $this->createController()->getTemplateRenderer()->withLayout('layouts/foo');
-
-        $this->assertEquals($templateRender, $controller->setTemplateRenderer($templateRender)->getTemplateRenderer());
-    }
-
     public function testRender(): void
     {
         $request = new ServerRequest('GET', '/articles/index');
-        $controller = $this->createController()->setRequest($request);
+        $controller = $this->createController();
 
         $response = $controller->index();
 
@@ -136,7 +111,7 @@ final class AbstractControllerTest extends TestCase
     public function testRenderJson(): void
     {
         $request = new ServerRequest('GET', '/articles/index');
-        $controller = $this->createController()->setRequest($request);
+        $controller = $this->createController();
 
         $response = $controller->status(['ok']);
 
@@ -148,7 +123,7 @@ final class AbstractControllerTest extends TestCase
     public function testRedirect(): void
     {
         $request = new ServerRequest('GET', '/articles/index');
-        $controller = $this->createController()->setRequest($request);
+        $controller = $this->createController();
 
         $response = $controller->old('/articles/new');
         $this->assertEquals(302, $response->getStatusCode());
@@ -158,7 +133,7 @@ final class AbstractControllerTest extends TestCase
     public function testRenderFile(): void
     {
         $request = new ServerRequest('GET', '/articles/index');
-        $controller = $this->createController()->setRequest($request);
+        $controller = $this->createController();
 
         $path = __DIR__ . '/TestApp/downloads/sample.xml';
         $response = $controller->download($path);
@@ -176,7 +151,7 @@ final class AbstractControllerTest extends TestCase
     public function testSendFileWithRelativePath(): void
     {
         $request = new ServerRequest('GET', '/articles/index');
-        $controller = $this->createController()->setRequest($request);
+        $controller = $this->createController();
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('`/var/www/../file` is a relative path');
@@ -187,7 +162,7 @@ final class AbstractControllerTest extends TestCase
     public function testSendFileDoesNotExist(): void
     {
         $request = new ServerRequest('GET', '/articles/index');
-        $controller = $this->createController()->setRequest($request);
+        $controller = $this->createController();
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('`/somewhere/somefile` does not exist or is not a file');
@@ -198,7 +173,7 @@ final class AbstractControllerTest extends TestCase
     public function testSendFileNoDownload(): void
     {
         $request = new ServerRequest('GET', '/articles/index');
-        $controller = $this->createController()->setRequest($request);
+        $controller = $this->createController();
 
         $path = __DIR__ . '/TestApp/downloads/sample.xml';
         $response = $controller->download($path, ['download' => false]);
@@ -216,7 +191,7 @@ final class AbstractControllerTest extends TestCase
 
     public function testRenderHooks(): void
     {
-        $controller = new ApiController(new TemplateRenderer(__DIR__ .'/TestApp/templates'));
+        $controller = new ApiWithLifeCycleController(new TemplateRenderer(__DIR__ .'/TestApp/templates'));
 
         $controller->index();
 
@@ -227,7 +202,7 @@ final class AbstractControllerTest extends TestCase
 
     public function testRenderHooksJson(): void
     {
-        $controller = new ApiController(new TemplateRenderer(__DIR__ .'/TestApp/templates'));
+        $controller = new ApiWithLifeCycleController(new TemplateRenderer(__DIR__ .'/TestApp/templates'));
 
         $controller->indexJson();
 
@@ -238,7 +213,7 @@ final class AbstractControllerTest extends TestCase
 
     public function testRenderHooksFile(): void
     {
-        $controller = new ApiController(new TemplateRenderer(__DIR__ .'/TestApp/templates'));
+        $controller = new ApiWithLifeCycleController(new TemplateRenderer(__DIR__ .'/TestApp/templates'));
 
         $controller->download();
 
@@ -249,7 +224,7 @@ final class AbstractControllerTest extends TestCase
 
     public function testRedirectHooks(): void
     {
-        $controller = new ApiController(new TemplateRenderer(__DIR__ .'/TestApp/templates'));
+        $controller = new ApiWithLifeCycleController(new TemplateRenderer(__DIR__ .'/TestApp/templates'));
 
         $controller->old();
 
@@ -261,7 +236,6 @@ final class AbstractControllerTest extends TestCase
     private function createController(): ArticlesController
     {
         $path = __DIR__ .'/TestApp/templates';
-
-        return new ArticlesController(new TemplateRenderer($path, 'php', sys_get_temp_dir()));
+        return new ArticlesController(new TemplateRenderer($path,['cachePath'=>sys_get_temp_dir() .'/tr_tests']));
     }
 }
