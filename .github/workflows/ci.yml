@@ -68,7 +68,7 @@ jobs:
               export DB_USERNAME=root;
               export DB_PASSWORD=root;
 
-              sudo mysql -uroot -proot -h 127.0.0.1 lightning < tests/schema/schema.sql
+              sudo mysql -uroot -proot -h 127.0.0.1 lightning < tests/schema/mysql.sql
 
             fi;
 

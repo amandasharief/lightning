@@ -49,7 +49,7 @@ COPY . /var/lightning
 RUN chmod -R 0775 /var/lightning
 WORKDIR /var/lightning
 
-Setup Composer
+# Setup Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 RUN composer install --no-interaction
 
