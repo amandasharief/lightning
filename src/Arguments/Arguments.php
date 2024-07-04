@@ -45,7 +45,7 @@ class Arguments
      */
     public function get(string $name): mixed
     {
-        if (! isset($this->data[$name])) {
+        if (! array_key_exists($name,$this->data)) {
             throw new UnkownArgumentException(sprintf('Unkown argument `%s`', $name));
         }
 
