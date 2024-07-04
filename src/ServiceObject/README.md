@@ -17,21 +17,26 @@ class RegisterUserService extends AbstractServiceObject
     {
     }
 
+    // hook will be called before execute here you can setup stuff
+    protected function initialize() : void 
+    {
+    }
+
     protected function execute(Arguments $args) : Result
     {
         if($args->get('registered') === true){
             return new Result(false, ['message' =>'User already registered']);
         }
         // do some stuff
-        return new Result(true, ['user' => $user]);
+        return new Result(true);
     }
 }
 ```
 
-To run the `ServiceObject` you can pass an array of parameters that will be passed as a [Arguments](params.md) object during execution, this is to ensure that state is not set during the constructor for DI purposes.
+When you run the `ServiceObject` you pass an arguments array which be converted to an [Arguments](../Arguments/README.md) object and passed to the `execute` method.
 
 ```php
-$result = (new RegisterUserService ($model, $logger))
+$result = (new RegisterUserService($model, $logger))
     ->dispatch(['name' => 'fred', 'email' => 'fred@example.com']);
 ```
 
