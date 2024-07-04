@@ -2,7 +2,7 @@
 
 namespace Lightning\Test\ServiceObject;
 
-use Lightning\Params\Params;
+use Lightning\Arguments\Arguments;
 use PHPUnit\Framework\TestCase;
 use Lightning\ServiceObject\Result;
 use Lightning\ServiceObject\AbstractServiceObject;
@@ -16,7 +16,7 @@ class ServiceObject extends AbstractServiceObject
         parent::initialize();
         $this->initialized = true;
     }
-    public function execute(Params $params): Result
+    public function execute(Arguments $params): Result
     {
         return new Result(true, [
             'params' => $params,

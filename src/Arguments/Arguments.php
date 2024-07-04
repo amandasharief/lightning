@@ -9,11 +9,11 @@
  * @license     https://opensource.org/licenses/LGPL-3.0 LGPL-3.0
  */
 
-namespace Lightning\Params;
+namespace Lightning\Arguments;
 
-use Lightning\Params\Exception\UnknownParameterException;
+use Lightning\Arguments\Exception\UnkownArgumentException;
 
-class Params
+class Arguments
 {
     /**
      * Container data
@@ -29,7 +29,7 @@ class Params
     }
 
     /**
-     * Set a value of a param
+     * Set a value of an argument
      */
     public function set(string $name, mixed $value): static
     {
@@ -41,12 +41,12 @@ class Params
     /**
      * Gets a param
      *
-     * @throws \Lightning\ServiceObject\Exception\UnknownParameterException
+     * @throws \Lightning\Arguments\Exception\UnknownArgumentException
      */
     public function get(string $name): mixed
     {
         if (! isset($this->data[$name])) {
-            throw new UnknownParameterException(sprintf('Unkown parameter `%s`', $name));
+            throw new UnkownArgumentException(sprintf('Unkown argument `%s`', $name));
         }
 
         return $this->data[$name];

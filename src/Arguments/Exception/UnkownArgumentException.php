@@ -9,10 +9,10 @@
  * @license     https://opensource.org/licenses/LGPL-3.0 LGPL-3.0
  */
 
-namespace Lightning\Params\Exception;
+namespace Lightning\Arguments\Exception;
 
 use RuntimeException;
 
-class UnknownParameterException extends RuntimeException
+class UnkownArgumentException extends RuntimeException
 {
 }

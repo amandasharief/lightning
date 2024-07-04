@@ -22,7 +22,7 @@ services:
   pgsql:
     image: postgres:12.5
     volumes:
-      - pgsql:/var/lib/postgresql/data
+      - pgsql-data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root

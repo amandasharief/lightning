@@ -11,7 +11,7 @@
 
 namespace Lightning\Worker;
 
-use Lightning\Params\Params;
+use Lightning\Arguments\Arguments;
 
 abstract class AbstractJob implements RunnableInterface, RetryableInterface
 {
@@ -20,7 +20,7 @@ abstract class AbstractJob implements RunnableInterface, RetryableInterface
     protected int $maxRetries = 3;
     protected int $delay = 15;
 
-    private ?Params $params;
+    private ?Arguments $params;
 
     /**
      * Hook called when this message is processed
@@ -43,12 +43,12 @@ abstract class AbstractJob implements RunnableInterface, RetryableInterface
     public function withParameters(array $parameters): static
     {
         $service = clone $this;
-        $service->params = new Params($parameters);
+        $service->params = new Arguments($parameters);
 
         return $service;
     }
 
-    abstract protected function execute(Params $params): void;
+    abstract protected function execute(Arguments $params): void;
 
     /**
      * Runs the JOB
@@ -56,7 +56,7 @@ abstract class AbstractJob implements RunnableInterface, RetryableInterface
     public function run(): void
     {
         $this->initialize();
-        $this->execute($this->params ?? new Params());
+        $this->execute($this->params ?? new Arguments());
     }
 
     /**

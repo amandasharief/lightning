@@ -2,7 +2,7 @@
 
 namespace Lightning\Test\Worker;
 
-use Lightning\Params\Params;
+use Lightning\Arguments\Arguments;
 use PHPUnit\Framework\TestCase;
 use Lightning\Worker\AbstractJob;
 
@@ -19,7 +19,7 @@ class SendEmailNotification extends AbstractJob
     {
     }
 
-    protected function execute(Params $params): void
+    protected function execute(Arguments $params): void
     {
         if ($params->has('testCase')) {
             $testCase = $params->get('testCase');
