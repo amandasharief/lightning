@@ -60,7 +60,7 @@ jobs:
               export DB_USERNAME=root;
               export DB_PASSWORD=root;
         
-              cat database/schema/sqlite.sql | sqlite3 ${PWD}/test.sqlite
+              cat tests/schema/sqlite.sql | sqlite3 ${PWD}/test.sqlite
             fi;
             
             if [[ ${{ matrix.database }} == 'mysql' ]]; then
@@ -68,7 +68,7 @@ jobs:
               export DB_USERNAME=root;
               export DB_PASSWORD=root;
 
-              sudo mysql -uroot -proot -h 127.0.0.1 lightning < database/schema/schema.sql
+              sudo mysql -uroot -proot -h 127.0.0.1 lightning < tests/schema/schema.sql
 
             fi;
 
@@ -78,7 +78,7 @@ jobs:
               export DB_USERNAME=postgres;
               export DB_PASSWORD=root
 
-              sudo PGPASSWORD=root psql -h 127.0.0.1 -U postgres -d lightning -f database/schema/postgres.sql
+              sudo PGPASSWORD=root psql -h 127.0.0.1 -U postgres -d lightning -f tests/schema/postgres.sql
             fi;
 
             php vendor/bin/phpunit --coverage-clover build/logs/clover.xml

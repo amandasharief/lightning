@@ -1,9 +1,6 @@
+# Copyright 2021 - 2024 Amanda Sharief
 FROM ubuntu:22.04
-LABEL maintainer="Amanda Sharief"
-LABEL version="3.0.0"
 
-ENV APACHE_RUN_USER www-data
-ENV APACHE_RUN_GROUP www-data
 ENV DATE_TIMEZONE UTC
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -15,8 +12,6 @@ RUN apt-get update && apt-get install -y \
     unzip \
     wget \
     zip \
-    apache2 \
-    libapache2-mod-php \
     php \
     php-apcu \
     php-cli \
@@ -46,19 +41,15 @@ RUN apt-get update && apt-get install -y \
     locales \
  && rm -rf /var/lib/apt/lists/*
 
-# Setup project folder
-COPY . /var/www
-RUN chown -R www-data:www-data /var/www
-RUN chmod -R 0775 /var/www
-
-# Configure apache
-RUN a2enmod rewrite ssl
-ADD docker/apache.conf /etc/apache2/sites-enabled/000-default.conf
-
 # Configure PHP
 RUN echo 'apc.enable_cli=1' >>  /etc/php/8.1/cli/php.ini
 
-WORKDIR /var/www
+# Setup project folder
+COPY . /var/lightning
+RUN chmod -R 0775 /var/lightning
+WORKDIR /var/lightning
+
+Setup Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 RUN composer install --no-interaction
 
@@ -66,4 +57,4 @@ RUN composer install --no-interaction
 RUN locale-gen es_ES.UTF-8
 RUN locale-gen nl_NL.UTF-8
 
-CMD ["/usr/sbin/apache2ctl", "-DFOREGROUND"]
+ENTRYPOINT ["/bin/bash"]

@@ -1,11 +1,10 @@
-version: "3"
+# Copyright 2021 - 2024 Amanda Sharief
 services:
   app:
     build: .
-    ports:
-      - "8080:80"
     volumes:
-      - .:/var/www
+      - .:/var/dev
+    tty: true
     depends_on:
       - mysql
       - pgsql
@@ -13,7 +12,7 @@ services:
       - mysql
       - pgsql
   mysql:
-    image: jamielsharief/mysql
+    image: mysql:8.0
     volumes:
       - mysql-data:/var/lib/mysql
     environment:
