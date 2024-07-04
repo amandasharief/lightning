@@ -13,20 +13,6 @@ final class ResultTest extends TestCase
         $this->assertFalse((new Result(false, []))->isSuccess());
     }
 
-    // public function testIsError(): void
-    // {
-    //     $this->assertTrue((new Result(false, []))->isError());
-    //     $this->assertFalse((new Result(true, []))->isError());
-    // }
-
-    public function testWithSuccess(): void
-    {
-        $result = new Result(false, []);
-
-        $this->assertFalse($result->isSuccess());
-        $this->assertTrue($result->withSuccess(true)->isSuccess());
-    }
-
     public function testHasData(): void
     {
         $this->assertTrue((new Result(true, ['foo' => 'bar']))->hasData());
@@ -46,14 +32,6 @@ final class ResultTest extends TestCase
         $result = new Result(true, ['foo' => 'bar']);
         $this->assertEquals('bar', $result->get('foo'));
         $this->assertNull($result->get('bar'));
-    }
-
-    public function testWithData(): void
-    {
-        $result = new Result(true, ['key' => 'value']);
-
-        $this->assertEquals(['key' => 'value'], $result->getData());
-        $this->assertEquals(['foo' => 'bar'], $result->withData(['foo' => 'bar'])->getData());
     }
 
     public function testToString(): void

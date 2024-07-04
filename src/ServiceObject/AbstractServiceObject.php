@@ -17,22 +17,11 @@ use Lightning\Arguments\Arguments;
  * Service Object
  *
  * Command Pattern: "an object is used to encapsulate all information needed to perform an action or trigger an event"
- *
- * IDEA: for type hinting, create an extra method
- *
- * public function with(string $name, string $url): static
- * {
- *     $params = new Params(['name' => $name,'url' => $url]);
- *
- *     return $this->withParams($params);
- *  }
  */
-abstract class AbstractServiceObject implements ServiceObjectInterface
+abstract class AbstractServiceObject
 {
-    private ?Arguments $params;
-
     /**
-     * A hook that is called before execute when the Service Object is run.
+     * A hook that is called before the execute method
      */
     protected function initialize(): void
     {
@@ -41,42 +30,15 @@ abstract class AbstractServiceObject implements ServiceObjectInterface
     /**
      * The Service Object logic that will be executed when it is run
      */
-    abstract protected function execute(Arguments $params): Result;
-
-    /**
-     * Gets the params that will be passed when run
-     */
-    public function getParameters(): array
-    {
-        return isset($this->params) ? $this->params->toArray() : [];
-    }
-
-    /**
-     * Returns a new instance with the parameters set
-     */
-    public function withParameters(array $parameters): static
-    {
-        $service = clone $this;
-        $service->params = new Arguments($parameters);
-
-        return $service;
-    }
+    abstract protected function execute(Arguments $args): Result;
 
     /**
      * Runs the Service Object
      */
-    public function run(): Result
+    public function dispatch(array $arguments): Result
     {
         $this->initialize();
 
-        return $this->execute($this->params ?? new Arguments());
-    }
-
-    /**
-     * Make this a callable
-     */
-    public function __invoke(): Result
-    {
-        return $this->run();
+        return $this->execute(new Arguments($arguments));
     }
 }

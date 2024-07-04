@@ -15,14 +15,14 @@ use Stringable;
 use JsonSerializable;
 
 /**
- * Result [immutable]
+ * Result Object [imutable]
  */
 class Result implements JsonSerializable, Stringable
 {
     /**
      * Constructor
      */
-    public function __construct(private bool $success = true, private array $data = [])
+    public function __construct(private bool $success, private array $data = [])
     {
     }
 
@@ -64,28 +64,6 @@ class Result implements JsonSerializable, Stringable
     public function has(string $name): bool
     {
         return isset($this->data[$name]);
-    }
-
-    /**
-     * Returns a new instance with this data
-     */
-    public function withData(array $data): static
-    {
-        $cloned = clone $this;
-        $cloned->data = $data;
-
-        return $cloned;
-    }
-
-    /**
-     * Returns a new instance with success changed
-     */
-    public function withSuccess(bool $success): static
-    {
-        $cloned = clone $this;
-        $cloned->success = $success;
-
-        return $cloned;
     }
 
     /**

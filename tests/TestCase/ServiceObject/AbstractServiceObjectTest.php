@@ -16,10 +16,10 @@ class ServiceObject extends AbstractServiceObject
         parent::initialize();
         $this->initialized = true;
     }
-    public function execute(Arguments $params): Result
+    public function execute(Arguments $args): Result
     {
         return new Result(true, [
-            'params' => $params,
+            'args' => $args,
             'initialized' => $this->initialized
         ]);
     }
@@ -29,45 +29,10 @@ final class AbstractServiceObjectTest extends TestCase
 {
     public function testDispatch()
     {
-        $service = new ServiceObject();
+        $result = (new ServiceObject())->dispatch(['foo'=>'bar']);
 
-        $result = $service->run();
         $this->assertInstanceOf(Result::class, $result);
         $this->assertTrue($result->get('initialized'));
-    }
-
-    public function testDispatchWithParameters()
-    {
-        $service = new ServiceObject();
-
-        $this->assertEquals('bar', $service->withParameters(['foo' => 'bar'])
-            ->run()
-            ->get('params')
-            ->get('foo'));
-    }
-
-    public function testGetParameters(): void
-    {
-        $service = new ServiceObject();
-        $this->assertEquals([], $service->getParameters());
-        $this->assertEquals(['foo' => 'bar'], $service->withParameters(['foo' => 'bar'])->getParameters());
-    }
-
-    public function testDispatchWithParametersArray()
-    {
-        $service = new ServiceObject();
-
-        $this->assertEquals('bar', $service->withParameters(['foo' => 'bar'])
-            ->run()
-            ->get('params')
-            ->get('foo'));
-    }
-
-    public function testIsInvokable(): void
-    {
-        $service = (new ServiceObject())->withParameters(['foo' => 'bar']);
-
-        $this->assertIsCallable($service);
-        $this->assertInstanceOf(Result::class, $service());
+        $this->assertInstanceOf(Arguments::class,$result->get('args'));
     }
 }

@@ -13,29 +13,26 @@ Create a class with depdencies in the `__construct` method and place the busines
 ```php
 class RegisterUserService extends AbstractServiceObject
 {
-    public function __construct(private Model $user, private LoggerInterface $logger) 
+    public function __construct(private UserModel $user, private LoggerInterface $logger) 
     {
     }
 
-    protected function execute(Params $params) : Result
+    protected function execute(Arguments $args) : Result
     {
-        $user = $params->get('user');
-
-        if(!$user){
-            return new Result(false, ['message' =>'User not found']);
+        if($args->get('registered') === true){
+            return new Result(false, ['message' =>'User already registered']);
         }
         // do some stuff
-        return new Result(true, ['user'=>$user]);
+        return new Result(true, ['user' => $user]);
     }
 }
 ```
 
-To run the `ServiceObject` you can pass an array of parameters that will be passed as a [Params](params.md) object during execution, this is to ensure that state is not set during the constructor for DI purposes.
+To run the `ServiceObject` you can pass an array of parameters that will be passed as a [Arguments](params.md) object during execution, this is to ensure that state is not set during the constructor for DI purposes.
 
 ```php
 $result = (new RegisterUserService ($model, $logger))
-    ->withParameters(['name' => 'fred', 'email' => 'fred@example.com'])
-    ->run();
+    ->dispatch(['name' => 'fred', 'email' => 'fred@example.com']);
 ```
 
 ## Result Object
@@ -46,13 +43,10 @@ Some of the methods available on `Result` object:
 ```php
 // check status
 $result->isSuccess();
-$result->isError();
 
 // work with data
 $result->hasData();
 $result->getData();
 $result->get('message');
 $string = (string) $result;
-$result = $result->withSuccess(false); // 
-$result = $result->withData(['key' => 'value']);
 ```
