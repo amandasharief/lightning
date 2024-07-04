@@ -49,7 +49,6 @@ final class IntegrationTestTraitTest extends TestCase
 
         $container->register(ArticlesController::class, new ArticlesController(new Response()));
 
-        die('xx');
         // Setup Routes
         $router = (new Router($container));
 
