@@ -40,13 +40,16 @@ final class IntegrationTestTraitTest extends TestCase
     public function setUp(): void
     {
         // Create DI Container
-        $definitions = include dirname(__DIR__, 3) . '/config/services.php';
-        $container = new Container($definitions);
+
+        $container = new Container();
 
         $container
             ->enableAutowiring()
             ->enableAutoConfigure();
 
+        $container->register(ArticlesController::class, new ArticlesController(new Response()));
+
+        die('xx');
         // Setup Routes
         $router = (new Router($container));
 

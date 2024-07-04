@@ -3,7 +3,7 @@ services:
   app:
     build: .
     volumes:
-      - .:/var/dev
+      - .:/var/lightning
     tty: true
     depends_on:
       - mysql

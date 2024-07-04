@@ -38,13 +38,15 @@ Or you can access from inside the container using the password `root`
 $ mysql -h mysql -u root -p
 ```
 
+Create the `lightning` database and import `tests/schema/mysql.sql`
+
 ```sql
 mysql> CREATE DATABASE lightning;
 mysql> USE lightning;
-mysql> SOURCE /var/www/database/schema/schema.sql
+mysql> SOURCE /var/lightning/tests/schema/mysql.sql
 ```
 
-Create the `lightning` database and import `tests/schema/schema.sql`
+
 
 Then you can run tests from within docker
 
