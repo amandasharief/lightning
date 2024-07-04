@@ -34,9 +34,7 @@ class HelloWorldCommand extends Command
 
     protected function execute(Arguments $args): int
     {
-        $console = $this->getConsole();
-
-        $console->out('Hello %s!', $args->getArgument('name'));
+        $this->console->out('Hello %s!', $args->getArgument('name'));
 
         return self::SUCCESS;
     }
@@ -102,16 +100,15 @@ To create a Console Application
 ```bash
 #!/usr/bin/env php
 <?php
+
 use Lightning\Console\Console;
 use function Lightning\Dotenv\env;
 use Lightning\Migration\Migration;
 use Lightning\Console\ConsoleApplication;
-use Lightning\Console\ConsoleArgumentParser;
 use Lightning\Migration\Command\MigrateUpCommand;
 use Lightning\Migration\Command\MigrateDownCommand;
 
 include dirname(__DIR__) . '/config/bootstrap_cli.php';
-
 
 $pdo = new PDO(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 $migration = new Migration($pdo, dirname(__DIR__) . '/database/migrations');
