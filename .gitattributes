@@ -11,6 +11,7 @@ CHANGELOG.md export-ignore
 README.md export-ignore
 tests export-ignore
 # For now
+app export ignore
 config export-ignore
 database export-ignore
 docker export-ignore

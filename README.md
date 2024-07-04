@@ -44,7 +44,6 @@ mysql> USE lightning;
 mysql> SOURCE /var/www/database/schema/schema.sql
 ```
 
-
 Create the `lightning` database and import `tests/schema/schema.sql`
 
 Then you can run tests from within docker
