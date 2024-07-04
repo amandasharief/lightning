@@ -1,6 +1,5 @@
 # Console
 
-
 > Checkout [Command Line Interface Guidelines](https://clig.dev/#arguments-and-flags) for information on naming and best practices.
 
 The console component is to make console utilities and applications, there is no plan for a command runner.

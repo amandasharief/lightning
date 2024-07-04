@@ -46,8 +46,6 @@ mysql> USE lightning;
 mysql> SOURCE /var/lightning/tests/schema/mysql.sql
 ```
 
-
-
 Then you can run tests from within docker
 
 ```php

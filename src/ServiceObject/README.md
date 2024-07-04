@@ -4,7 +4,7 @@ Service objects help keep your models and controllers skinny, whilst keeping you
 
 `Service Objects` must have all dependencies added to the `__constructor` method.
 
-The `Service Object` is based upon the command pattern and follows the [single responsibility principle](https://en.wikipedia.org/wiki/Single-responsibility_principle), with the protected method `execute` where the application business logic goes and it must always return a `ResultInterface` object, standardizing the result is also an important part of this design.
+The `Service Object` is based upon the command pattern and follows the [single responsibility principle](https://en.wikipedia.org/wiki/Single-responsibility_principle), with the protected method `execute` where the application business logic goes and it must always return a `Result` object, standardizing the result is also an important part of this design.
 
 ## Usage
 

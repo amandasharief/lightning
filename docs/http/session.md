@@ -1,3 +1,0 @@
-# Session
-
-PSR friendly session.

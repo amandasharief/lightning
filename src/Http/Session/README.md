@@ -1,4 +1,8 @@
-# Flash
+# Session
+
+PSR friendly session.
+
+## Flash Component
 
 The Flash component makes it easy to send messages between requests.
 

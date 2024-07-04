@@ -2,7 +2,6 @@
 
 A set of ready made reusuable Exceptions for HTTP applications
 
-
 Create any HTTP exception
 
 ```php

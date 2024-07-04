@@ -22,7 +22,7 @@ services:
   pgsql:
     image: postgres:12.5
     volumes:
-      - pg-data:/var/lib/postgresql/data
+      - pgsql:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
@@ -34,4 +34,4 @@ services:
       - "6379:6379"
 volumes:
   mysql-data:
-  pg-data:
+  pgsql-data:
