@@ -6,12 +6,12 @@ use Lightning\Console\ANSI;
 use Lightning\Console\Console;
 use PHPUnit\Framework\TestCase;
 use Lightning\Console\Arguments;
-use Lightning\Console\AbstractCommand;
 use Lightning\Console\ConsoleApplication;
 use Lightning\Console\TestSuite\InputStreamStub;
+use Lightning\Console\AbstractCommand as Command    ;
 use Lightning\Console\TestSuite\OutputStreamStub;
 
-class FooCommand extends AbstractCommand
+class FooCommand extends Command
 {
     protected string $name = 'foo';
     protected string $description = 'foo command';
@@ -21,22 +21,26 @@ class FooCommand extends AbstractCommand
             'description' => 'name to use'
         ]);
     }
-    protected function execute(Arguments $args)
+    protected function execute(Arguments $args): int
     {
         $console = $this->getConsole();
 
         $console->out('foo:' .  $args->getArgument('name', 'none'));
+
+        return Command::SUCCESS;
     }
 }
 
-class BarCommand extends AbstractCommand
+class BarCommand extends Command
 {
     protected string $name = 'bar';
     protected string $description = 'bar command';
-    protected function execute(Arguments $args)
+    protected function execute(Arguments $args): int
     {
         $console = $this->getConsole();
         $console->out('bar');
+
+        return COMMAND::SUCCESS;
     }
 }
 

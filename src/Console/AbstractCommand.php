@@ -104,8 +104,7 @@ abstract class AbstractCommand implements CommandInterface
      */
     public function getHelp(): string
     {
-
-        $help = new ConsoleHelpFormatter($this->console->stdout->isatty() && !getenv('NO_COLOR'));
+        $help = new ConsoleHelpFormatter($this->console->stdout->isatty() && ! getenv('NO_COLOR'));
         if (! empty($this->description)) {
             $help->setDescription($this->description);
         }
@@ -139,9 +138,9 @@ abstract class AbstractCommand implements CommandInterface
 
     /**
      * Place your command logic here
-     * @return int|null
+     * @return int success (0) or error(1)
      */
-    abstract protected function execute(Arguments $args);
+    abstract protected function execute(Arguments $args): int;
 
     /**
      * Exits the command without an error

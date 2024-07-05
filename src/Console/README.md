@@ -35,7 +35,7 @@ class HelloWorldCommand extends Command
     {
         $this->console->out('Hello %s!', $args->getArgument('name'));
 
-        return self::SUCCESS;
+        return COMMAND::SUCCESS;
     }
 }
 ```

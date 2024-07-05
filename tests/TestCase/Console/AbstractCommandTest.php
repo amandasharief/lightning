@@ -6,13 +6,13 @@ use Lightning\Console\ANSI;
 use Lightning\Console\Console;
 use PHPUnit\Framework\TestCase;
 use Lightning\Console\Arguments;
-use Lightning\Console\AbstractCommand;
+use Lightning\Console\AbstractCommand as Command;
 use Lightning\Console\ConsoleArgumentParser;
 use Lightning\Console\Exception\StopException;
 use Lightning\Console\TestSuite\InputStreamStub;
 use Lightning\Console\TestSuite\OutputStreamStub;
 
-class NameCommand extends AbstractCommand
+class NameCommand extends Command
 {
     protected string $name = 'name';
 
@@ -21,11 +21,11 @@ class NameCommand extends AbstractCommand
         $console = $this->getConsole();
         $console->out(sprintf('Hello %s', $console->in('you')));
 
-        return static::SUCCESS;
+        return Command::SUCCESS;
     }
 }
 
-class HelloCommand extends AbstractCommand
+class HelloCommand extends Command
 {
     protected string $name = 'hello';
     protected string $description = 'hello world';
@@ -44,7 +44,7 @@ class HelloCommand extends AbstractCommand
         return $this->parser;
     }
 
-    protected function execute(Arguments $args)
+    protected function execute(Arguments $args) : int
     {
         $console = $this->getConsole();
 
@@ -59,6 +59,7 @@ class HelloCommand extends AbstractCommand
         }
 
         $console->out(sprintf('Hello %s', $args->getArgument('name')));
+        return Command::SUCCESS;
     }
 }
 
@@ -117,7 +118,7 @@ final class AbstractCommandTest extends TestCase
 
         $this->expectException(StopException::class);
         $this->expectExceptionMessage('Command exited');
-        $this->expectExceptionCode(AbstractCommand::SUCCESS);
+        $this->expectExceptionCode(Command::SUCCESS);
 
         $command->exit();
     }
@@ -128,7 +129,7 @@ final class AbstractCommandTest extends TestCase
 
         $this->expectException(StopException::class);
         $this->expectExceptionMessage('Command aborted');
-        $this->expectExceptionCode(AbstractCommand::ERROR);
+        $this->expectExceptionCode(Command::ERROR);
 
         $command->abort();
     }
@@ -137,14 +138,14 @@ final class AbstractCommandTest extends TestCase
     {
         $command = new HelloCommand($this->console);
 
-        $this->assertEquals(AbstractCommand::SUCCESS, $command->run(['bin/console'], $this->console));
+        $this->assertEquals(Command::SUCCESS, $command->run(['bin/console'], $this->console));
         $this->assertStringContainsString('Hello world', $this->stdout->getContents());
     }
 
     public function testRunCatchStopException(): void
     {
         $command = new HelloCommand($this->console);
-        $this->assertEquals(AbstractCommand::ERROR, $command->run(['bin/console','--abort'], $this->console));
+        $this->assertEquals(Command::ERROR, $command->run(['bin/console','--abort'], $this->console));
     }
 
     public function testDisplayHelp(): void
