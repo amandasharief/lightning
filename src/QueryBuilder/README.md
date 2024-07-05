@@ -34,7 +34,7 @@ $builder->select(['*'])
     ->from('articles')
     ->where([
         'published' => 1, // Equals or if you pass a null value then it will be IS NULL
-        'author <>' => 1234] // Not equals or you can use != which is non ISO standard,
+        'author <>' => 1234 // Not equals or you can use != which is non ISO standard,
         'deleted_at <>'  => null, // IS NOT NULL
         'status' => ['new','pending'],  // IN
         'category <>' => ['Development'],  // NOT IN
