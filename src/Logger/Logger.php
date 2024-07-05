@@ -82,7 +82,7 @@ class Logger implements LoggerInterface
      *
      * @throws \Psr\Log\InvalidArgumentException
      */
-    public function log($level, string|Stringable $message, array $context = [])
+    public function log($level, string|Stringable $message, array $context = []) : void
     {
         if (! in_array($level, $this->logLevels)) {
             throw new InvalidArgumentException(sprintf('Invalid log level `%s`', $level));
