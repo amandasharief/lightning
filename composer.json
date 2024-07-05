@@ -30,8 +30,7 @@
         "phpunit/phpunit": "^9",
         "phpstan/phpstan": "^1.6",
         "nyholm/psr7": "^1.4",
-        "nyholm/psr7-server": "^1.0",
-        "maximebf/debugbar": "^1.17"
+        "nyholm/psr7-server": "^1.0"
     },
     "scripts" : {
         "test": [
