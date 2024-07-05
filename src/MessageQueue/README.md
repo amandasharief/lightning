@@ -31,7 +31,7 @@ class Message
 To send the message to the queue called `default`
 
 ```php
-$queue->send('default',new Message('jon@bloggs.co.uk')); // This will probably be in service or controller
+$queue->send('default', new Message('jon@bloggs.co.uk')); // This will probably be in service or controller
 ```
 
 Then to receive messages from the `default` queue

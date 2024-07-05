@@ -50,13 +50,13 @@ final class AbstractJobTest extends TestCase
     public function testWithParams(): void
     {
         $job = new SendEmailNotification();
-        $this->assertEquals(['foo' => 'bar'], $job->withParameters(['foo' => 'bar'])->getParameters());
+        $this->assertEquals(['foo' => 'bar'], $job->withArguments(['foo' => 'bar'])->getArguments());
     }
 
     public function testUsedParams(): void
     {
         $job = new SendEmailNotification();
-        $job->withParameters(['testCase' => $this])->run();
+        $job->withArguments(['testCase' => $this])->run();
     }
 
     public function testMaxRetries(): void

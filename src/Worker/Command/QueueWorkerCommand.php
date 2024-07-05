@@ -58,7 +58,8 @@ class QueueWorkerCommand extends AbstractCommand
     {
         $this->addArgument('queue', [
             'description' => 'The queue where to get the messages from',
-            'type' => 'string'
+            'type' => 'string',
+            'default' => 'default'
         ]);
 
         $this->addOption('daemon', [

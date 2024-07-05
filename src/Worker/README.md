@@ -81,18 +81,17 @@ class SendEmailNotification extends AbstractJob
     {
     }
 
-    protected function execute(Params $params): void
+    protected function execute(Arguments $args): void
     {
-        $this->mailer->send('welcome-email', $params->get('email'));
+        $this->mailer->send('welcome-email', $args->get('email'));
     }
 }
 ```
 
-Then create the `Job` and send this using the `MessageProducer`
+Then create the `Job` object (which is imutable) and send this using the `MessageProducer`,
 
 ```php
-$job = new SendEmailNotification($mailer);
-$job = $job->withParameters(['email'=>'jon@example.com']);
+$job = (new SendEmailNotification($mailer))->withArguments(['email'=>'jon@example.com']);
 
 (new MessageProducer(new MemoryQueue()))->send('mailers', $job);
 ```

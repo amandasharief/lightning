@@ -19,8 +19,7 @@ abstract class AbstractJob implements RunnableInterface, RetryableInterface
 
     protected int $maxRetries = 3;
     protected int $delay = 15;
-
-    private ?Arguments $params;
+    private array $args = [];
 
     /**
      * Hook called when this message is processed
@@ -28,27 +27,26 @@ abstract class AbstractJob implements RunnableInterface, RetryableInterface
     protected function initialize(): void
     {
     }
-
     /**
      * Gets the params that will be passed when run
      */
-    public function getParameters(): array
+    public function getArguments(): array
     {
-        return isset($this->params) ? $this->params->toArray() : [];
+        return $this->args;
     }
 
     /**
-     * Returns a new instance with the parameters set
+     * Returns a new instance with the arguments set
      */
-    public function withParameters(array $parameters): static
+    public function withArguments(array $args): static
     {
         $service = clone $this;
-        $service->params = new Arguments($parameters);
+        $service->args = $args;
 
         return $service;
     }
 
-    abstract protected function execute(Arguments $params): void;
+    abstract protected function execute(Arguments $args): void;
 
     /**
      * Runs the JOB
@@ -56,7 +54,7 @@ abstract class AbstractJob implements RunnableInterface, RetryableInterface
     public function run(): void
     {
         $this->initialize();
-        $this->execute($this->params ?? new Arguments());
+        $this->execute(new Arguments($this->args));
     }
 
     /**
