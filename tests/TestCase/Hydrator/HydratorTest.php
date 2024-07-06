@@ -7,32 +7,23 @@ use ReflectionProperty;
 use PHPUnit\Framework\TestCase;
 use Lightning\Hydrator\Hydrator;
 
-class ProductEntity
+trait EntityTrait
 {
-    private int|null $id = null;
-    private string $name;
-    private ?string $description = null;
-
-    public function getId(): int|null
+    public function getDescription(): ?string
     {
-        return $this->id;
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): self
+    {
+        $this->description = $description;
+
+        return $this;
     }
 
     public function getName(): string
     {
         return $this->name;
-    }
-
-    public function getDescription(): string
-    {
-        return $this->description;
-    }
-
-    public function setId(int|null $id): self
-    {
-        $this->id = $id;
-
-        return $this;
     }
 
     public function setName(string $name): self
@@ -42,12 +33,36 @@ class ProductEntity
         return $this;
     }
 
-    public function setDescription(string $description): self
+    public function getId(): ?int
     {
-        $this->description = $description;
+        return isset($this->id) ? $this->id : null;
+    }
+
+    public function setId(int $id): self
+    {
+        $this->id = $id;
 
         return $this;
     }
+}
+
+
+class Product
+{
+    use EntityTrait;
+
+    private ?int $id = null;
+    private string $name;
+    private ?string $description = null;
+}
+
+class Person
+{
+    use EntityTrait;
+
+    private int $id;
+    private string $name;
+    private ?string $description = null;    
 }
 
 final class HydratorTest extends TestCase
@@ -61,7 +76,7 @@ final class HydratorTest extends TestCase
 
     public function testHydrate(): void
     {
-        $product = new ProductEntity();
+        $product = new Product();
 
         $data = [
             'name' => 'product name',
@@ -70,9 +85,9 @@ final class HydratorTest extends TestCase
         ];
 
         (new Hydrator())->hydrate($product, $data);
-
         $this->assertEquals('product name', $product->getName());
         $this->assertEquals('product description', $product->getDescription());
+        $this->assertFalse((new ReflectionClass($product))->hasProperty('unkown_property'));
     }
 
     public function testCachePropertyIsNotEmpty(): void
@@ -81,40 +96,56 @@ final class HydratorTest extends TestCase
         $prop = $reflectionClass->getStaticPropertyValue('cache');
 
         $this->assertNotEmpty($prop);
-        $this->assertArrayHasKey(ProductEntity::class, $prop);
+        $this->assertArrayHasKey(Product::class, $prop);
 
-        $this->assertArrayHasKey('id', $prop[ProductEntity::class]);
-        $this->assertInstanceOf(ReflectionProperty::class, $prop[ProductEntity::class]['id']);
+        $this->assertArrayHasKey('id', $prop[Product::class]);
+        $this->assertInstanceOf(ReflectionProperty::class, $prop[Product::class]['id']);
 
-        $this->assertArrayHasKey('name', $prop[ProductEntity::class]);
-        $this->assertInstanceOf(ReflectionProperty::class, $prop[ProductEntity::class]['name']);
+        $this->assertArrayHasKey('name', $prop[Product::class]);
+        $this->assertInstanceOf(ReflectionProperty::class, $prop[Product::class]['name']);
 
-        $this->assertArrayHasKey('description', $prop[ProductEntity::class]);
-        $this->assertInstanceOf(ReflectionProperty::class, $prop[ProductEntity::class]['description']);
+        $this->assertArrayHasKey('description', $prop[Product::class]);
+        $this->assertInstanceOf(ReflectionProperty::class, $prop[Product::class]['description']);
     }
 
     public function testExtract(): void
     {
-        $product = new ProductEntity();
+        $product = new Product();
 
-        $product->setId(1000)
-            ->setName('Linux Laptop')
+        $product->setName('Linux Laptop')
             ->setDescription('A linux laptop');
 
         $expected = [
-            'id' => 1000,
+            'id' => null,
             'name' => 'Linux Laptop',
             'description' => 'A linux laptop'
         ];
 
         $result = (new Hydrator())->extract($product);
 
+
+        $this->assertEquals($expected, $result);
+    }
+
+    public function testExtractInitializedOnly(): void
+    {
+        $product = new Person();
+
+        $product->setName('Amanda');
+
+        $expected = [
+            'name' => 'Amanda',
+            'description' => null
+        ];
+        
+        $result = (new Hydrator())->extract($product);
+       
         $this->assertEquals($expected, $result);
     }
 
     public function testExtractCached(): void
     {
-        $product = new ProductEntity();
+        $product = new Product();
 
         $product->setId(1000)
             ->setName('Linux Laptop')
@@ -139,7 +170,7 @@ final class HydratorTest extends TestCase
         $hydrator = new Hydrator();
         $this->assertEquals([], $reflectionClass->getStaticPropertyValue('cache'));
 
-        $product = new ProductEntity();
+        $product = new Product();
         $hydrator->hydrate($product, [
             'name' => 'Laptop',
             'description' => 'A nice laptop'
