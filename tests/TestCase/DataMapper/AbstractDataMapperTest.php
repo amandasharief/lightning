@@ -121,7 +121,11 @@ class Tag extends AbstractDataMapper
     protected array $fields = [
         'id', 'name','created_at','updated_at'
     ];
-    protected string $entityClass = TagEntity::class;
+
+    public function createEntity(): TagEntity
+    {
+        return new TagEntity();
+    }
 }
 
 class Article extends AbstractDataMapper
@@ -131,8 +135,11 @@ class Article extends AbstractDataMapper
     protected array $fields = [
         'id', 'title','body','author_id','created_at','updated_at'
     ];
-
-    protected string $entityClass = ArticleEntity::class;
+    
+    public function createEntity(): ArticleEntity
+    {
+        return new ArticleEntity();
+    }
 
     public function setProperty($property, $value)
     {

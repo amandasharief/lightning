@@ -27,7 +27,11 @@ class ArticleMapper extends AbstractDataMapper
     protected $primaryKey = 'id';
     protected string $table = 'articles';
     protected array $fields = ['id','title','body','author_id','created_at','updated_at'];
-    protected string $entityClass = ArticleEntity::class;
+
+    public function createEntity(): object
+    {
+        return new ArticleEntity();
+    }
 }
 
 final class AbstractRepositoryTest extends TestCase

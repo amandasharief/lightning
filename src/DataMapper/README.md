@@ -7,7 +7,9 @@ magic.
 
 ## Example
 
-Create your `DataMapper`, ensuring that you add the `table`, `fields` properties and the `mapDataToEntity` method.
+Create your `DataMapper`, ensuring that you add the `table`, `fields` and the factory method `createEntity`.  
+
+> **_NOTE:_** If you wish to use custom mapping such as `fromState` and `toState` in your entity classes you can override the `mapDataToEntity` and `mapEntityToData` methods.
 
 ```php
 /**
@@ -27,8 +29,11 @@ class Article extends AbstractDataMapper
     protected array $fields = [
         'id', 'title','body','author_id','created_at','updated_at'
     ];
-    protected string $entityClass = ArticleEntity::class;
-   
+
+    public function createEntity(): ArticleEntity
+    {
+        return new ArticleEntity();
+    }   
 }
 ```
 

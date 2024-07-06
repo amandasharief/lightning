@@ -101,7 +101,11 @@ class DummyArticleEntity
 class DummyArticle extends AbstractObjectRelationalMapper
 {
     protected string $table = 'articles';
-    protected string $entityClass = DummyArticleEntity::class;
+
+    public function createEntity(): object
+    {
+        return new DummyArticleEntity();
+    }
 }
 
 final class MapperManagerTest extends TestCase

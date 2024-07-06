@@ -89,7 +89,10 @@ class Article extends MockMapper
         ]
     ];
 
-    protected string $entityClass = ArticleEntity::class;
+    public function createEntity(): ArticleEntity
+    {
+        return new ArticleEntity();
+    }
 }
 
 class Author extends MockMapper
@@ -114,7 +117,10 @@ class Author extends MockMapper
         $this->hasMany[0]['dependent'] = $dependent;
     }
 
-    protected string $entityClass = AuthorEntity::class;
+    public function createEntity(): AuthorEntity
+    {
+        return new AuthorEntity();
+    }
 }
 
 class Profile extends MockMapper
@@ -133,7 +139,10 @@ class Profile extends MockMapper
         ]
     ];
 
-    protected string $entityClass = ProfileEntity::class;
+    public function createEntity(): object
+    {
+        return new ProfileEntity();
+    }
 }
 
 class User extends MockMapper
@@ -156,7 +165,10 @@ class User extends MockMapper
         $this->hasOne[0]['dependent'] = $dependent;
     }
 
-    protected string $entityClass = UserEntity::class;
+    public function createEntity(): object
+    {
+        return new UserEntity();
+    }
 }
 
 class Tag extends MockMapper
@@ -165,7 +177,10 @@ class Tag extends MockMapper
     protected array $fields = [
         'id', 'name','created_at','updated_at'
     ];
-    protected string $entityClass = TagEntity::class;
+    public function createEntity(): object
+    {
+        return new TagEntity();
+    }
 }
 
 class Post extends MockMapper
@@ -189,7 +204,10 @@ class Post extends MockMapper
         $this->belongsToMany[0]['dependent'] = $dependent;
     }
 
-    protected string $entityClass = PostEntity::class;
+    public function createEntity(): object
+    {
+        return new PostEntity();
+    }
 }
 
 /**

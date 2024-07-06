@@ -29,7 +29,6 @@ abstract class AbstractDataMapper
      */
     protected $primaryKey = 'id';
     protected string $table = 'none';
-    protected string $entityClass;
 
     /**
      * These are the fields that DataMapper works with
@@ -57,6 +56,11 @@ abstract class AbstractDataMapper
     protected function initialize(): void
     {
     }
+
+    /**
+     * Factory method for creating an Entity associated with this Data Mapper
+     */
+    abstract public function createEntity(): object;
 
     /**
      * Checks if the Entity is persisted
@@ -539,7 +543,7 @@ abstract class AbstractDataMapper
      */
     public function mapDataToEntity(array $state): object
     {
-        $entity = new $this->entityClass();
+        $entity = $this->createEntity();
 
         foreach ($state as $key => $value) {
             if (in_array($key, $this->fields)) {
