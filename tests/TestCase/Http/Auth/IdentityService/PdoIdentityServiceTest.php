@@ -15,6 +15,7 @@ use Lightning\Http\Auth\IdentityService\PdoIdentityService;
 final class PdoIdentityServiceTest extends TestCase
 {
     private ?PDO $pdo;
+    private FixtureManager $fixtureManager;
 
     public function setUp(): void
     {
