@@ -142,22 +142,22 @@ The `MapperManager` is responsible for managing the data mapper instances and cr
 To create the Manager in your DI container
 
 ```php
-$manager = new MapperManager($dataSource);
+new MapperManager($dataSource, $hydrator);
 ```
 
 If you are adding additional depenendices to the constructor or using a different datasource with a particular mapper, then you will need to either configure how the `DataMapper` is created or add an already created one.
 
-To add an already created one
+To add an already created mapper
 
 ```php
-$manager->add(new ArticleMapper(new MemoryDataSource()));
+$manager->add(new ArticleMapper(new MemoryDataSource(), new Hydrator()));
 ```
 
-To create one when it is needed aka lazy load, you can use a factory callable.
+To create one when it is needed aka lazy load, you can use a factory callable
 
 ```php
-$manager->configure(ArticleMapper::class, function(DataSourceInterface $dataSource, MapperManager $manager){
-    return new ArticleMapper($dataSource, $manager, new SomeDependency());
+$manager->configure(ArticleMapper::class, function(DataSourceInterface $dataSource, Hydrator $hydrator, MapperManager $manager){
+        return new ArticleMapper($dataSource, $manager, new SomeDependency());
 });
 ```
 

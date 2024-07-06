@@ -17,6 +17,7 @@ use Lightning\DataMapper\AbstractDataMapper;
 use Lightning\Repository\AbstractRepository;
 use Lightning\DataMapper\DataSourceInterface;
 use Lightning\DataMapper\DataSource\DatabaseDataSource;
+use Lightning\Hydrator\Hydrator;
 
 class ArticleRepository extends AbstractRepository
 {
@@ -38,6 +39,7 @@ final class AbstractRepositoryTest extends TestCase
 {
     protected ?PDO $pdo;
     protected FixtureManager $fixtureManager;
+    protected DatabaseDataSource $storage;
 
     public function setUp(): void
     {
@@ -249,6 +251,6 @@ final class AbstractRepositoryTest extends TestCase
     {
         $datasource = new DatabaseDataSource($this->pdo, new QueryBuilder());
 
-        return new ArticleRepository(new ArticleMapper($datasource, new EventDispatcher(new ListenerRegistry())));
+        return new ArticleRepository(new ArticleMapper($datasource, new Hydrator()));
     }
 }

@@ -30,8 +30,7 @@ use Lightning\Hydrator\Hydrator;
 
 final class ArticleEntity
 {
-    private int $id;
-
+    private ?int $id = null;
     private string $title;
     private string $body;
     private ?int $author_id = null;
@@ -289,12 +288,14 @@ final class AbstractDataMapperTest extends TestCase
     protected ?PDO $pdo;
     protected FixtureManager $fixtureManager;
     protected DatabaseDataSource $storage;
+    protected Hydrator $hydrator;
 
     public function setUp(): void
     {
         $this->pdo = ( new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 
         $this->storage = new DatabaseDataSource($this->pdo, new QueryBuilder());
+        $this->hydrator = new Hydrator();
 
         $this->fixtureManager = new FixtureManager($this->pdo);
         $this->fixtureManager->load([
@@ -312,14 +313,14 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testGetDataSource(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
 
         $this->assertInstanceOf(DataSourceInterface::class, $mapper->getDataSource());
     }
 
     // public function testCreateEntity(): void
     // {
-    //     $mapper = new Article($this->storage);
+    //     $mapper = new Article($this->storage, $this->hydrator);
 
     //     $data = [
     //         'title' => 'test',
@@ -341,7 +342,7 @@ final class AbstractDataMapperTest extends TestCase
 
     // public function testCreateEntities(): void
     // {
-    //     $mapper = new Article($this->storage);
+    //     $mapper = new Article($this->storage, $this->hydrator);
 
     //     $data = [
     //         'title' => 'test',
@@ -358,16 +359,15 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testGetPrimaryKey(): void
     {
-        $this->assertEquals(['id'], (new Article($this->storage))->getPrimaryKey());
+        $this->assertEquals(['id'], (new Article($this->storage, $this->hydrator))->getPrimaryKey());
     }
 
     public function testGet(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
 
         /** @var ArticleEntity $article */
         $article = $mapper->getBy(['id' => 1000]);
-
         $this->assertInstanceOf(ArticleEntity::class, $article);
         $this->assertSame('Article #1', $article->getTitle());
     }
@@ -377,7 +377,7 @@ final class AbstractDataMapperTest extends TestCase
      */
     public function testGetFields(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $mapper->setProperty('fields', [
             'id', 'title','body','author_id'
         ]);
@@ -390,7 +390,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testGetNotFound(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
 
         $this->expectException(EntityNotFoundException::class);
         $this->expectExceptionMessage('Entity Not Found');
@@ -401,28 +401,28 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testFindCount(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $this->assertEquals(3, $mapper->findCount());
         $this->assertEquals(['beforeFind'], $mapper->getCalled());
     }
 
     public function testFindCountHookCalled(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $mapper->findCount();
         $this->assertEquals(['beforeFind'], $mapper->getCalled());
     }
 
     public function testFindCountWithQuery(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $this->assertEquals(1, $mapper->findCountBy(['id' => 1000]));
         $this->assertEquals(0, $mapper->findCountBy(['id' => 1234]));
     }
 
     public function testFind(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $entity = $mapper->find(new QueryObject());
         $this->assertEquals('Article #1', $entity->getTitle());
         $this->assertTrue($mapper->isPersisted($entity));
@@ -430,14 +430,14 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testFindHookCalled(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $this->assertInstanceOf(ArticleEntity::class, $mapper->find(new QueryObject()));
         $this->assertEquals(['beforeFind','afterFind'], $mapper->getCalled());
     }
 
     public function testFindHookCalledAndCancelled(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $mapper->stopOn('beforeFind');
         $this->assertNull($mapper->find(new QueryObject()));
         $this->assertEquals(['beforeFind'], $mapper->getCalled());
@@ -445,33 +445,33 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testFindWithCondition(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $entity = $mapper->findBy(['id' => 1000]);
         $this->assertEquals('Article #1', $entity->getTitle());
     }
 
     public function testFindNoResult(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $this->assertNull($mapper->findBy(['id' => 1234]));
     }
 
     public function testFindAll(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $result = $mapper->findAll();
         $this->assertCount(3, $result);
     }
 
     public function testFindAllBy(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $this->assertCount(2, $mapper->findAllBy(['id !=' => 1000]));
     }
 
     public function testFindAllNoResults(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $items = $mapper->findAll();
 
         $this->assertEmpty($mapper->findAllBy(['id' => 123456789]));
@@ -479,7 +479,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testCreate(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
 
         $article = new ArticleEntity();
         (new Hydrator())->hydrate($article,[
@@ -502,7 +502,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testCreateBeforeSaveHookCancelled(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
 
         $article = new ArticleEntity();
         (new Hydrator())->hydrate($article,[
@@ -521,7 +521,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testBeforeCreateHookCancelled(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
 
         $article = new ArticleEntity();
         (new Hydrator())->hydrate($article,[
@@ -540,7 +540,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testUpdate(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $mapper->reset();
 
@@ -553,7 +553,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testUpdateBeforeSaveHookCancelled(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $mapper->reset();
 
@@ -565,7 +565,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testUpdateBeforeUpdateHookCancelled(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $mapper->reset();
         $mapper->stopOn('beforeUpdate');
@@ -576,7 +576,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testUpdateWithNoPrimaryKey(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
        
         $article = new ArticleEntity();
         (new Hydrator())->hydrate($article,[
@@ -597,7 +597,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testUpdateFail(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $article->setId(1234);
         $this->assertFalse($mapper->save($article));
@@ -605,7 +605,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testSaveMany(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $entities = $mapper->findAll();
         foreach ($entities as $entity) {
             $entity->setUpdatedAt(date('Y-m-d H:i:s'));
@@ -615,12 +615,12 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testSaveManyFail(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $article->setId(1234);
         $this->assertFalse($mapper->save($article));
 
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $article->setId(1234);
         $entities = $mapper->createCollection([$article]);
@@ -629,7 +629,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testUpdateAll(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
 
         $this->assertEquals(2, $mapper->updateAll(new QueryObject(['id !=' => 1001]), ['author_id' => 1111]));
         $this->assertEquals(0, $mapper->updateAll(new QueryObject(['id' => 1234]), ['author_id' => 1111]));
@@ -637,7 +637,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testUpdateAllException(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Data cannot be empty');
 
@@ -646,27 +646,27 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testUpdateAllBy(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
 
         $this->assertEquals(2, $mapper->updateAllBy(['id !=' => 1001], ['author_id' => 1111]));
     }
 
     public function testDeleteAll(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $this->assertEquals(2, $mapper->deleteAll(new QueryObject(['id !=' => 1001])));
         $this->assertEquals(0, $mapper->deleteAll(new QueryObject(['id' => 1234])));
     }
 
     public function testDeleteAllBy(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $this->assertEquals(2, $mapper->deleteAllBy(['id !=' => 1001]));
     }
 
     public function testDelete(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $mapper->reset();
 
@@ -676,7 +676,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testDeleteHookCancelled(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $mapper->reset();
 
@@ -687,7 +687,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testDeleteFail(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $article->setId(1234);
 
@@ -696,7 +696,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testDeleteMany(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $articles = $mapper->findAll();
 
         $this->assertTrue($mapper->deleteMany($articles));
@@ -705,12 +705,12 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testDeleteManyFail(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $article->setId(1234);
         $this->assertFalse($mapper->delete($article));
 
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $article->setId(1234);
         $entities = $mapper->createCollection([$article]);
@@ -719,7 +719,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testFindList(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $this->assertEquals(
             [1000,1001,1002],
             $mapper->findList()
@@ -728,7 +728,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testFindListWithNoPrimaryKey(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $reflection = new ReflectionClass($mapper);
         $property = $reflection->getProperty('primaryKey');
         $property->setAccessible(true);
@@ -742,7 +742,7 @@ final class AbstractDataMapperTest extends TestCase
     public function testFindListWithQuery(): void
     {
         $query = new QueryObject(['id !=' => 1001]);
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $this->assertEquals(
             [1000,1002],
             $mapper->findList($query)
@@ -751,7 +751,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testFindListBy(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $this->assertEquals(
             [1000,1002],
             $mapper->findListBy(['id !=' => 1001])
@@ -760,7 +760,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testFindListWithValues(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
         $this->assertEquals(
             [1000 => 'Article #1',1001 => 'Article #2',1002 => 'Article #3'],
             $mapper->findList(null, ['idField' => 'id','valueField' => 'title'])
@@ -769,7 +769,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testFindListGrouped(): void
     {
-        $mapper = new Article($this->storage);
+        $mapper = new Article($this->storage, $this->hydrator);
 
         $mapper->updateAll(new QueryObject(), ['author_id' => 2000]);
         $mapper->updateAll(new QueryObject(['id !=' => 1001]), ['author_id' => 4000]);
@@ -791,7 +791,7 @@ final class AbstractDataMapperTest extends TestCase
 
     // public function testBeforeFindHookFail(): void
     // {
-    //     $mapper = new Article($this->storage);
+    //     $mapper = new Article($this->storage, $this->hydrator);
 
     //     $this->assertNull($mapper->find());
     //     $this->assertTrue($mapper->findAll()->isEmpty());
@@ -801,7 +801,7 @@ final class AbstractDataMapperTest extends TestCase
 
     // public function testBeforeCreateHookFail(): void
     // {
-    //     $mapper = new Article($this->storage);
+    //     $mapper = new Article($this->storage, $this->hydrator);
 
     //     $article = $mapper->createEntity([
     //         'title' => 'test',
@@ -816,7 +816,7 @@ final class AbstractDataMapperTest extends TestCase
 
     // public function testBeforeSaveHookFail(): void
     // {
-    //     $mapper = new Article($this->storage);
+    //     $mapper = new Article($this->storage, $this->hydrator);
 
     //     $article = $mapper->createEntity([
     //         'title' => 'test',
@@ -831,7 +831,7 @@ final class AbstractDataMapperTest extends TestCase
 
     // public function testBeforeDeleteHookFail(): void
     // {
-    //     $mapper = new Article($this->storage);
+    //     $mapper = new Article($this->storage, $this->hydrator);
     //     $mapper->registerHook('beforeDelete', 'hookFail');
 
     //     $article = $mapper->find();
@@ -841,7 +841,7 @@ final class AbstractDataMapperTest extends TestCase
 
     // public function testBeforeUpdateHookFail(): void
     // {
-    //     $mapper = new Article($this->storage);
+    //     $mapper = new Article($this->storage, $this->hydrator);
     //     $mapper->registerHook('beforeUpdate', 'hookFail');
 
     //     $article = $mapper->find();

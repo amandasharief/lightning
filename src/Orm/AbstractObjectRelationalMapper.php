@@ -13,6 +13,7 @@ namespace Lightning\Orm;
 
 use LogicException;
 use ReflectionProperty;
+use Lightning\Hydrator\Hydrator;
 use Lightning\Utility\Collection;
 use Lightning\DataMapper\QueryObject;
 use Lightning\DataMapper\AbstractDataMapper;
@@ -27,8 +28,6 @@ use Lightning\DataMapper\DataSourceInterface;
  */
 abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
 {
-    protected MapperManager $mapperManager;
-
     /**
       * This also assumes $this->profile is the Profile mapper injected during construction
       *
@@ -80,10 +79,9 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
     /**
      * Constructor
      */
-    public function __construct(DataSourceInterface $dataSource, MapperManager $mapperManager)
+    public function __construct(protected DataSourceInterface $dataSource,protected Hydrator $hydrator,protected MapperManager $mapperManager)
     {
-        $this->mapperManager = $mapperManager;
-        parent::__construct($dataSource);
+        parent::__construct($dataSource, $hydrator);
 
         $this->initializeOrm();
     }
@@ -185,7 +183,7 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
                 }
             }
         }
-        
+
         $primaryKey = $this->getPrimaryKey()[0];
 
         foreach ($resultSet as &$entity) {
@@ -200,36 +198,36 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
                     $bindingKey = $mapper->getPrimaryKey()[0];
 
                     switch ($type) {
-                            case 'belongsTo':
-                                $conditions[$bindingKey] = $row[$config['foreignKey']];
-                                $result = $mapper->findAllBy($conditions, $options);
-                                $this->setObjectProperty($entity, $config['propertyName'], $result ? $result[0] : null);
+                        case 'belongsTo':
+                            $conditions[$bindingKey] = $row[$config['foreignKey']];
+                            $result = $mapper->findAllBy($conditions, $options);
+                            $this->setObjectProperty($entity, $config['propertyName'], $result ? $result[0] : null);
 
                             break;
-                            case 'hasOne':
+                        case 'hasOne':
 
-                                $conditions[$config['foreignKey']] = $row[$primaryKey];
-                                $result = $mapper->findAllBy($conditions, $options);
-                                $this->setObjectProperty($entity, $config['propertyName'], $result ? $result[0] : null);
-
-                            break;
-                            case 'hasMany':
-                                $conditions[$config['foreignKey']] = $row[$bindingKey];
-                                $this->setObjectProperty($entity, $config['propertyName'], $mapper->findAllBy($conditions, $options));
+                            $conditions[$config['foreignKey']] = $row[$primaryKey];
+                            $result = $mapper->findAllBy($conditions, $options);
+                            $this->setObjectProperty($entity, $config['propertyName'], $result ? $result[0] : null);
 
                             break;
-                            case 'belongsToMany':
-                                $result = $this->dataSource->read(
-                                    $config['joinTable'], new QueryObject([$config['foreignKey'] => $row[$primaryKey]])
-                                );
+                        case 'hasMany':
+                            $conditions[$config['foreignKey']] = $row[$bindingKey];
+                            $this->setObjectProperty($entity, $config['propertyName'], $mapper->findAllBy($conditions, $options));
 
-                                $otherForeignKey = $config['otherForeignKey'];
-                                $ids = array_map(function ($record) use ($otherForeignKey) {
-                                    return $record[$otherForeignKey]; // extract tag_id
-                                }, $result);
+                            break;
+                        case 'belongsToMany':
+                            $result = $this->dataSource->read(
+                                $config['joinTable'], new QueryObject([$config['foreignKey'] => $row[$primaryKey]])
+                            );
 
-                                $conditions[$primaryKey] = $ids;
-                                $this->setObjectProperty($entity, $config['propertyName'], $mapper->findAllBy($conditions, $options));
+                            $otherForeignKey = $config['otherForeignKey'];
+                            $ids = array_map(function ($record) use ($otherForeignKey) {
+                                return $record[$otherForeignKey]; // extract tag_id
+                            }, $result);
+
+                            $conditions[$primaryKey] = $ids;
+                            $this->setObjectProperty($entity, $config['propertyName'], $mapper->findAllBy($conditions, $options));
 
                             break;
                     }

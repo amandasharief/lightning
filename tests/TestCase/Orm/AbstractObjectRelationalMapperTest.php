@@ -26,6 +26,7 @@ use Lightning\Test\Fixture\ProfilesFixture;
 use Lightning\Test\Fixture\PostsTagsFixture;
 use Lightning\Orm\AbstractObjectRelationalMapper;
 use Lightning\DataMapper\DataSource\DatabaseDataSource;
+use Lightning\Hydrator\Hydrator;
 use ReflectionClass;
 use ReflectionProperty;
 
@@ -218,12 +219,15 @@ final class AbstractObjectRelationalMapperTest extends TestCase
     protected ?PDO $pdo;
     protected FixtureManager $fixtureManager;
     protected DatabaseDataSource $dataSource;
-
+    protected Hydrator $hydrator;
+    
     public function setUp(): void
     {
         $this->pdo = ( new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 
         $this->dataSource = new DatabaseDataSource($this->pdo, new QueryBuilder());
+        $this->hydrator = new Hydrator();
+
         $this->fixtureManager = new FixtureManager($this->pdo);
         $this->fixtureManager->load([
             ArticlesFixture::class,
@@ -241,11 +245,11 @@ final class AbstractObjectRelationalMapperTest extends TestCase
         unset($this->pdo);
     }
 
-
-
     public function testBelongsTo(): void
     {
-        $article = new Article($this->dataSource, new MapperManager($this->dataSource));
+        $article = new Article(
+            $this->dataSource, $this->hydrator, new MapperManager($this->dataSource , $this->hydrator)
+        );
 
         $result = $article->getBy(['id' => 1000], ['with' => ['author']]);
 
@@ -274,8 +278,9 @@ final class AbstractObjectRelationalMapperTest extends TestCase
 
     public function testBelongsToConditions(): void
     {
-        $article = new Article($this->dataSource, new MapperManager($this->dataSource));
-
+        $article = new Article(
+            $this->dataSource,$this->hydrator, new MapperManager($this->dataSource , $this->hydrator)
+        );
         $article->setAssociation('belongsTo', [
             [
                 'className' => Author::class,
@@ -309,7 +314,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
     {
         $this->dataSource->delete('authors', new QueryObject([]));
 
-        $article = new Article($this->dataSource, new MapperManager($this->dataSource));
+        $article = new Article($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
 
         $result = $article->getBy(['id' => 1000], ['with' => ['author']]);
         $expected = [
@@ -326,7 +331,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
 
     public function testHasOne(): void
     {
-        $user = new User($this->dataSource, new MapperManager($this->dataSource));
+        $user = new User($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
 
         $result = $user->getBy(['id' => 1000], ['with' => ['profile']]);
 
@@ -355,10 +360,10 @@ final class AbstractObjectRelationalMapperTest extends TestCase
     public function testHasOneConditions(): void
     {
         // Create Extra Record
-        $profile = new Profile($this->dataSource, new MapperManager($this->dataSource));
+        $profile = new Profile($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
         $result = $profile->getDataSource()->update('profiles', new QueryObject(), ['user_id' => 1000]);
 
-        $user = new User($this->dataSource, new MapperManager($this->dataSource));
+        $user = new User($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
 
         $user->setAssociation('hasOne', [
             [
@@ -398,7 +403,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
     public function testHasOneNotFound(): void
     {
         $this->dataSource->delete('profiles', new QueryObject([]));
-        $user = new User($this->dataSource, new MapperManager($this->dataSource));
+        $user = new User($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
 
         $result = $user->getBy(['id' => 1000], ['with' => ['profile']]);
 
@@ -415,7 +420,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
 
     public function testHasOneDepenent(): void
     {
-        $user = new User($this->dataSource, new MapperManager($this->dataSource));
+        $user = new User($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
         $user->setDependent(true);
 
         $query = new QueryObject(['user_id' => 1000]);
@@ -429,7 +434,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
     {
         $this->dataSource->update('articles', new QueryObject(['id' => 1002]), ['author_id' => 2000]);
 
-        $author = new Author($this->dataSource, new MapperManager($this->dataSource));
+        $author = new Author($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
 
         $result = $author->getBy(['id' => 2000], ['with' => ['articles']]);
 
@@ -468,7 +473,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
     {
         $this->dataSource->update('articles', new QueryObject(['id' => 1002]), ['author_id' => 2000]);
 
-        $author = new Author($this->dataSource, new MapperManager($this->dataSource));
+        $author = new Author($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
 
         $author->setAssociation('hasMany', [
             [
@@ -508,7 +513,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
     {
         $this->dataSource->update('articles', new QueryObject(['id' => 1002]), ['author_id' => 2000]);
 
-        $author = new Author($this->dataSource, new MapperManager($this->dataSource));
+        $author = new Author($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
         $author->setOrder('hasMany', 'articles', 'id DESC');
 
         $result = $author->getBy(['id' => 2000], ['with' => ['articles']]);
@@ -545,7 +550,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
     {
         $this->dataSource->update('articles', new QueryObject(['id' => 1002]), ['author_id' => 2000]);
 
-        $author = new Author($this->dataSource, new MapperManager($this->dataSource));
+        $author = new Author($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
         $author->setFields('hasMany', 'articles', ['id','title','body']);
 
         $result = $author->getBy(['id' => 2000], ['with' => ['articles']]);
@@ -576,7 +581,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
 
     public function testHasManyDependent(): void
     {
-        $author = new Author($this->dataSource, new MapperManager($this->dataSource));
+        $author = new Author($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
         $author->setDependent(true);
 
         $query = new QueryObject(['author_id' => 2000]);
@@ -590,7 +595,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
     {
         $this->dataSource->delete('articles', new QueryObject([]));
 
-        $author = new Author($this->dataSource, new MapperManager($this->dataSource));
+        $author = new Author($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
 
         $result = $author->getBy(['id' => 2000], ['with' => ['articles']]);
 
@@ -610,7 +615,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
         // Create extra
         $this->dataSource->update('posts_tags', new QueryObject(['post_id' => 1002]), ['post_id' => 1000]);
 
-        $post = new Post($this->dataSource, new MapperManager($this->dataSource));
+        $post = new Post($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
         $result = $post->getBy(['id' => 1000], ['with' => ['tags']]);
 
         $expected = [
@@ -645,7 +650,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
         // Create extra
         $this->dataSource->update('posts_tags', new QueryObject(['post_id' => 1002]), ['post_id' => 1000]);
 
-        $post = new Post($this->dataSource, new MapperManager($this->dataSource));
+        $post = new Post($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
 
         $post->setAssociation('belongsToMany', [
             [
@@ -690,7 +695,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
         // Create extra
         $this->dataSource->update('posts_tags', new QueryObject(['post_id' => 1002]), ['post_id' => 1000]);
 
-        $post = new Post($this->dataSource, new MapperManager($this->dataSource));
+        $post = new Post($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
 
         $post->setAssociation('belongsToMany', [
             [
@@ -737,7 +742,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
         // Create extra
         $this->dataSource->update('posts_tags', new QueryObject(['post_id' => 1002]), ['post_id' => 1000]);
 
-        $post = new Post($this->dataSource, new MapperManager($this->dataSource));
+        $post = new Post($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
         $result = $post->getBy(['id' => 1000], ['with' => ['tags']]);
 
         $expected = [
@@ -753,7 +758,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
 
     public function testHasAndBelongsToDependent(): void
     {
-        $post = new Post($this->dataSource, new MapperManager($this->dataSource));
+        $post = new Post($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
         $post->setDependent(true);
 
         $query = new QueryObject(['post_id' => 1000]);
@@ -765,7 +770,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
 
     public function testInvalidAssociationDefinitionPropertyName(): void
     {
-        $post = new Post($this->dataSource, new MapperManager($this->dataSource));
+        $post = new Post($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('belongsTo is missing propertyName');
@@ -782,7 +787,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
 
     public function testInvalidAssociationDefinitionForeignKey(): void
     {
-        $post = new Post($this->dataSource, new MapperManager($this->dataSource));
+        $post = new Post($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('belongsTo `foo` is missing foreignKey');
@@ -799,7 +804,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
 
     public function testInvalidAssociationDefinitionClassName(): void
     {
-        $post = new Post($this->dataSource, new MapperManager($this->dataSource));
+        $post = new Post($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('belongsTo `foo` is missing className');
@@ -817,7 +822,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
 
     public function testInvalidAssociationDefinitionJoinTable(): void
     {
-        $post = new Post($this->dataSource, new MapperManager($this->dataSource));
+        $post = new Post($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('belongsToMany `tags` is missing joinTable');
@@ -835,7 +840,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
 
     public function testInvalidAssociationDefinitionOtherForeignKey(): void
     {
-        $post = new Post($this->dataSource, new MapperManager($this->dataSource));
+        $post = new Post($this->dataSource, $this->hydrator, new MapperManager($this->dataSource, $this->hydrator));
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('belongsToMany `tags` is missing otherForeignKey');

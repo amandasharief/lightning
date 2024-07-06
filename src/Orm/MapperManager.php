@@ -12,14 +12,13 @@
 namespace Lightning\Orm;
 
 use Lightning\DataMapper\DataSourceInterface;
-
+use Lightning\Hydrator\Hydrator;
 
 /**
  * MapperManager
  */
 class MapperManager
 {
-    private DataSourceInterface $dataSource;
 
     /**
      * @var AbstractObjectRelationalMapper[]
@@ -34,9 +33,9 @@ class MapperManager
     /**
      * Constructor
      */
-    public function __construct(DataSourceInterface $dataSource)
+    public function __construct(protected DataSourceInterface $dataSource, protected Hydrator $hydrator)
     {
-        $this->dataSource = $dataSource;
+
     }
 
     /**
@@ -74,13 +73,14 @@ class MapperManager
             return $this->mappers[$class];
         }
 
-        return $this->mappers[$class] = $this->createDataMapper($class, $this->dataSource);
+        return $this->mappers[$class] = $this->createDataMapper($class, $this->dataSource,  $this->hydrator);
     }
 
     /**
      * Creates the DataMapper object
+     * @todo Not sure about this as depenendices should be in the mapper manager constructor 
      */
-    protected function createDataMapper(string $class, DataSourceInterface $dataSource): AbstractObjectRelationalMapper
+    protected function createDataMapper(string $class, DataSourceInterface $dataSource, Hydrator $hydrator): AbstractObjectRelationalMapper
     {
         if (isset($this->factoryCallables[$class])) {
             $callback = $this->factoryCallables[$class];
@@ -88,6 +88,6 @@ class MapperManager
             return $callback($dataSource, $this);
         }
 
-        return new $class($dataSource, $this);
+        return new $class($dataSource, $hydrator, $this);
     }
 }

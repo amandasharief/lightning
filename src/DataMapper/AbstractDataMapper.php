@@ -15,13 +15,12 @@ use ReflectionProperty;
 use BadMethodCallException;
 use Lightning\Database\Row;
 use InvalidArgumentException;
+use Lightning\Hydrator\Hydrator;
 use Lightning\Utility\Collection;
 use Lightning\DataMapper\Exception\EntityNotFoundException;
 
 abstract class AbstractDataMapper
 {
-    protected DataSourceInterface $dataSource;
-
     /**
      * Primary Key
      *
@@ -43,10 +42,8 @@ abstract class AbstractDataMapper
     /**
      * Constructor
      */
-    public function __construct(DataSourceInterface $dataSource)
+    public function __construct(protected DataSourceInterface $dataSource, protected Hydrator $hydrator)
     {
-        $this->dataSource = $dataSource;
-
         $this->initialize();
     }
 
@@ -67,20 +64,20 @@ abstract class AbstractDataMapper
      */
     public function isPersisted(object $entity): bool
     {
-        return in_array(spl_object_hash($entity), $this->persisted);
+        return in_array(spl_object_id($entity), $this->persisted);
     }
-
 
     /**
      * Marks an entity as persisted
      */
-    public function markPersisted(object $entity, bool $status) : void 
+    public function markPersisted(object $entity, bool $status): void
     {
-        if($status){
-            array_push($this->persisted, spl_object_hash($entity));
+        if ($status) {
+            array_push($this->persisted, spl_object_id($entity));
+
             return;
         }
-        
+
         $key = array_search(spl_object_hash($entity), $this->persisted);
         if ($key !== false) {
             unset($this->persisted[$key]);
@@ -515,7 +512,7 @@ abstract class AbstractDataMapper
         $result = $this->dataSource->delete($this->table, $query) === 1;
 
         if ($result) {
-            $this->markPersisted($entity,false);
+            $this->markPersisted($entity, false);
             $this->afterDelete($entity);
         }
 
@@ -539,44 +536,27 @@ abstract class AbstractDataMapper
     }
 
     /**
-     * Maps state array to entity
+     * Converts a row from the storage into an Entity object
      */
     public function mapDataToEntity(array $state): object
     {
         $entity = $this->createEntity();
 
-        foreach ($state as $key => $value) {
-            if (in_array($key, $this->fields)) {
-                $reflectionProperty = new ReflectionProperty($entity, $key);
-                if ($reflectionProperty->isPrivate()) {
-                    $reflectionProperty->setAccessible(true); // Only required for PHP 8.0 and lower
-                }
-                $reflectionProperty->setValue($entity, $value);
-            }
-        }
+        $this->hydrator->hydrate(
+            $entity, array_intersect_key($state, array_flip((array) $this->fields))
+        );
 
         return $entity;
     }
 
     /**
-     * Converts the entity into a database row
+     * Converts Entity object into an array ready to be persisted to storage
      */
     public function mapEntityToData(object $entity): array
     {
-        $data = [];
-        foreach ($this->fields as $field) {
-            $reflectionProperty = new ReflectionProperty($entity, $field);
-            
-            if ($reflectionProperty->isPrivate()) {
-                $reflectionProperty->setAccessible(true); // Only required for PHP 8.0 and lower 
-            }
+        $extracted = $this->hydrator->extract($entity);
 
-            if( $reflectionProperty->isInitialized($entity)){
-                $data[$field] = $reflectionProperty->getValue($entity);
-            }
-        }
-
-        return $data;
+        return  array_intersect_key($extracted, array_flip((array) $this->fields));
     }
 
     /**

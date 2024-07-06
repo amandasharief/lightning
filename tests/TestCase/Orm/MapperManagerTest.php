@@ -9,6 +9,7 @@ use Lightning\DataMapper\DataSourceInterface;
 use Lightning\Orm\AbstractObjectRelationalMapper;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Lightning\DataMapper\DataSource\MemoryDataSource;
+use Lightning\Hydrator\Hydrator;
 
 class DummyArticleEntity
 {
@@ -112,21 +113,19 @@ final class MapperManagerTest extends TestCase
 {
     public function testGet(): void
     {
-        $dataSource = new MemoryDataSource();
-        
-        $manager = new MapperManager($dataSource);
+        $manager = new MapperManager(new MemoryDataSource(), new Hydrator());
 
         $this->assertInstanceOf(
             DummyArticle::class, $manager->get(DummyArticle::class)
         );
     }
+
     public function testAdd(): void
     {
-        $dataSource = new MemoryDataSource();
         
-        $manager = new MapperManager($dataSource);
+        $manager = new MapperManager(new MemoryDataSource(), new Hydrator());
+        $mapper = new DummyArticle(new MemoryDataSource(), new Hydrator(), $manager);
 
-        $mapper = new DummyArticle($dataSource, $manager);
         $this->assertInstanceOf(
           MapperManager::class, $manager->add($mapper)
         );
@@ -136,11 +135,11 @@ final class MapperManagerTest extends TestCase
     {
         $dataSource = new MemoryDataSource();
         
-        $manager = new MapperManager($dataSource);
+        $manager = new MapperManager($dataSource, new Hydrator());
 
         $this->assertInstanceOf(
             MapperManager::class, $manager->configure(DummyArticle::class, function (DataSourceInterface $dataSource,  MapperManager $manager) {
-                $mapper = new DummyArticle($dataSource, new MapperManager($dataSource));
+                $mapper = new DummyArticle($dataSource, new Hydrator(), new MapperManager($dataSource, new Hydrator()));
                 $mapper->foo = 'bar'; // ensure its callback
 
                 return $mapper;
@@ -157,9 +156,9 @@ final class MapperManagerTest extends TestCase
     {
         $dataSource = new MemoryDataSource();
         
-        $manager = new MapperManager($dataSource);
+        $manager = new MapperManager($dataSource, new Hydrator());
 
-        $mapper = new DummyArticle($dataSource, $manager);
+        $mapper = new DummyArticle($dataSource, new Hydrator(), $manager);
 
         $mapper->foo = 'bar'; // test its not being created
 
