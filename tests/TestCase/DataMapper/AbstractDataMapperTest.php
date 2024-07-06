@@ -30,7 +30,7 @@ use Lightning\Hydrator\Hydrator;
 
 final class ArticleEntity
 {
-    private ?int $id = null;
+    private int $id;
     private string $title;
     private string $body;
     private ?int $author_id = null;
@@ -98,7 +98,7 @@ final class ArticleEntity
 
     public function getId(): ?int
     {
-        return $this->id;
+        return $this->id ?? null;
     }
 
     /**
