@@ -2,60 +2,94 @@
 
 namespace Lightning\Test\TestCase\Event;
 
+use Lightning\Event\Event;
 use PHPUnit\Framework\TestCase;
 use Lightning\Event\EventDispatcher;
-use Lightning\Event\ListenerRegistry;
-use Psr\EventDispatcher\StoppableEventInterface;
-
-class StoppableEvent implements StoppableEventInterface
-{
-    public bool $isStopped = false;
-
-    public function stop(): void
-    {
-        $this->isStopped = true;
-    }
-    public function isPropagationStopped(): bool
-    {
-        return $this->isStopped;
-    }
-}
 
 final class EventDispatcherTest extends TestCase
 {
-    public function testGetListerProvider(): void
+    public function testAddListener(): void
     {
-        $provider = new ListenerRegistry();
-        $dispatcher = new EventDispatcher($provider);
-        $this->assertEquals($provider, $dispatcher->getListenerRegistry());
+        $eventDispatcher = new EventDispatcher();
+
+        $handler = function (Event $event) {
+            $this->assertTrue(true);
+        };
+
+        $this->assertInstanceOf(EventDispatcher::class, $eventDispatcher->addListener(Event::class, $handler));
+        $this->assertCount(1, $eventDispatcher->getListenersForEvent(new Event()));
+    }
+
+    public function testAddMultipleListener(): void
+    {
+        $eventDispatcher = new EventDispatcher();
+
+        $this->assertInstanceOf(EventDispatcher::class, $eventDispatcher->addListener(Event::class, function (Event $event) {
+            $this->assertTrue(true);
+        }));
+
+
+        $this->assertInstanceOf(EventDispatcher::class, $eventDispatcher->addListener(Event::class, function (Event $event) {
+            $this->assertTrue(true);
+        }));
+
+        $this->assertCount(2, $eventDispatcher->getListenersForEvent(new Event()));
+    }
+
+
+    public function testGetListenersForEvent(): void
+    {
+        $eventDispatcher = new EventDispatcher();
+
+        $handler = function (Event $event) {
+            $this->assertTrue(true);
+        };
+
+        $this->assertEquals(
+            [$handler],
+            $eventDispatcher->addListener(Event::class, $handler)->getListenersForEvent(new Event())
+        );
+    }
+
+    /**
+     * @depends testAddListener
+     */
+    public function testRemoveListener(): void
+    {
+        $eventDispatcher = new EventDispatcher();
+
+        $handler = function (Event $event) {
+            $this->assertTrue(true);
+        };
+
+        $this->assertInstanceOf(EventDispatcher::class, $eventDispatcher->addListener(Event::class, $handler));
+        $this->assertCount(1, $eventDispatcher->getListenersForEvent(new Event()));
+        $this->assertInstanceOf(EventDispatcher::class, $eventDispatcher->removeListener(Event::class, $handler));
+        $this->assertCount(0, $eventDispatcher->getListenersForEvent(new Event()));
     }
 
     public function testDispatch(): void
     {
-        $event = new StoppableEvent();
-        $provider = new ListenerRegistry();
-        $dispatcher = new EventDispatcher($provider);
-        $provider->registerListener(StoppableEvent::class, function (StoppableEvent $event) {
+        $eventDispatcher = new EventDispatcher();
+        $event = new Event();
+
+        $eventDispatcher->addListener(Event::class, function (Event $event) {
             $this->assertTrue(true);
         });
 
-        $this->assertEquals($event, $dispatcher->dispatch($event));
+        $this->assertEquals($event, $eventDispatcher->dispatch($event));
     }
 
     public function testDispatchStopEvent(): void
     {
-        $event = new StoppableEvent();
-        $provider = new ListenerRegistry();
-        $dispatcher = new EventDispatcher($provider);
-        $provider->registerListener(StoppableEvent::class, function (StoppableEvent $event) {
+        $eventDispatcher = new EventDispatcher();
+        $event = new Event();
+
+        $eventDispatcher->addListener(Event::class, function (Event $event) {
+            $event->stopPropagation();
             $this->assertTrue(true);
-            $event->stop();
         });
 
-        $provider->registerListener(StoppableEvent::class, function (StoppableEvent $event) {
-            $this->assertTrue(false); // fail
-        });
-
-        $this->assertEquals($event, $dispatcher->dispatch($event));
+        $this->assertEquals($event, $eventDispatcher->dispatch($event));
     }
 }

@@ -23,7 +23,7 @@ final class EventDispatcherTestTraitTest extends TestCase
 
     public function createEventDispatcher(): TestEventDispatcher
     {
-        return new TestEventDispatcher(new EventDispatcher(new ListenerRegistry()));
+        return new TestEventDispatcher(new EventDispatcher());
     }
 
     public function testSet(): void

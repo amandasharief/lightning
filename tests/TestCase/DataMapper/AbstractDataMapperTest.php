@@ -303,7 +303,7 @@ final class AbstractDataMapperTest extends TestCase
             TagsFixture::class,
         ]);
 
-        $this->setEventDispatcher(new TestEventDispatcher(new EventDispatcher(new ListenerRegistry())));
+        $this->setEventDispatcher(new TestEventDispatcher(new EventDispatcher()));
     }
 
     public function tearDown(): void

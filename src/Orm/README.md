@@ -24,7 +24,10 @@ class Author extends AbstractObjectRelationalMapper
         ]
     ];
 
-    protected string $entityClass = AuthorEntity::class;
+    public function createEntity(): AuthorEntity
+    {
+        return new AuthorEntity();
+    }   
 }
 
 ```
@@ -48,7 +51,10 @@ class Article extends AbstractObjectRelationalMapper
         ]
     ];
 
-    protected string $entityClass = AritcleEntity::class;
+    public function createEntity(): ArticleEntity
+    {
+        return new ArticleEntity();
+    }   
 }
 ```
 
@@ -139,13 +145,17 @@ The following options are supported:
 
 The `MapperManager` is responsible for managing the data mapper instances and creating them when needed, ensuring that there is only one instance ever created and that mappers are available in any direction.
 
-To create the Manager in your DI container
+To create the Mapper Manager in your DI container
 
 ```php
 new MapperManager($dataSource, $hydrator);
 ```
 
-If you are adding additional depenendices to the constructor or using a different datasource with a particular mapper, then you will need to either configure how the `DataMapper` is created or add an already created one.
+This is used in the Data Mappers that extends `AbstractObjectRelationalMapper`, it will create or fetch the Data Manager.. 
+
+## Adding Data Mappers
+
+If you are adding additional depenendices to the constructor or using a different datasource with a particular data mapper, then you will need to either configure how the `DataMapper` is created or add an already created one.
 
 To add an already created mapper
 

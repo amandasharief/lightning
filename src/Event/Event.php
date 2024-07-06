@@ -14,9 +14,12 @@ namespace Lightning\Event;
 use Psr\EventDispatcher\StoppableEventInterface;
 
 /**
- * AbstractStoppableEvent
+ * Event
+ * 
+ * @internal Since a non stoppable event does not require code, decided to just include this for quick
+ * usage and extending
  */
-abstract class AbstractStoppableEvent extends AbstractEvent implements StoppableEventInterface
+class Event implements StoppableEventInterface
 {
     private bool $propagationStopped = false;
 
