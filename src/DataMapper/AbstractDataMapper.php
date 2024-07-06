@@ -11,14 +11,12 @@
 
 namespace Lightning\DataMapper;
 
-use App\Command\Person;
 use ReflectionProperty;
 use BadMethodCallException;
 use Lightning\Database\Row;
 use InvalidArgumentException;
 use Lightning\Utility\Collection;
 use Lightning\DataMapper\Exception\EntityNotFoundException;
-use Lightning\Entity\PersistableInterface;
 
 abstract class AbstractDataMapper
 {
@@ -575,35 +573,6 @@ abstract class AbstractDataMapper
         }
 
         return $data;
-    }
-
-    /**
-     * Creates an Entity from an array using mapping.
-     */
-    public function createEntity(array $data = [], array $options = []): object
-    {
-        $options += ['fields' => $this->fields,'persisted' => false];
-        if ($options['fields']) {
-            $data = array_intersect_key($data, array_flip((array) $options['fields']));
-        }
-
-        /** @todo think this is redunant now since it is not used internally */
-        $entity = $this->mapDataToEntity($data);
-        if ($options['persisted']) {
-            $this->markPersisted($entity, true);
-        }
-
-        return $entity;
-    }
-
-    /**
-     * Create a collection of Entities
-     */
-    public function createEntities(array $data, array $options = []): iterable
-    {
-        return array_map(function ($row) use ($options) {
-            return $this->createEntity($row, $options);
-        }, $data);
     }
 
     /**

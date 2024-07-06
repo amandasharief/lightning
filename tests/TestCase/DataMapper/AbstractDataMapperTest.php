@@ -26,6 +26,7 @@ use Lightning\TestSuite\EventDispatcherTestTrait;
 use Lightning\DataMapper\DataSource\DatabaseDataSource;
 use Lightning\Test\TestCase\DataMapper\Entity\TagEntity;
 use Lightning\DataMapper\Exception\EntityNotFoundException;
+use Lightning\Hydrator\Hydrator;
 
 final class ArticleEntity
 {
@@ -280,6 +281,7 @@ final class AbstractDataMapperTest extends TestCase
 
     protected ?PDO $pdo;
     protected FixtureManager $fixtureManager;
+    protected DatabaseDataSource $storage;
 
     public function setUp(): void
     {
@@ -308,44 +310,44 @@ final class AbstractDataMapperTest extends TestCase
         $this->assertInstanceOf(DataSourceInterface::class, $mapper->getDataSource());
     }
 
-    public function testCreateEntity(): void
-    {
-        $mapper = new Article($this->storage);
+    // public function testCreateEntity(): void
+    // {
+    //     $mapper = new Article($this->storage);
 
-        $data = [
-            'title' => 'test',
-            'body' => 'none',
-            'author_id' => 1234,
-            'created_at' => '2022-10-18 09:40:45',
-            'updated_at' => '2022-10-18 09:40:45',
-        ];
+    //     $data = [
+    //         'title' => 'test',
+    //         'body' => 'none',
+    //         'author_id' => 1234,
+    //         'created_at' => '2022-10-18 09:40:45',
+    //         'updated_at' => '2022-10-18 09:40:45',
+    //     ];
 
-        $entity = $mapper->createEntity($data);
-        $this->assertInstanceOf(ArticleEntity::class, $entity);
+    //     $entity = $mapper->createEntity($data);
+    //     $this->assertInstanceOf(ArticleEntity::class, $entity);
 
-        $this->assertEquals('test', $entity->getTitle());
-        $this->assertEquals('none', $entity->getBody());
-        $this->assertEquals(1234, $entity->getAuthorId());
-        $this->assertEquals('2022-10-18 09:40:45', $entity->getCreatedAt());
-        $this->assertEquals('2022-10-18 09:40:45', $entity->getUpdatedAt());
-    }
+    //     $this->assertEquals('test', $entity->getTitle());
+    //     $this->assertEquals('none', $entity->getBody());
+    //     $this->assertEquals(1234, $entity->getAuthorId());
+    //     $this->assertEquals('2022-10-18 09:40:45', $entity->getCreatedAt());
+    //     $this->assertEquals('2022-10-18 09:40:45', $entity->getUpdatedAt());
+    // }
 
-    public function testCreateEntities(): void
-    {
-        $mapper = new Article($this->storage);
+    // public function testCreateEntities(): void
+    // {
+    //     $mapper = new Article($this->storage);
 
-        $data = [
-            'title' => 'test',
-            'body' => 'none',
-            'author_id' => 1234,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ];
+    //     $data = [
+    //         'title' => 'test',
+    //         'body' => 'none',
+    //         'author_id' => 1234,
+    //         'created_at' => date('Y-m-d H:i:s'),
+    //         'updated_at' => date('Y-m-d H:i:s'),
+    //     ];
 
-        $result = $mapper->createEntities([$data,$data]);
-        $this->assertInstanceOf(ArticleEntity::class, $result[0]);
-        $this->assertInstanceOf(ArticleEntity::class, $result[1]);
-    }
+    //     $result = $mapper->createEntities([$data,$data]);
+    //     $this->assertInstanceOf(ArticleEntity::class, $result[0]);
+    //     $this->assertInstanceOf(ArticleEntity::class, $result[1]);
+    // }
 
     public function testGetPrimaryKey(): void
     {
@@ -472,7 +474,8 @@ final class AbstractDataMapperTest extends TestCase
     {
         $mapper = new Article($this->storage);
 
-        $article = $mapper->createEntity([
+        $article = new ArticleEntity();
+        (new Hydrator())->hydrate($article,[
             'title' => 'test',
             'body' => 'none',
             'author_id' => 1234,
@@ -494,7 +497,8 @@ final class AbstractDataMapperTest extends TestCase
     {
         $mapper = new Article($this->storage);
 
-        $article = $mapper->createEntity([
+        $article = new ArticleEntity();
+        (new Hydrator())->hydrate($article,[
             'title' => 'test',
             'body' => 'none',
             'author_id' => 1234,
@@ -512,7 +516,8 @@ final class AbstractDataMapperTest extends TestCase
     {
         $mapper = new Article($this->storage);
 
-        $article = $mapper->createEntity([
+        $article = new ArticleEntity();
+        (new Hydrator())->hydrate($article,[
             'title' => 'test',
             'body' => 'none',
             'author_id' => 1234,
@@ -566,7 +571,8 @@ final class AbstractDataMapperTest extends TestCase
     {
         $mapper = new Article($this->storage);
        
-        $article = $mapper->createEntity([
+        $article = new ArticleEntity();
+        (new Hydrator())->hydrate($article,[
             'title' => 'test',
             'body' => 'none',
             'author_id' => 1234,
