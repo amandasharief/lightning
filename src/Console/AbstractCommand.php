@@ -43,7 +43,6 @@ abstract class AbstractCommand implements CommandInterface
      */
     public function __construct(protected Console $console)
     {
-        $this->parser = $this->createConsoleArgumentParser();
     }
 
     /**
@@ -119,7 +118,7 @@ abstract class AbstractCommand implements CommandInterface
     /**
      * Adds an option for this command
      */
-    public function addOption(string $name, array $options = []): static
+    protected function addOption(string $name, array $options = []): static
     {
         $this->parser->addOption($name, $options);
 
@@ -129,7 +128,7 @@ abstract class AbstractCommand implements CommandInterface
     /**
      * Adds a argument for this command
      */
-    public function addArgument(string $name, array $options = []): static
+    protected function addArgument(string $name, array $options = []): static
     {
         $this->parser->addArgument($name, $options);
 
@@ -147,7 +146,7 @@ abstract class AbstractCommand implements CommandInterface
      *
      * @throws StopException
      */
-    public function exit(): void
+    protected function exit(): void
     {
         throw new StopException('Command exited', self::SUCCESS);
     }
@@ -157,7 +156,7 @@ abstract class AbstractCommand implements CommandInterface
      *
      * @throws StopException
      */
-    public function abort(int $code = self::ERROR): void
+    protected function abort(int $code = self::ERROR): void
     {
         throw new StopException('Command aborted', $code);
     }
@@ -169,7 +168,9 @@ abstract class AbstractCommand implements CommandInterface
      */
     public function run(array $args): int
     {
+        $this->parser = $this->createConsoleArgumentParser();
         $this->addDefaultOptions();
+
         $this->initialize();
 
         array_shift($args);

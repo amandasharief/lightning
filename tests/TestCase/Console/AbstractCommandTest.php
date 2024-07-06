@@ -37,6 +37,9 @@ class HelloCommand extends Command
         $this->addOption('abort', [
             'type' => 'boolean'
         ]);
+        $this->addOption('exit', [
+            'type' => 'boolean'
+        ]);
     }
 
     public function getParser(): ConsoleArgumentParser
@@ -52,6 +55,10 @@ class HelloCommand extends Command
             $this->abort();
         }
 
+        if($args->getOption('exit')){
+            $this->exit();
+        }
+
         // test Add argument and addOption
         $name = $args->getArgument('name');
         if ($args->getOption('u')) {
@@ -61,6 +68,8 @@ class HelloCommand extends Command
         $console->out(sprintf('Hello %s', $args->getArgument('name')));
         return Command::SUCCESS;
     }
+
+
 }
 
 final class AbstractCommandTest extends TestCase
@@ -93,45 +102,35 @@ final class AbstractCommandTest extends TestCase
     public function testAddOption(): void
     {
         $command = new HelloCommand($this->console);
-        $command->addOption('uppercase', ['description' => 'change name to uppercase', 'short' => 'u']);
-
-        $this->assertEquals(
-            'change name to uppercase',
-            $command->getParser()->generateOptions()['-u,--uppercase']
+        $this->assertEquals(Command::SUCCESS, $command->run(['bin/console', '-h'], $this->console));
+        
+        $this->assertStringContainsString(
+            "\e[32m-u,--uppercase \e[0mchange name to uppercase\n",
+            $this->stdout->getContents()
         );
     }
 
     public function testAddArgument(): void
     {
         $command = new HelloCommand($this->console);
-        $command->addArgument('name', ['description' => 'name to use', 'default' => 'world']);
-
-        $this->assertEquals(
-            'name to use (default: "world")',
-            $command->getParser()->generateArguments()['name']
+        $this->assertEquals(Command::SUCCESS, $command->run(['bin/console', '-h'], $this->console));
+        
+        $this->assertStringContainsString(
+            "\e[32mname           \e[0mname to use (default: \"world\")\n",
+            $this->stdout->getContents()
         );
     }
 
     public function testExit(): void
     {
         $command = new HelloCommand($this->console);
-
-        $this->expectException(StopException::class);
-        $this->expectExceptionMessage('Command exited');
-        $this->expectExceptionCode(Command::SUCCESS);
-
-        $command->exit();
+       $this->assertEquals(Command::SUCCESS, $command->run(['bin/console', '-exit'], $this->console));
     }
 
     public function testAbort(): void
     {
         $command = new HelloCommand($this->console);
-
-        $this->expectException(StopException::class);
-        $this->expectExceptionMessage('Command aborted');
-        $this->expectExceptionCode(Command::ERROR);
-
-        $command->abort();
+        $this->assertEquals(Command::ERROR, $command->run(['bin/console', '-abort'], $this->console));
     }
 
     public function testRun(): void
@@ -153,11 +152,7 @@ final class AbstractCommandTest extends TestCase
         $command = new HelloCommand($this->console);
         $command->run(['bin/console', '-h'], $this->console);
 
-        $yellow = ANSI::FG_YELLOW;
-        $reset = ANSI::RESET;
-        $green = ANSI::FG_GREEN;
-
-        $expected = "hello world\n\n{$yellow}Usage:{$reset}\n  hello [options] [name]\n\n{$yellow}Arguments:{$reset}\n  {$green}name           {$reset}name to use (default: \"world\")\n\n{$yellow}Options:{$reset}\n  {$green}-h,--help      {$reset}Displays this help message\n  {$green}-u,--uppercase {$reset}change name to uppercase\n  {$green}--abort        {$reset}\n\n";
+        $expected = "hello world\n\n\e[33mUsage:\e[0m\n  hello [options] [name]\n\n\e[33mArguments:\e[0m\n  \e[32mname           \e[0mname to use (default: \"world\")\n\n\e[33mOptions:\e[0m\n  \e[32m-h,--help      \e[0mDisplays this help message\n  \e[32m-u,--uppercase \e[0mchange name to uppercase\n  \e[32m--abort        \e[0m\n  \e[32m--exit         \e[0m\n\n";
 
         $this->assertEquals($expected, $this->stdout->getContents());
     }
