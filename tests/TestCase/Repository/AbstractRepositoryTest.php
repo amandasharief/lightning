@@ -232,11 +232,6 @@ final class AbstractRepositoryTest extends TestCase
         $this->assertEquals(2, $respository->updateAllBy(['id <>' => 1001], ['title' => 'foo']));
     }
 
-    public function testGetDataSource(): void
-    {
-        $this->assertInstanceOf(DataSourceInterface::class, $this->createRepository()->getDataSource());
-    }
-
     public function testCreateQueryObject(): void
     {
         $respository = $this->createRepository();

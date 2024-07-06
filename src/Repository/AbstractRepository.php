@@ -211,23 +211,7 @@ abstract class AbstractRepository
     {
         return new QueryObject($criteria, $options);
     }
-
-    /**
-     * Creates an Entity
-     */
-    public function createEntity(array $data = [], array $options = []): object
-    {
-        return $this->mapper->createEntity($data, $options);
-    }
-
-    /**
-     * Gets the DataSource for this Repository
-     */
-    public function getDataSource(): DataSourceInterface
-    {
-        return $this->mapper->getDataSource();
-    }
-
+    
     /**
      * Gets the Data Mapper
      */
