@@ -100,7 +100,7 @@ The `TestEventDispatcher` is PSR 14 Event Dispatcher which is for testing wether
 It comes with the additional methods
 
 ```php
-$eventDispatcher = new TestEventDispatcher(new EventDispatcher);
+$eventDispatcher = new TestEventDispatcher(new EventDispatcher(new ListenerProvider()));
 
 $events = $eventDispatcher->getDispatchedEvents(); // [BeforeFind::class]
 $event = $eventDispatcher->getDispatchedEvent(BeforeFind::class);

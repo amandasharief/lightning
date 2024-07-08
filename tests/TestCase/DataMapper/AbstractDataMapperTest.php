@@ -26,6 +26,7 @@ use Lightning\TestSuite\EventDispatcherTestTrait;
 use Lightning\DataMapper\DataSource\DatabaseDataSource;
 use Lightning\Test\TestCase\DataMapper\Entity\TagEntity;
 use Lightning\DataMapper\Exception\EntityNotFoundException;
+use Lightning\EventDispatcher\ListenerProvider\ListenerProvider;
 use Lightning\Hydrator\Hydrator;
 
 final class ArticleEntity
@@ -303,7 +304,7 @@ final class AbstractDataMapperTest extends TestCase
             TagsFixture::class,
         ]);
 
-        $this->setEventDispatcher(new TestEventDispatcher(new EventDispatcher()));
+        $this->setEventDispatcher(new TestEventDispatcher(new EventDispatcher(New ListenerProvider())));
     }
 
     public function tearDown(): void
