@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 /**
  * LightningPHP
- * Copyright 2021 - 2022 Amanda Sharief.
+ * Copyright 2021 - 2024 Amanda Sharief.
  *
  * Licensed under GNU Lesser General Public License
  *
