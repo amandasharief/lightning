@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 /**
  * LightningPHP
- * Copyright 2021 - 2022 Amanda Sharief.
+ * Copyright 2021 - 2024 Amanda Sharief.
  *
  * Licensed under GNU Lesser General Public License
  *
@@ -9,17 +9,11 @@
  * @license     https://opensource.org/licenses/LGPL-3.0 LGPL-3.0
  */
 
-namespace Lightning\Event;
+namespace Lightning\EventDispatcher;
 
 use Psr\EventDispatcher\StoppableEventInterface;
 
-/**
- * Event
- * 
- * @internal Since a non stoppable event does not require code, decided to just include this for quick
- * usage and extending
- */
-class Event implements StoppableEventInterface
+abstract class AbstractStoppableEvent implements StoppableEventInterface
 {
     private bool $propagationStopped = false;
 

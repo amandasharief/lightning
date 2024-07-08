@@ -10,10 +10,10 @@ use PHPUnit\Framework\TestCase;
 
 use Lightning\Utility\Collection;
 use function Lightning\Dotenv\env;
-use Lightning\Event\EventDispatcher;
+use Lightning\EventDispatcher\EventDispatcher;
 use Lightning\DataMapper\QueryObject;
 
-use Lightning\Event\ListenerRegistry;
+use Lightning\EventDispatcher\ListenerRegistry;
 use Lightning\Fixture\FixtureManager;
 use Lightning\Test\Fixture\TagsFixture;
 use Lightning\QueryBuilder\QueryBuilder;

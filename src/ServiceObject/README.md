@@ -43,6 +43,7 @@ $result = (new RegisterUserService($model, $logger))
 ## Result Object
 
 Depending what the service layer is doing sometimes you will need to just return a simple `true` or `false` and other times you will need a richer result. 
+
 Some of the methods available on `Result` object:
 
 ```php
