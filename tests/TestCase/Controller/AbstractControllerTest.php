@@ -8,15 +8,44 @@ use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 
 use Psr\Http\Message\ResponseInterface;
+use Lightning\Controller\Event\AfterRender;
 use Lightning\Controller\AbstractController;
-use Lightning\Controller\ControllerLifecycleInterface;
+use Lightning\Controller\Event\BeforeRender;
+use Lightning\Controller\Event\AfterRedirect;
+use Lightning\Controller\Event\BeforeRedirect;
 use Lightning\TemplateRenderer\TemplateRenderer;
+use Psr\EventDispatcher\StoppableEventInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Lightning\TemplateRenderer\TemplateRendererInterface;
+use Lightning\EventDispatcher\ListenerProvider\ListenerProvider;
 use Lightning\Test\TestCase\Controller\TestApp\ArticlesController;
+use Lightning\Controller\EventDispatcherAwareInterface as ControllerEventDispatcherAwareInterface;
 
-class ApiController extends AbstractController
+class ApiController extends AbstractController implements ControllerEventDispatcherAwareInterface
 {
-    private array $called = [];
+    public function __construct(
+        protected TemplateRendererInterface $view,
+        protected EventDispatcherInterface $eventDispatcher
+    ) {
+        parent::__construct($view, $eventDispatcher);
+    }
+
+    public function getEventDispatcher(): EventDispatcherInterface
+    {
+        return $this->eventDispatcher;
+    }
+
+    public function setEventDispatcher(EventDispatcherInterface $eventDispatcher): static
+    {
+        $this->eventDispatcher = $eventDispatcher;
+
+        return $this;
+    }
+
+    public function dispatchEvent(object $event): object
+    {
+        return $this->eventDispatcher->dispatch($event);
+    }
 
     public function index(): ResponseInterface
     {
@@ -44,58 +73,46 @@ class ApiController extends AbstractController
     {
         return new Response();
     }
-
-    public function initialize(): void
-    {
-        $this->wasCalled('initialize');
-    }
-
-    public function beforeRender(): ?ResponseInterface
-    {
-        $this->wasCalled('beforeRender');
-
-        return null;
-    }
-
-    public function afterRender(ResponseInterface $response): ResponseInterface
-    {
-        $this->wasCalled('afterRender');
-
-        return $response;
-    }
-
-    public function beforeRedirect(string $url): ?ResponseInterface
-    {
-        $this->wasCalled('beforeRedirect');
-
-        return null;
-    }
-
-    public function afterRedirect(ResponseInterface $response): ResponseInterface
-    {
-        $this->wasCalled('afterRedirect');
-
-        return $response;
-    }
-
-    private function wasCalled(string $method): void
-    {
-        $this->called[] = $method;
-    }
-
-    public function getCalled(): array
-    {
-        return $this->called;
-    }
 }
 
-class ApiWithLifeCycleController extends ApiController implements ControllerLifecycleInterface
+final class TestEventDispatcher implements EventDispatcherInterface
 {
+    private array $calledEvents = [];
 
+    public function __construct(private ListenerProvider $listenerProvider)
+    {
+    }
+    public function dispatch(object $event): object
+    {
+        foreach ($this->listenerProvider->getListenersForEvent($event) as $listener) {
+            if ($event instanceof StoppableEventInterface && $event->isPropagationStopped()) {
+                break;
+            }
+            $listener($event);
+            $this->calledEvents[] = $event::class;
+        }
+
+        return $event;
+    }
+
+    public function getListenerProvider(): ListenerProvider
+    {
+        return $this->listenerProvider;
+    }
+    public function getCalledEvents(): array
+    {
+        return $this->calledEvents;
+    }
 }
 
 final class AbstractControllerTest extends TestCase
 {
+    public function testGetTemplateRenderer(): void
+    {
+        $controller = $this->createController();
+        $this->assertInstanceOf(TemplateRendererInterface::class, $controller->getTemplateRenderer());
+    }
+
     public function testRender(): void
     {
         $request = new ServerRequest('GET', '/articles/index');
@@ -189,53 +206,193 @@ final class AbstractControllerTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    public function testRenderHooks(): void
+    public function testBeforeRender(): void
     {
-        $controller = new ApiWithLifeCycleController(new TemplateRenderer(__DIR__ .'/TestApp/templates'));
+        $eventDispatcher = new TestEventDispatcher(new ListenerProvider());
+        $controller = $controller = new ApiController(
+            new TemplateRenderer(__DIR__ .'/TestApp/templates'),
+            $eventDispatcher
+        );
+
+        $eventDispatcher->getListenerProvider()
+            ->add(BeforeRender::class, function (BeforeRender $event) {
+            })
+            ->add(AfterRender::class, function (AfterRender $event) {
+            });
 
         $controller->index();
 
-        $this->assertEquals([
-            'initialize','beforeRender','afterRender'
-        ], $controller->getCalled());
+        $this->assertEquals(
+            ["Lightning\Controller\Event\BeforeRender", "Lightning\Controller\Event\AfterRender"],
+            $eventDispatcher->getCalledEvents()
+        );
     }
 
-    public function testRenderHooksJson(): void
+    public function testBeforeRenderReturnResponse(): void
     {
-        $controller = new ApiWithLifeCycleController(new TemplateRenderer(__DIR__ .'/TestApp/templates'));
+        $eventDispatcher = new TestEventDispatcher(new ListenerProvider());
+        $controller = $controller = new ApiController(
+            new TemplateRenderer(__DIR__ .'/TestApp/templates'),
+            $eventDispatcher
+        );
+
+        $eventDispatcher->getListenerProvider()
+            ->add(BeforeRender::class, function (BeforeRender $event) {
+                $event->setResponse(new Response());
+            })
+            ->add(AfterRender::class, function (AfterRender $event) {
+            });
+
+        $controller->index();
+
+        $this->assertEquals(
+            ["Lightning\Controller\Event\BeforeRender"],
+            $eventDispatcher->getCalledEvents()
+        );
+    }
+
+    public function testBeforeRenderJson(): void
+    {
+        $eventDispatcher = new TestEventDispatcher(new ListenerProvider());
+        $controller = $controller = new ApiController(
+            new TemplateRenderer(__DIR__ .'/TestApp/templates'),
+            $eventDispatcher
+        );
+
+        $eventDispatcher->getListenerProvider()
+            ->add(BeforeRender::class, function (BeforeRender $event) {
+            })
+            ->add(AfterRender::class, function (AfterRender $event) {
+            });
 
         $controller->indexJson();
 
-        $this->assertEquals([
-            'initialize','beforeRender','afterRender'
-        ], $controller->getCalled());
+        $this->assertEquals(
+            ["Lightning\Controller\Event\BeforeRender", "Lightning\Controller\Event\AfterRender"],
+            $eventDispatcher->getCalledEvents()
+        );
     }
 
-    public function testRenderHooksFile(): void
+    public function testBeforeRenderJsonReturnResponse(): void
     {
-        $controller = new ApiWithLifeCycleController(new TemplateRenderer(__DIR__ .'/TestApp/templates'));
+        $eventDispatcher = new TestEventDispatcher(new ListenerProvider());
+        $controller = $controller = new ApiController(
+            new TemplateRenderer(__DIR__ .'/TestApp/templates'),
+            $eventDispatcher
+        );
+
+        $eventDispatcher->getListenerProvider()
+            ->add(BeforeRender::class, function (BeforeRender $event) {
+                $event->setResponse(new Response());
+            })
+            ->add(AfterRender::class, function (AfterRender $event) {
+            });
+
+        $controller->indexJson();
+
+        $this->assertEquals(
+            ["Lightning\Controller\Event\BeforeRender"],
+            $eventDispatcher->getCalledEvents()
+        );
+    }
+
+    public function testBeforeRenderFile(): void
+    {
+        $eventDispatcher = new TestEventDispatcher(new ListenerProvider());
+        $controller = $controller = new ApiController(
+            new TemplateRenderer(__DIR__ .'/TestApp/templates'),
+            $eventDispatcher
+        );
+
+        $eventDispatcher->getListenerProvider()
+            ->add(BeforeRender::class, function (BeforeRender $event) {
+            })
+            ->add(AfterRender::class, function (AfterRender $event) {
+            });
 
         $controller->download();
 
-        $this->assertEquals([
-            'initialize','beforeRender','afterRender'
-        ], $controller->getCalled());
+        $this->assertEquals(
+            ["Lightning\Controller\Event\BeforeRender", "Lightning\Controller\Event\AfterRender"],
+            $eventDispatcher->getCalledEvents()
+        );
     }
 
-    public function testRedirectHooks(): void
+    public function testBeforeRenderFileReturnResponse(): void
     {
-        $controller = new ApiWithLifeCycleController(new TemplateRenderer(__DIR__ .'/TestApp/templates'));
+        $eventDispatcher = new TestEventDispatcher(new ListenerProvider());
+        $controller = $controller = new ApiController(
+            new TemplateRenderer(__DIR__ .'/TestApp/templates'),
+            $eventDispatcher
+        );
+
+        $eventDispatcher->getListenerProvider()
+            ->add(BeforeRender::class, function (BeforeRender $event) {
+                $event->setResponse(new Response());
+            })
+            ->add(AfterRender::class, function (AfterRender $event) {
+            });
+
+        $controller->download();
+
+        $this->assertEquals(
+            ["Lightning\Controller\Event\BeforeRender"],
+            $eventDispatcher->getCalledEvents()
+        );
+    }
+
+    public function testBeforeRedirect(): void
+    {
+        $eventDispatcher = new TestEventDispatcher(new ListenerProvider());
+        $controller = $controller = new ApiController(
+            new TemplateRenderer(__DIR__ .'/TestApp/templates'),
+            $eventDispatcher
+        );
+
+        $eventDispatcher->getListenerProvider()
+            ->add(BeforeRedirect::class, function (BeforeRedirect $event) {
+            })
+            ->add(AfterRedirect::class, function (AfterRedirect $event) {
+            });
 
         $controller->old();
 
-        $this->assertEquals([
-            'initialize','beforeRedirect','afterRedirect'
-        ], $controller->getCalled());
+        $this->assertEquals(
+            ["Lightning\Controller\Event\BeforeRedirect", "Lightning\Controller\Event\AfterRedirect"],
+            $eventDispatcher->getCalledEvents()
+        );
     }
 
-    private function createController(): ArticlesController
+    public function testBeforeRedirectReturnResponse(): void
+    {
+        $eventDispatcher = new TestEventDispatcher(new ListenerProvider());
+        $controller = $controller = new ApiController(
+            new TemplateRenderer(__DIR__ .'/TestApp/templates'),
+            $eventDispatcher
+        );
+
+        $eventDispatcher->getListenerProvider()
+            ->add(BeforeRedirect::class, function (BeforeRedirect $event) {
+                $event->setResponse(new Response());
+            })
+            ->add(AfterRedirect::class, function (AfterRedirect $event) {
+            });
+
+        $controller->old();
+
+        $this->assertEquals(
+            ["Lightning\Controller\Event\BeforeRedirect"],
+            $eventDispatcher->getCalledEvents()
+        );
+    }
+
+    private function createController(?EventDispatcherInterface $eventDispatcher = null): ArticlesController
     {
         $path = __DIR__ .'/TestApp/templates';
-        return new ArticlesController(new TemplateRenderer($path,['cachePath'=>sys_get_temp_dir() .'/tr_tests']));
+
+        return new ArticlesController(
+            new TemplateRenderer($path, ['cachePath' => sys_get_temp_dir() .'/tr_tests']),
+            $eventDispatcher
+        );
     }
 }

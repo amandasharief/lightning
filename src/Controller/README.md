@@ -1,8 +1,8 @@
-# Controller
+# PSR-7 / PSR-14 Controller
 
-A PSR-7 `Controller` with `TemplateRenderer`, and a couple of important methods `render`, `renderJson` ,`renderFile` and `redirect` to keep code dry when working with `ResponseInterface`.
+A PSR-7 and PSR-14 `Controller` with `TemplateRenderer`, and a couple of important methods `render`, `renderJson` ,`renderFile` and `redirect` to keep code dry when working with `ResponseInterface`.
 
-Create your application controller with the factory method `createResponse`
+Create your controller with the factory method `createResponse`
 
 ```php
 use Lightning\Controller\AbstractController as BaseController;
@@ -66,51 +66,43 @@ return $this->renderFile('/var/www/downloads/2021.txt',['download' => 'false']);
 return $this->renderFile('/var/www/downloads/2021.pdf',['name' =>'important.pdf']); // To give the file a different name
 ```
 
-## Callbacks
+##  `PSR-14` Events
 
-> The design of this deliberately does not include a specific event implementation e.g. PSR-14 event or Hooks. These methods are provided as the first point of call for getting the desired behavior.
-
-The following callbacks methods are called allowing you modify the behavior of the `Controller`, you can create different versions of the `Controller` using these methods to carry out different actions such as triggering `PSR-14 events` etc or using hooks or quite simply just placing the logic in the methods.
-
-- `initialize`
-- `beforeRender`
-- `afterRender`
-- `beforeRedirect`
-- `afterRedirect`
-
-Here is how you could implement `PSR-14` Events using the controller callbacks.
+To use PSR-14 implement the `EventDispatcherAwareInterface` on your controller and add the `EventDispatcher` object as a dependency, ideally this should be the second dependency.
 
 ```php
-abstract class AbstractEventsController extends AbstractController
+class BaseController extends AbstractController implements EventDispatcherAwareInterface
 {
-    protected EventDispatcherInterface $eventDispatcher;
+    public function __construct(
+        protected TemplateRendererInterface $view,
+        protected EventDispatcherInterface $eventDispatcher
+    ) {
+        parent::__construct($view, $eventDispatcher);
+    }
 
-    public function __construct(TemplateRenderer $templateRenderer, EventDispatcherInterface $eventDispatcher)
+    public function getEventDispatcher(): EventDispatcherInterface
+    {
+        return $this->eventDispatcher;
+    }
+
+    public function setEventDispatcher(EventDispatcherInterface $eventDispatcher): static
     {
         $this->eventDispatcher = $eventDispatcher;
-        parent::__construct($templateRenderer);
-        
-        $this->eventDispatcher->dispatch(new InitializeEvent($this));
+
+        return $this;
     }
 
-    protected function beforeRender(): ?ResponseInterface
+    public function dispatchEvent(object $event): object
     {
-        return $this->eventDispatcher->dispatch(new BeforeRenderEvent($this, $this->request))->getResponse(); // Response object or null
+        return $this->eventDispatcher->dispatch($event);
     }
 
-    protected function afterRender(ResponseInterface $response): ResponseInterface
-    {
-        return $this->eventDispatcher->dispatch(new AfterRenderEvent($this, $this->request, $response))->getResponse();
-    }
-
-    protected function beforeRedirect(string $url): ?ResponseInterface
-    {
-        return $this->eventDispatcher->dispatch(new BeforeRedirectEvent($this, $url, $this->request))->getResponse(); // Response object or null
-    }
-
-    protected function afterRedirect(ResponseInterface $response): ResponseInterface
-    {
-        return $this->eventDispatcher->dispatch(new AfterRedirectEvent($this, $this->request, $response))->getResponse();
-    }
 }
 ```
+
+The following events are dispatched:
+
+- `BeforeRender` - On this event you can set a Response object, if you do then this response will be returned by the render method.
+- `AfterRender`
+- `BeforeRedirect` - On this event you can set a Response object, if you do then this response will be returned by the render method.
+- `AfterRedirect`

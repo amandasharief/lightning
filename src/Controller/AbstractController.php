@@ -13,25 +13,32 @@ namespace Lightning\Controller;
 
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
+use Lightning\Controller\Event\AfterRender;
+use Lightning\Controller\Event\BeforeRender;
+use Lightning\Controller\Event\AfterRedirect;
+use Lightning\Controller\Event\BeforeRedirect;
 use Lightning\TemplateRenderer\TemplateRendererInterface;
 
 /**
  * Abstract Controller
- *
- * @internal design has been changed with hook methods added rather than hard coding events etc, these can be overridden with a trait to get
- * the behavior that you want, eg. PSR-14 events
  */
 abstract class AbstractController
 {
     /**
      * Constructor - if you override this make sure still call this
-     * @param TemplateRenderInterface $view This has been called view for easy
+     * @param TemplateRendererInterface $view This has been called view for easy
      */
-    public function __construct(protected TemplateRendererInterface $view)
+    public function __construct(
+        protected TemplateRendererInterface $view
+    ) {
+        $this->initialize();
+    }
+
+    /**
+     * Hook that is triggered during startup
+     */
+    protected function initialize(): void
     {
-        if ($this instanceof ControllerLifecycleInterface) {
-            $this->initialize();
-        }
     }
 
     /**
@@ -41,7 +48,7 @@ abstract class AbstractController
      */
     public function render(string $template, array $data = [], int $statusCode = 200): ResponseInterface
     {
-        if ($this instanceof ControllerLifecycleInterface && $response = $this->beforeRender()) {
+        if ($this instanceof EventDispatcherAwareInterface && $response = $this->dispatchEvent(new BeforeRender($this))->getResponse()) {
             return $response;
         }
 
@@ -53,7 +60,7 @@ abstract class AbstractController
             $this->view->render($template, $data)
         );
 
-        return $this instanceof ControllerLifecycleInterface ? $this->afterRender($response) : $response;
+        return $this instanceof EventDispatcherAwareInterface ? $this->dispatchEvent((new AfterRender($this, $response)))->getResponse() : $response;
     }
 
     /**
@@ -61,7 +68,7 @@ abstract class AbstractController
      */
     public function renderJson($payload, int $statusCode = 200, int $jsonFlags = 0): ResponseInterface
     {
-        if ($this instanceof ControllerLifecycleInterface && $response = $this->beforeRender()) {
+        if ($this instanceof EventDispatcherAwareInterface && $response = $this->dispatchEvent(new BeforeRender($this))->getResponse()) {
             return $response;
         }
 
@@ -73,7 +80,7 @@ abstract class AbstractController
             json_encode($payload, $jsonFlags)
         );
 
-        return $this instanceof ControllerLifecycleInterface ? $this->afterRender($response) : $response;
+        return $this instanceof EventDispatcherAwareInterface ? $this->dispatchEvent((new AfterRender($this, $response)))->getResponse() : $response;
     }
 
     /**
@@ -89,7 +96,7 @@ abstract class AbstractController
             throw new InvalidArgumentException(sprintf('`%s` does not exist or is not a file', $path));
         }
 
-        if ($this instanceof ControllerLifecycleInterface && $response = $this->beforeRender()) {
+        if ($this instanceof EventDispatcherAwareInterface && $response = $this->dispatchEvent(new BeforeRender($this))->getResponse()) {
             return $response;
         }
 
@@ -104,7 +111,7 @@ abstract class AbstractController
 
         $response->getBody()->write(file_get_contents($path));
 
-        return $this instanceof ControllerLifecycleInterface ? $this->afterRender($response) : $response;
+        return $this instanceof EventDispatcherAwareInterface ? $this->dispatchEvent((new AfterRender($this, $response)))->getResponse() : $response;
     }
 
     /*
@@ -114,7 +121,7 @@ abstract class AbstractController
      */
     public function redirect(string $uri, int $status = 302): ResponseInterface
     {
-        if ($this instanceof ControllerLifecycleInterface && $response = $this->beforeRedirect($uri)) {
+        if ($this instanceof EventDispatcherAwareInterface && $response = $this->dispatchEvent(new BeforeRedirect($this,null,$uri))->getResponse()) {
             return $response;
         }
 
@@ -122,11 +129,19 @@ abstract class AbstractController
             ->withHeader('Location', $uri)
             ->withStatus($status);
 
-        return  $this instanceof ControllerLifecycleInterface ? $this->afterRedirect($response) : $response;
+        return $this instanceof EventDispatcherAwareInterface ? $this->dispatchEvent((new AfterRedirect($this, $response)))->getResponse() : $response;
     }
 
     /**
      * Factory method
      */
     abstract public function createResponse(): ResponseInterface;
+
+    /**
+     * Gets the Template Renderer (aka View) for this controller
+     */
+    public function getTemplateRenderer(): TemplateRendererInterface
+    {
+        return $this->view;
+    }
 }

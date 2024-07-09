@@ -2,10 +2,9 @@
 
 namespace Lightning\Test\TestCase\Controller\TestApp;
 
-use Lightning\Controller\AbstractController;
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
-
+use Lightning\Controller\AbstractController;
 
 class ArticlesController extends AbstractController
 {
