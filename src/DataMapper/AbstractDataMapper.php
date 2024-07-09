@@ -16,7 +16,6 @@ use BadMethodCallException;
 use Lightning\Database\Row;
 use InvalidArgumentException;
 use Lightning\Hydrator\Hydrator;
-use Lightning\Utility\Collection;
 use Lightning\DataMapper\Exception\EntityNotFoundException;
 
 abstract class AbstractDataMapper
@@ -101,90 +100,16 @@ abstract class AbstractDataMapper
     }
 
     /**
-     * Before create callback
-     */
-    protected function beforeCreate(object $entity): bool
-    {
-        return true;
-    }
-
-    /**
-     * After create callback
-     */
-    protected function afterCreate(object $entity): void
-    {
-    }
-
-    /**
-     * Before update callback
-     */
-    protected function beforeUpdate(object $entity): bool
-    {
-        return true;
-    }
-
-    /**
-     * after update callback
-     */
-    protected function afterUpdate(object $entity): void
-    {
-    }
-
-    /**
-     * Before save callback
-     */
-    protected function beforeSave(object $entity): bool
-    {
-        return true;
-    }
-
-    /**
-     * After save callback
-     */
-    protected function afterSave(object $entity): void
-    {
-    }
-
-    /**
-     * Before delete callback
-     */
-    protected function beforeDelete(object $entity): bool
-    {
-        return true;
-    }
-
-    /**
-     * after delete callback
-     */
-    protected function afterDelete(object $entity): void
-    {
-    }
-
-    /**
-     * before find callback
-     */
-    protected function beforeFind(QueryObject $query): bool
-    {
-        return true;
-    }
-
-    /**
-     * After find callback
-     */
-    protected function afterFind(Collection $collection, QueryObject $query): void
-    {
-    }
-
-    /**
      * Inserts an Entity into the database
      */
     protected function create(object $entity): bool
     {
-        if (! $this->beforeCreate($entity)) {
-            return false;
-        }
+        // if (! $this->beforeCreate($entity)) {
+        //     return false;
+        // }
 
-        $row = array_intersect_key($this->mapEntityToData($entity), array_flip($this->fields));;
+        $row = array_intersect_key($this->mapEntityToData($entity), array_flip($this->fields));
+        ;
         $result = $this->dataSource->create($this->table, $row);
 
         if ($result) {
@@ -192,13 +117,10 @@ abstract class AbstractDataMapper
             $id = $this->dataSource->getGeneratedId();
             if ($id && is_string($this->primaryKey)) {
                 $reflectionProperty = new ReflectionProperty($entity, $this->primaryKey);
-                if ($reflectionProperty->isPrivate()) {
-                    $reflectionProperty->setAccessible(true); // Only required for PHP 8.0 and lower
-                }
                 $reflectionProperty->setValue($entity, $id);
             }
 
-            $this->afterCreate($entity);
+            // $this->afterCreate($entity);
         }
 
         return $result;
@@ -209,15 +131,15 @@ abstract class AbstractDataMapper
      */
     public function save(object $entity): bool
     {
-        if (! $this->beforeSave($entity)) {
-            return false;
-        }
+        // if (! $this->beforeSave($entity)) {
+        //     return false;
+        // }
 
         $result = $this->isPersisted($entity) ? $this->update($entity) : $this->create($entity);
 
         if ($result) {
             $this->markPersisted($entity, true);
-            $this->afterSave($entity);
+            // $this->afterSave($entity);
         }
 
         return $result;
@@ -245,14 +167,14 @@ abstract class AbstractDataMapper
     {
         $query = $query ?? $this->createQueryObject();
 
-        return $this->read($query->setOption('limit', 1))->get(0);
+        return $this->read($query->setOption('limit', 1))[0] ?? null;
     }
 
     /**
      * Finds multiple Entities
-     * @return Collection|object[]
+     * @return object[]
      */
-    public function findAll(?QueryObject $query = null): Collection
+    public function findAll(?QueryObject $query = null): array
     {
         $query = $query ?? $this->createQueryObject();
 
@@ -266,7 +188,8 @@ abstract class AbstractDataMapper
     {
         $query = $query ?? $this->createQueryObject();
 
-        return $this->beforeFind($query) === false ? 0 : $this->dataSource->count($this->table, $query);
+        return $this->dataSource->count($this->table, $query);
+        // return $this->beforeFind($query) === false ? 0 : $this->dataSource->count($this->table, $query);
     }
 
     /**
@@ -297,13 +220,13 @@ abstract class AbstractDataMapper
     /**
      * Converts the Collection to a list
      */
-    private function convertCollectionToList(Collection $collection, string $keyField, ?string $valueField = null, ?string $groupField = null): array
+    private function convertCollectionToList(array $collection, string $keyField, ?string $valueField = null, ?string $groupField = null): array
     {
         $result = [];
 
         // grouped list
         if ($groupField && $valueField && $keyField) {
-            $result = $collection->reduce(function (array $entitites, Row $row) use ($keyField, $valueField, $groupField) {
+            $result = array_reduce($collection, function (array $entitites, Row $row) use ($keyField, $valueField, $groupField) {
                 $entitites[$row[$groupField] ?? null][$row[$keyField] ?? null] = $row[$valueField] ?? null;
 
                 return $entitites;
@@ -312,7 +235,7 @@ abstract class AbstractDataMapper
 
         // key value list
         elseif ($valueField && $keyField) {
-            $result = $collection->reduce(function (array $entitites, Row $row) use ($keyField, $valueField) {
+            $result = array_reduce($collection, function (array $entitites, Row $row) use ($keyField, $valueField) {
                 $entitites[$row[$keyField] ?? null] = $row[$valueField] ?? null;
 
                 return $entitites;
@@ -321,7 +244,7 @@ abstract class AbstractDataMapper
 
         // value list
         elseif ($keyField) {
-            $result = $collection->reduce(function (array $entitites, Row $row) use ($keyField) {
+            $result = array_reduce($collection, function (array $entitites, Row $row) use ($keyField) {
                 $entitites[] = $row[$keyField] ?? null;
 
                 return $entitites;
@@ -355,9 +278,9 @@ abstract class AbstractDataMapper
 
     /**
      * Finds multiple instances
-     * @return Collection|object[]
+     * @return object[]
      */
-    public function findAllBy(array $criteria, array $options = []): Collection
+    public function findAllBy(array $criteria, array $options = []): array
     {
         return $this->findAll($this->createQueryObject($criteria, $options));
     }
@@ -383,41 +306,32 @@ abstract class AbstractDataMapper
     }
 
     /**
-     * Factory method
-     */
-    public function createCollection(array $items = []): Collection
-    {
-        return new Collection($items);
-    }
-
-    /**
      * Reads from the datasource
      */
-    protected function read(QueryObject $query, bool $mapResult = true): Collection
+    protected function read(QueryObject $query, bool $mapResult = true): array
     {
-        if (! $this->beforeFind($query)) {
-            return $this->createCollection();
-        }
+        // if (! $this->beforeFind($query)) {
+        //     return [];
+        // }
 
         if ($this->fields && ! $query->getOption('fields')) {
             $query->setOption('fields', $this->fields);
         }
 
-        $collection = $this->createCollection($this->dataSource->read($this->table, $query));
-        if ($collection->isEmpty()) {
-            return $collection;
+        if (! $result = $this->dataSource->read($this->table, $query)) {
+            return [];
         }
 
-        $this->afterFind($collection, $query);
+        // $this->afterFind($result, $query);
 
         if ($mapResult) {
-            foreach ($collection as $index => $row) {
-                $collection[$index] = $this->mapDataToEntity($row->toArray());
-                $this->markPersisted($collection[$index], true);
+            foreach ($result as $index => $row) {
+                $result[$index] = $this->mapDataToEntity($row->toArray());
+                $this->markPersisted($result[$index], true);
             }
         }
 
-        return $collection;
+        return $result;
     }
 
     /**
@@ -425,18 +339,18 @@ abstract class AbstractDataMapper
      */
     public function update(object $entity): bool
     {
-        if (! $this->beforeUpdate($entity)) {
-            return false;
-        }
+        // if (! $this->beforeUpdate($entity)) {
+        //     return false;
+        // }
 
         $row = array_intersect_key($this->mapEntityToData($entity), array_flip($this->fields));
         $query = $this->createQueryObject($this->getConditionsFromState($row));
 
         $result = $this->dataSource->update($this->table, $query, $row) === 1;
 
-        if ($result) {
-            $this->afterUpdate($entity);
-        }
+        // if ($result) {
+        //     $this->afterUpdate($entity);
+        // }
 
         return $result;
     }
@@ -502,9 +416,9 @@ abstract class AbstractDataMapper
      */
     public function delete(object $entity): bool
     {
-        if (! $this->beforeDelete($entity)) {
-            return false;
-        }
+        // if (! $this->beforeDelete($entity)) {
+        //     return false;
+        // }
 
         $row = $this->mapEntityToData($entity);
         $query = $this->createQueryObject($this->getConditionsFromState($row));
@@ -513,7 +427,7 @@ abstract class AbstractDataMapper
 
         if ($result) {
             $this->markPersisted($entity, false);
-            $this->afterDelete($entity);
+            // $this->afterDelete($entity);
         }
 
         return $result;
