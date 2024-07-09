@@ -10,7 +10,7 @@ class AuthorEntity extends AbstractEntity
     private string $name;
     private string $created_at;
     private string $updated_at;
-    private Collection $articles;
+    private array $articles;
 
     public function getId(): ?int
     {
@@ -53,12 +53,12 @@ class AuthorEntity extends AbstractEntity
         return $this;
     }
 
-    public function getArticles(): ?Collection
+    public function getArticles(): ?array
     {
         return $this->articles ?? null;
     }
 
-    public function setArticles(Collection $articles): static
+    public function setArticles(array $articles): static
     {
         $this->articles = $articles;
 

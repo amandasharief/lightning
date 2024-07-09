@@ -89,11 +89,11 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
     /**
      * Reads from the DataSource
      */
-    protected function read(QueryObject $query, bool $mapResult = true): Collection
+    protected function read(QueryObject $query, bool $mapResult = true): array
     {
         $resultSet = parent::read($query, $mapResult);
 
-        return $query->getOption('with') && $resultSet->isEmpty() === false ? $this->loadRelatedData($resultSet, $query) : $resultSet;
+        return $query->getOption('with') && !empty($resultSet) ? $this->loadRelatedData($resultSet, $query) : $resultSet;
     }
 
     public function delete(object $entity): bool
@@ -169,7 +169,7 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
      * Loads the related data
      *
      */
-    protected function loadRelatedData(Collection $resultSet, QueryObject $query): Collection
+    protected function loadRelatedData(array $resultSet, QueryObject $query): array
     {
         $options = $query->getOptions();
 
@@ -281,16 +281,10 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
     }
 
     /**
-     * @internal this is not checking fields, since we are adding RElATED data which is not part of field
+     * @internal this is not checking fields, since we are adding RELATED data which is not part of field
      */
     private function setObjectProperty(object $entity, string $property, mixed $value): void
     {
-        $reflectionProperty = new ReflectionProperty($entity, $property);
-
-        if ($reflectionProperty->isPrivate()) {
-            $reflectionProperty->setAccessible(true); // Only required for PHP 8.0 and lower
-        }
-
-        $reflectionProperty->setValue($entity, $value);
+        (new ReflectionProperty($entity, $property))->setValue($entity, $value);
     }
 }

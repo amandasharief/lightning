@@ -9,7 +9,7 @@ class PostEntity extends AbstractEntity
     private int $id;
     private string $title;
     private string $body;
-    private Collection $tags;
+    private array $tags;
     private string $created_at;
     private string $updated_at;
 
@@ -66,12 +66,12 @@ class PostEntity extends AbstractEntity
         return $this;
     }
 
-    public function getTags(): ?Collection
+    public function getTags(): ?array
     {
         return $this->tags ?? null;
     }
 
-    public function setTags(Collection $tags): static
+    public function setTags(array $tags): static
     {
         $this->tags = $tags;
 

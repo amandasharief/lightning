@@ -14,7 +14,6 @@ namespace Lightning\Repository;
 use Lightning\Utility\Collection;
 use Lightning\DataMapper\QueryObject;
 use Lightning\DataMapper\AbstractDataMapper;
-use Lightning\DataMapper\DataSourceInterface;
 
 /**
  * Repository
@@ -76,7 +75,7 @@ abstract class AbstractRepository
      */
     public function findAll(?QueryObject $query = null): Collection
     {
-        return $this->mapper->findAll($query);
+        return new Collection($this->mapper->findAll($query));
     }
 
     /**
@@ -116,7 +115,7 @@ abstract class AbstractRepository
      */
     public function findAllBy(array $criteria, array $options = []): Collection
     {
-        return $this->mapper->findAllBy($criteria, $options);
+        return new Collection($this->mapper->findAllBy($criteria, $options));
     }
 
     /**

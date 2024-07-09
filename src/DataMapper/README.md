@@ -17,8 +17,8 @@ Create your `DataMapper`, ensuring that you add the `table`, `fields` and the fa
  * 
  * @method ?ArticleEntity find(QueryObject $query)
  * @method ?ArticleEntity findBy(array $criteria, array $options = [])
- * @method Collection|ArticleEntity[] findAll(QueryObject $query)
- * @method Collection|ArticleEntity[] findAllBy(array $criteria, array $options = [])
+ * @method ArticleEntity[] findAll(QueryObject $query)
+ * @method ArticleEntity[] findAllBy(array $criteria, array $options = [])
  */
 class Article extends AbstractDataMapper
 {
@@ -37,14 +37,14 @@ class Article extends AbstractDataMapper
 }
 ```
 
-The `DataMapper` will use `Reflection` to set the properties on your `Entity`. 
+The `DataMapper` will use the `Hydrator` to set the properties on your `Entity`.
 
 Create your entity class (a Plain Old PHP Object (POPO)).
 
 1. Only make a property nullable if the data storage is set to `nullable`.
 2. properties should be `private`
 3. the primary key should not have a setter method, the datamapper will use reflection to set this
-4. the `DataMapper` does not call the setter or getter methods, it uses reflection to set or get values, and properties value should match what is/will be stored in the datasource.
+4. the `DataMapper` does not call the setter or getter methods, it uses reflection to set or get values, and properties value should match the fields is/will used in the datasource.
 
 ```php
 final class ArticleEntity
