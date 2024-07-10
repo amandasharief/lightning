@@ -1,6 +1,6 @@
 # Lightning Router
 
-A lightweight PSR-7 and PSR-15 router with support for PSR-11, PSR-14.
+A lightweight PSR-7 and PSR-15 router with support for PSR-11.
 
 ## Usage
 
@@ -144,3 +144,21 @@ $router->delete('/articles/:id', [ArticlesController::class,'destroy'], ['id' =>
 ## PSR-11: DI Container
 
 When creating the Router object add a `Container` object to use when creating the object from the matched route proxy.
+
+## Callbacks
+
+The router offers the following callbacks using the `ControllerInterface`.  Implement the `ControllerInterface` on your controller and these methods will be called just before and right after the matched route is invoked.
+
+```php
+class AppController implements ControllerInterface
+{
+    public function beforeFilter(ServerRequestInterface $request): ?ResponseInterface
+    {
+    }
+
+    public function afterFilter(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        return $response;
+    }
+}
+```

@@ -1,7 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Lightning\Test\Router\Middleware;
+namespace Lightning\Test\TestCase\Router\Middleware;
 
+use Lightning\Router\ControllerInterface;
 use Nyholm\Psr7\Response;
 use Lightning\Router\Route;
 use Nyholm\Psr7\ServerRequest;
@@ -10,6 +11,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Lightning\Router\Middleware\InvokerMiddleware;
+use Psr\Http\Message\RequestInterface;
 
 class Foo
 {
@@ -17,8 +19,21 @@ class Foo
 
 class PostsController
 {
-    protected ResponseInterface $response;
+    public function index(ServerRequestInterface $serverRequestInterface): ResponseInterface
+    {
+        $response = new Response();
+
+        $response->getBody()->write('ok');
+
+        return $response;
+    }
+}
+class ArticlesController implements ControllerInterface
+{
+    protected ?ResponseInterface $response = null;
     protected ServerRequestInterface $request;
+
+    protected array $called = [];
 
     public function index(ServerRequestInterface $serverRequestInterface): ResponseInterface
     {
@@ -27,6 +42,30 @@ class PostsController
         $response->getBody()->write('ok');
 
         return $response;
+    }
+
+    public function beforeFilter(ServerRequestInterface $request): ?ResponseInterface
+    {
+        $this->called[] = 'beforeFilter';
+
+        return $this->response;
+    }
+
+    public function afterFilter(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $this->called[] = 'afterFilter';
+
+        return $response;
+    }
+
+    public function getCalled(): array 
+    {
+        return $this->called;
+    }
+
+    public function setResponse(ResponseInterface $response) : void
+    {
+        $this->response = $response;
     }
 }
 
@@ -47,12 +86,40 @@ final class InvokerMiddlewareTest extends TestCase
 {
     public function testProcess(): void
     {
-        $route = new Route('get', '/articles/:id', [new PostsController(),'index']);
-        $route->match('GET', '/articles/1234');
-
-        $middleware = new InvokerMiddleware($route->getHandler());
-        $request = new ServerRequest('GET', '/not-relevant');
-        $response = $middleware->process($request, new DummyRequestHandler($request));
+        $callable = [new PostsController(),'index'];
+        $request = new ServerRequest('GET', '/posts/index');
+       
+        $response = (new InvokerMiddleware($callable))->process($request, new DummyRequestHandler($request));
         $this->assertEquals('ok', (string) $response->getBody());
     }
+
+    public function testBeforeFilterAfterFilter(): void
+    {
+        $controller = new ArticlesController();
+        $callable = [$controller,'index'];
+        $request = new ServerRequest('GET', '/posts/index');
+       
+        $response = (new InvokerMiddleware($callable))->process($request, new DummyRequestHandler($request));
+        $this->assertEquals('ok', (string) $response->getBody());
+
+        $this->assertEquals(['beforeFilter','afterFilter'],$controller->getCalled());
+    }
+
+    public function testBeforeFilterReturnResponse(): void
+    {
+        $controller = new ArticlesController();
+        $callable = [$controller,'index'];
+        $request = new ServerRequest('GET', '/posts/index');
+
+        $response =new Response();
+        $response->getBody()->write('changed');
+        $controller->setResponse($response);
+
+       
+        $response = (new InvokerMiddleware($callable))->process($request, new DummyRequestHandler($request));
+        $this->assertEquals('changed', (string) $response->getBody());
+
+        $this->assertEquals(['beforeFilter'],$controller->getCalled());
+    }
+  
 }
