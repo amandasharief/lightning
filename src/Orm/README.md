@@ -141,14 +141,14 @@ The following options are supported:
 - conditions: An array of additional criteria to use. e.g. `['tenant_id' => TENANT_ID]`
 - order: A setting for order e.g. `status DESC`
 
-## MapperManager
+## DataMapperManager
 
-The `MapperManager` is responsible for managing the data mapper instances and creating them when needed, ensuring that there is only one instance ever created and that mappers are available in any direction.
+The `DataMapperManager` is responsible for managing the data mapper instances and creating them when needed, ensuring that there is only one instance ever created and that mappers are available in any direction.
 
 To create the Mapper Manager in your DI container
 
 ```php
-new MapperManager($dataSource, $hydrator);
+new DataMapperManager(new DataMapperFactory($dataSource, $hydrator));
 ```
 
 This is used in the Data Mappers that extends `AbstractObjectRelationalMapper`, it will create or fetch the Data Manager.. 
@@ -160,15 +160,14 @@ If you are adding additional depenendices to the constructor or using a differen
 To add an already created mapper
 
 ```php
-$manager->add(new ArticleMapper(new MemoryDataSource(), new Hydrator()));
+$manager->add(new ArticleMapper(new MemoryDataSource(), new Hydrator(), $manager));
 ```
 
-To create one when it is needed aka lazy load, you can use a factory callable
+To get a `DataMapper` use the `get` method, this will either get one that has already been created or
+create a new one
 
 ```php
-$manager->configure(ArticleMapper::class, function(DataSourceInterface $dataSource, Hydrator $hydrator, MapperManager $manager){
-        return new ArticleMapper($dataSource, $manager, new SomeDependency());
-});
+$manager->get(Article::$class);
 ```
 
 ## Resources

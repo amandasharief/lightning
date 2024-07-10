@@ -1,15 +1,15 @@
 <?php declare(strict_types=1);
 
-namespace Lightning\Test\Orm;
+namespace Lightning\Test\TestCase\Orm;
 
 use PHPUnit\Framework\TestCase;
-use Lightning\Orm\MapperManager;
+use Lightning\Orm\DataMapperManager;
 
 use Lightning\DataMapper\DataSourceInterface;
 use Lightning\Orm\AbstractObjectRelationalMapper;
-use Psr\EventDispatcher\EventDispatcherInterface;
 use Lightning\DataMapper\DataSource\MemoryDataSource;
 use Lightning\Hydrator\Hydrator;
+use Lightning\Orm\DataMapperFactory;
 
 class DummyArticleEntity
 {
@@ -109,44 +109,31 @@ class DummyArticle extends AbstractObjectRelationalMapper
     }
 }
 
-final class MapperManagerTest extends TestCase
+final class DataMapperManagerTest extends TestCase
 {
     public function testGet(): void
     {
-        $manager = new MapperManager(new MemoryDataSource(), new Hydrator());
+        $manager = new DataMapperManager(new DataMapperFactory(new MemoryDataSource(), new Hydrator()));
 
         $this->assertInstanceOf(
             DummyArticle::class, $manager->get(DummyArticle::class)
         );
     }
 
+    /**
+     * @depends testGet
+     */
     public function testAdd(): void
     {
         
-        $manager = new MapperManager(new MemoryDataSource(), new Hydrator());
+        $manager = new DataMapperManager(new DataMapperFactory(new MemoryDataSource(), new Hydrator()));
         $mapper = new DummyArticle(new MemoryDataSource(), new Hydrator(), $manager);
 
         $this->assertInstanceOf(
-          MapperManager::class, $manager->add($mapper)
+          DataMapperManager::class, $manager->add($mapper)
         );
-    }
 
-    public function testConfigure(): void
-    {
-        $dataSource = new MemoryDataSource();
-        
-        $manager = new MapperManager($dataSource, new Hydrator());
-
-        $this->assertInstanceOf(
-            MapperManager::class, $manager->configure(DummyArticle::class, function (DataSourceInterface $dataSource,  MapperManager $manager) {
-                $mapper = new DummyArticle($dataSource, new Hydrator(), new MapperManager($dataSource, new Hydrator()));
-                $mapper->foo = 'bar'; // ensure its callback
-
-                return $mapper;
-            })
-          );
-
-        $this->assertEquals('bar', $manager->get(DummyArticle::class)->foo);
+        $this->assertSame($mapper, $manager->get(DummyArticle::class));
     }
 
     /**
@@ -156,7 +143,7 @@ final class MapperManagerTest extends TestCase
     {
         $dataSource = new MemoryDataSource();
         
-        $manager = new MapperManager($dataSource, new Hydrator());
+        $manager = new DataMapperManager(new DataMapperFactory($dataSource, new Hydrator()));
 
         $mapper = new DummyArticle($dataSource, new Hydrator(), $manager);
 

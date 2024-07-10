@@ -155,13 +155,9 @@ $mapper->deleteAll($query);
 $mapper->updateAll($query, ['status'=> 'approved']);
 ```
 
-## Collection
-
-The `Utility\Collection` object is used to store the results from find operations and this is passed to the callback methods.
-
 ## Callbacks
 
-> The design of this deliberately does not include a specific event implementation e.g. PSR-14 event or Hooks. These methods are provided as the first point of call for getting the desired behavior.
+> The design of this deliberately does not include a specific event implementation e.g. PSR-14 events. These methods are provided as the first point of call for getting the desired behavior. Note to myself, the Data Mapper design is not suppose to implement other designs, but rather be used to implement other designs.
 
 The following callbacks methods are called allowing you modify the behavior of the `DataMapper`, you can create different versions of the `DataMapper` using these methods to carry out different actions such as triggering `PSR-14 events` etc or using hooks or quite simply just placing the logic in the methods.
 
@@ -175,7 +171,7 @@ The following callbacks methods are called allowing you modify the behavior of t
 - `afterSave` - triggered after afterCreate or afterUpdate
 - `afterDelete`
 - `beforeFind` - triggered on find, findCount and findList
-- `afterFind` - triggered on find and findList
+- `afterFind` - triggered on find and findList.
 
 For example 
 
@@ -223,8 +219,9 @@ abstract AppDataMapper extends AbstractDataMapper
         return true;
     }
 
-    protected function afterFind(Collection $collection, QueryObject $query): void
+    protected function afterFind(array $resultSet, QueryObject $query): array
     {
+        return $resultSet;
     }
 }
 ```

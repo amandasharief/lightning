@@ -14,7 +14,6 @@ namespace Lightning\Orm;
 use LogicException;
 use ReflectionProperty;
 use Lightning\Hydrator\Hydrator;
-use Lightning\Utility\Collection;
 use Lightning\DataMapper\QueryObject;
 use Lightning\DataMapper\AbstractDataMapper;
 use Lightning\DataMapper\DataSourceInterface;
@@ -79,9 +78,11 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
     /**
      * Constructor
      */
-    public function __construct(protected DataSourceInterface $dataSource,protected Hydrator $hydrator,protected MapperManager $mapperManager)
+    public function __construct(protected DataSourceInterface $dataSource, protected Hydrator $hydrator, protected DataMapperManager $manager)
     {
         parent::__construct($dataSource, $hydrator);
+        
+        $manager->add($this);
 
         $this->initializeOrm();
     }
@@ -93,7 +94,7 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
     {
         $resultSet = parent::read($query, $mapResult);
 
-        return $query->getOption('with') && !empty($resultSet) ? $this->loadRelatedData($resultSet, $query) : $resultSet;
+        return $query->getOption('with') && ! empty($resultSet) ? $this->loadRelatedData($resultSet, $query) : $resultSet;
     }
 
     public function delete(object $entity): bool
@@ -194,7 +195,7 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
                     $conditions = $config['conditions'];
                     $options = ['fields' => $config['fields'], 'order' => $config['order']];
 
-                    $mapper = $this->mapperManager->get($config['className']);
+                    $mapper = $this->manager->get($config['className']);
                     $bindingKey = $mapper->getPrimaryKey()[0];
 
                     switch ($type) {
@@ -250,7 +251,7 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
         foreach (['hasOne','hasMany'] as $assoc) {
             foreach ($this->$assoc as $config) {
                 if (! empty($config['dependent'])) {
-                    $mapper = $this->mapperManager->get($config['className']);
+                    $mapper = $this->manager->get($config['className']);
                     foreach ($mapper->findAllBy([$config['foreignKey'] => $id]) as $entity) {
                         $mapper->delete($entity);
                     }
