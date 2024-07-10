@@ -48,7 +48,7 @@ abstract class AbstractController
      */
     public function render(string $template, array $data = [], int $statusCode = 200): ResponseInterface
     {
-        if ($this instanceof EventDispatcherAwareInterface && $response = $this->dispatchEvent(new BeforeRender($this))->getResponse()) {
+        if ($response = $this->beforeRender()) {
             return $response;
         }
 
@@ -60,7 +60,7 @@ abstract class AbstractController
             $this->view->render($template, $data)
         );
 
-        return $this instanceof EventDispatcherAwareInterface ? $this->dispatchEvent((new AfterRender($this, $response)))->getResponse() : $response;
+        return $this->afterRender($response);
     }
 
     /**
@@ -68,7 +68,7 @@ abstract class AbstractController
      */
     public function renderJson($payload, int $statusCode = 200, int $jsonFlags = 0): ResponseInterface
     {
-        if ($this instanceof EventDispatcherAwareInterface && $response = $this->dispatchEvent(new BeforeRender($this))->getResponse()) {
+        if ($response = $this->beforeRender()) {
             return $response;
         }
 
@@ -80,7 +80,7 @@ abstract class AbstractController
             json_encode($payload, $jsonFlags)
         );
 
-        return $this instanceof EventDispatcherAwareInterface ? $this->dispatchEvent((new AfterRender($this, $response)))->getResponse() : $response;
+        return $this->afterRender($response);
     }
 
     /**
@@ -96,7 +96,7 @@ abstract class AbstractController
             throw new InvalidArgumentException(sprintf('`%s` does not exist or is not a file', $path));
         }
 
-        if ($this instanceof EventDispatcherAwareInterface && $response = $this->dispatchEvent(new BeforeRender($this))->getResponse()) {
+        if ($response = $this->beforeRender()) {
             return $response;
         }
 
@@ -111,7 +111,7 @@ abstract class AbstractController
 
         $response->getBody()->write(file_get_contents($path));
 
-        return $this instanceof EventDispatcherAwareInterface ? $this->dispatchEvent((new AfterRender($this, $response)))->getResponse() : $response;
+        return $this->afterRender($response);
     }
 
     /*
@@ -121,15 +121,16 @@ abstract class AbstractController
      */
     public function redirect(string $uri, int $status = 302): ResponseInterface
     {
-        if ($this instanceof EventDispatcherAwareInterface && $response = $this->dispatchEvent(new BeforeRedirect($this,null,$uri))->getResponse()) {
+        if ($response = $this->beforeRedirect($uri)) {
             return $response;
         }
+
 
         $response = $this->createResponse()
             ->withHeader('Location', $uri)
             ->withStatus($status);
 
-        return $this instanceof EventDispatcherAwareInterface ? $this->dispatchEvent((new AfterRedirect($this, $response)))->getResponse() : $response;
+        return $this->afterRedirect($response);
     }
 
     /**
@@ -143,5 +144,37 @@ abstract class AbstractController
     public function getTemplateRenderer(): TemplateRendererInterface
     {
         return $this->view;
+    }
+
+     /**
+     * Before render hook
+     */
+    protected function beforeRender(): ?ResponseInterface
+    {
+        return null;
+    }
+
+    /**
+     * After render hook
+     */
+    protected function afterRender(ResponseInterface $response): ResponseInterface
+    {
+        return $response;
+    }
+
+    /**
+     * Before Redirect hook
+     */
+    protected function beforeRedirect(string $url): ?ResponseInterface
+    {
+        return null;
+    }
+
+    /**
+     * After Redirect hook
+     */
+    protected function afterRedirect(ResponseInterface $response): ResponseInterface
+    {
+        return $response;
     }
 }
