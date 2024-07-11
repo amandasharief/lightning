@@ -218,41 +218,6 @@ abstract AppDataMapper extends AbstractDataMapper
 }
 ```
 
-## Entity Lifecycle Callbacks
-
-The `DataMapper` also works with entity life cycle callbacks. Create your entity with the class attribute `Entity` 
-so that the `DataMapper` knows that there is metadata on this to read on the entity
-
-The entity lifecycle callbacks are the same names you are familar with if you have used other PHP or java solutions, which are `PrePersist`,`PostPersist`,`PreUpdate`,`PostUpdate`,`PreRemove`,`PostRemove` and `PostLoad`.
-
-```php
-#[Entity]
-class Article
-{
-    private int $id;
-    private string $title;
-    private string $body;
-    private ?int $author_id = null;
-    private ?string $created_at = null;
-    private ?string $updated_at = null;
-
-    // getters and setters would go here
-
-    #[PrePersist]
-    public function onCreate()
-    {
-        $this->created_at = date('Y-m-d H:i:s');
-    }
-
-    #[PrePersist]
-    #[PreUpdate]
-    public function onCreateOrUpdate()
-    {
-         $this->updated_at = date('Y-m-d H:i:s');
-    }
-}
-```
-
 ## Executing Raw Queries
 
 Sometimes you may need to execute a query directly

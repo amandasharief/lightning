@@ -114,78 +114,6 @@ class ArticleEntity
 
         return $this;
     }
-
-    //
-    private array $called = [];
-
-    #[PreUpdate]
-    #[PrePersist]
-    public function onPrePersistAndUpdate()
-    {
-        $this->wasCalled('onPrePersistAndUpdate');
-    }
-
-    #[PostPersist]
-    #[PostUpdate]
-    public function onPostPersistAndUpdate()
-    {
-        $this->wasCalled('onPostPersistAndUpdate');
-    }
-
-    #[PrePersist]
-    public function onPrePersist()
-    {
-        $this->wasCalled('onPrePersist');
-    }
-    #[PostPersist]
-    public function onPostPersist()
-    {
-        $this->wasCalled('onPostPersist');
-    }
-
-    #[PreUpdate]
-    public function onPreUpdate()
-    {
-        $this->wasCalled('onPreUpdate');
-    }
-    #[PostUpdate]
-    public function onPostUpdate()
-    {
-        $this->wasCalled('onPostUpdate');
-    }
-
-    #[PreRemove]
-    public function onPreRemove()
-    {
-        $this->wasCalled('onPreRemove');
-    }
-
-    #[PostRemove]
-    public function onPostRemove()
-    {
-        $this->wasCalled('onPostRemove');
-    }
-
-    #[PostLoad]
-    public function onPostFind()
-    {
-        $this->wasCalled('onPostLoad');
-    }
-
-    private function wasCalled(string $method)
-    {
-        $this->called[] = $method;
-    }
-
-    public function getCalled(): array
-    {
-        return $this->called;
-    }
-
-    public function reset(): void
-    {
-        $this->called = [];
-    }
 }
 
 class Tag extends AbstractDataMapper
@@ -356,7 +284,18 @@ class Article extends AbstractDataMapper
 
         return $result;
     }
+
+    public function callIsPersisted(object $entity) : bool 
+    {
+        return $this->isPersisted($entity);
+    }
+
+    public function callMarkIsPersisted(object $entity, bool $value) : void 
+    {
+        $this->markPersisted($entity,$value);
+    }
 }
+
 
 final class AbstractDataMapperTest extends TestCase
 {
@@ -479,13 +418,13 @@ final class AbstractDataMapperTest extends TestCase
     public function testFindCount(): void
     {
         $mapper = new Article($this->storage, $this->hydrator);
-        $this->assertEquals(3, $mapper->findCount());
+        $this->assertEquals(3, $mapper->count());
     }
 
     public function testFindCountHookCalled(): void
     {
         $mapper = new Article($this->storage, $this->hydrator);
-        $mapper->findCount();
+        $mapper->count();
     }
 
     public function testFindCountWithQuery(): void
@@ -500,9 +439,8 @@ final class AbstractDataMapperTest extends TestCase
         $mapper = new Article($this->storage, $this->hydrator);
         $entity = $mapper->find(new QueryObject());
         $this->assertEquals('Article #1', $entity->getTitle());
-        $this->assertTrue($mapper->isPersisted($entity));
+        $this->assertTrue($mapper->callIsPersisted($entity));
         $this->assertEquals(['beforeFind','afterFind'], $mapper->getCalled());
-        $this->assertEquals(['onPostLoad'], $entity->getCalled());
     }
 
     public function testFindHookCalled(): void
@@ -573,7 +511,7 @@ final class AbstractDataMapperTest extends TestCase
         $this->assertEquals($expected, $article->getId());
 
         $this->assertEquals(['beforeSave','beforeCreate','afterCreate','afterSave'], $mapper->getCalled());
-        $this->assertEquals(['onPrePersistAndUpdate','onPrePersist','onPostPersistAndUpdate','onPostPersist'], $article->getCalled());
+
     }
 
     public function testCreateBeforeSaveHookCancelled(): void
@@ -593,7 +531,6 @@ final class AbstractDataMapperTest extends TestCase
         $this->assertFalse($mapper->save($article));
 
         $this->assertEquals(['beforeSave'], $mapper->getCalled());
-        $this->assertEquals([], $article->getCalled());
     }
 
     public function testBeforeCreateHookCancelled(): void
@@ -613,7 +550,6 @@ final class AbstractDataMapperTest extends TestCase
         $this->assertFalse($mapper->save($article));
 
         $this->assertEquals(['beforeSave','beforeCreate'], $mapper->getCalled());
-        $this->assertEquals([], $article->getCalled());
     }
 
     public function testUpdate(): void
@@ -621,13 +557,11 @@ final class AbstractDataMapperTest extends TestCase
         $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $mapper->reset();
-        $article->reset();
 
         $article->setTitle('foo');
 
         $this->assertTrue($mapper->save($article));
         $this->assertEquals(['beforeSave','beforeUpdate', 'afterUpdate','afterSave'], $mapper->getCalled());
-        $this->assertEquals(['onPrePersistAndUpdate','onPreUpdate','onPostPersistAndUpdate','onPostUpdate'], $article->getCalled());
     }
 
     public function testUpdateBeforeSaveHookCancelled(): void
@@ -635,12 +569,11 @@ final class AbstractDataMapperTest extends TestCase
         $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $mapper->reset();
-        $article->reset();
+        
         $mapper->stopOn('beforeSave');
         $this->assertFalse($mapper->save($article));
 
         $this->assertEquals(['beforeSave'], $mapper->getCalled());
-        $this->assertEquals([], $article->getCalled()); // expected
     }
 
     public function testUpdateBeforeUpdateHookCancelled(): void
@@ -667,7 +600,7 @@ final class AbstractDataMapperTest extends TestCase
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
 
-        $mapper->markPersisted($article, true);
+        $mapper->callMarkIsPersisted($article, true);
 
         $this->expectException(BadMethodCallException::class);
         $this->expectExceptionMessage('Primary key `id` has no value');
@@ -753,11 +686,10 @@ final class AbstractDataMapperTest extends TestCase
         $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $mapper->reset();
-        $article->reset();
+        
 
         $this->assertTrue($mapper->delete($article));
         $this->assertEquals(['beforeDelete','afterDelete'], $mapper->getCalled());
-        $this->assertEquals(['onPreRemove','onPostRemove'], $article->getCalled());
     }
 
     public function testDeleteHookCancelled(): void

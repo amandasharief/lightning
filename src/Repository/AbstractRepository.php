@@ -83,7 +83,7 @@ abstract class AbstractRepository
      */
     public function findCount(?QueryObject $query = null): int
     {
-        return $this->mapper->findCount($query);
+        return $this->mapper->count($query);
     }
 
     // /**
