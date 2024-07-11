@@ -20,7 +20,7 @@ Create your `DataMapper`, ensuring that you add the `table`, `fields` and the fa
  * @method ArticleEntity[] findAll(QueryObject $query)
  * @method ArticleEntity[] findAllBy(array $criteria, array $options = [])
  */
-class Article extends AbstractDataMapper
+class ArticleMapper extends AbstractDataMapper
 {
     protected $primaryKey = 'id';
     protected string $table = 'articles';
@@ -47,7 +47,7 @@ Create your entity class (a Plain Old PHP Object (POPO)).
 4. the `DataMapper` does not call the setter or getter methods, it uses reflection to set or get values, and properties value should match the fields is/will used in the datasource.
 
 ```php
-final class ArticleEntity
+final class Article
 {
     private int $id;
     private string $title;
@@ -111,7 +111,6 @@ final class ArticleEntity
         return $this;
     }
 }
-
 ```
 
 Finding records, this under the hood uses the `QueryBuilder` component.
@@ -144,7 +143,7 @@ $count = $aritcle->deleteAllBy([
 
 ## Query Object
 
-Under the hood, the find methods use the `QueryObject`, this object is passed to the callbacks.
+Under the hood, the find methods use the `QueryObject`, which is passed to the callbacks. This `QueryObject` represents an SQL query. See [P of EAA Query Object](https://www.martinfowler.com/eaaCatalog/queryObject.html).
 
 ```php
 $query = new QueryObject(['status' => 'pending'],['order' => 'title DESC']);
@@ -157,7 +156,7 @@ $mapper->updateAll($query, ['status'=> 'approved']);
 
 ## Callbacks
 
-> The design of this deliberately does not include a specific event implementation e.g. PSR-14 events. These methods are provided as the first point of call for getting the desired behavior. Note to myself, the Data Mapper design is not suppose to implement other designs, but rather be used to implement other designs.
+> The design of this deliberately does not include a specific event implementation e.g. PSR-14 events. These methods are provided as the first point of call for getting the desired behavior. Note to myself, the Data Mapper design is not suppose to implement other designs, but rather be used to implement by other designs. Try to keep this as independant as possible.
 
 The following callbacks methods are called allowing you modify the behavior of the `DataMapper`, you can create different versions of the `DataMapper` using these methods to carry out different actions such as triggering `PSR-14 events` etc or using hooks or quite simply just placing the logic in the methods.
 
@@ -225,3 +224,51 @@ abstract AppDataMapper extends AbstractDataMapper
     }
 }
 ```
+
+## Entity Lifecycle Callbacks
+
+The `DataMapper` also works with entity life cycle callbacks. Create your entity with the class attribute `Entity` 
+so that the `DataMapper` knows that there is metadata on this to read on the entity
+
+The entity lifecycle callbacks are the same names you are familar with if you have used other PHP or java solutions, which are `PrePersist`,`PostPersist`,`PreUpdate`,`PostUpdate`,`PreRemove`,`PostRemove` and `PostLoad`.
+
+> **_NOTE:_**  Since `FindList` returns values from the database only and not entities, therefore consider this when using the `PostLoad`
+
+
+```php
+#[Entity]
+class Article
+{
+    private int $id;
+    private string $title;
+    private string $body;
+    private ?int $author_id = null;
+    private ?string $created_at = null;
+    private ?string $updated_at = null;
+
+    // getters and setters would go here
+
+    #[PrePersist]
+    public function onCreate()
+    {
+        $this->created_at = date('Y-m-d H:i:s');
+    }
+
+    #[PrePersist]
+    #[PreUpdate]
+    public function onCreateOrUpdate()
+    {
+         $this->updated_at = date('Y-m-d H:i:s');
+    }
+}
+```
+
+## Executing Raw Queries
+
+Sometimes you may need to execute a query directly
+
+```php
+$pdoStatement = $mapper->getDataSource()->execute('SELECT * FROM articles', $params);
+foreach($pdoStatement as $row){
+    // do something
+}

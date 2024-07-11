@@ -8,12 +8,12 @@ use BadMethodCallException;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
-use Lightning\Utility\Collection;
+use Lightning\Hydrator\Hydrator;
+
 use function Lightning\Dotenv\env;
-use Lightning\EventDispatcher\EventDispatcher;
+
 use Lightning\DataMapper\QueryObject;
 
-use Lightning\EventDispatcher\ListenerRegistry;
 use Lightning\Fixture\FixtureManager;
 use Lightning\Test\Fixture\TagsFixture;
 use Lightning\QueryBuilder\QueryBuilder;
@@ -22,14 +22,16 @@ use Lightning\Test\Fixture\ArticlesFixture;
 use Lightning\DataMapper\AbstractDataMapper;
 use Lightning\TestSuite\TestEventDispatcher;
 use Lightning\DataMapper\DataSourceInterface;
+use Lightning\EventDispatcher\EventDispatcher;
 use Lightning\TestSuite\EventDispatcherTestTrait;
 use Lightning\DataMapper\DataSource\DatabaseDataSource;
 use Lightning\Test\TestCase\DataMapper\Entity\TagEntity;
 use Lightning\DataMapper\Exception\EntityNotFoundException;
 use Lightning\EventDispatcher\ListenerProvider\ListenerProvider;
-use Lightning\Hydrator\Hydrator;
 
-final class ArticleEntity
+#[Entity]
+#[HasEntityLifecycleCallbacks]
+class ArticleEntity
 {
     private int $id;
     private string $title;
@@ -112,6 +114,78 @@ final class ArticleEntity
 
         return $this;
     }
+
+    //
+    private array $called = [];
+
+    #[PreUpdate]
+    #[PrePersist]
+    public function onPrePersistAndUpdate()
+    {
+        $this->wasCalled('onPrePersistAndUpdate');
+    }
+
+    #[PostPersist]
+    #[PostUpdate]
+    public function onPostPersistAndUpdate()
+    {
+        $this->wasCalled('onPostPersistAndUpdate');
+    }
+
+    #[PrePersist]
+    public function onPrePersist()
+    {
+        $this->wasCalled('onPrePersist');
+    }
+    #[PostPersist]
+    public function onPostPersist()
+    {
+        $this->wasCalled('onPostPersist');
+    }
+
+    #[PreUpdate]
+    public function onPreUpdate()
+    {
+        $this->wasCalled('onPreUpdate');
+    }
+    #[PostUpdate]
+    public function onPostUpdate()
+    {
+        $this->wasCalled('onPostUpdate');
+    }
+
+    #[PreRemove]
+    public function onPreRemove()
+    {
+        $this->wasCalled('onPreRemove');
+    }
+
+    #[PostRemove]
+    public function onPostRemove()
+    {
+        $this->wasCalled('onPostRemove');
+    }
+
+    #[PostLoad]
+    public function onPostFind()
+    {
+        $this->wasCalled('onPostLoad');
+    }
+
+    private function wasCalled(string $method)
+    {
+        $this->called[] = $method;
+    }
+
+    public function getCalled(): array
+    {
+        return $this->called;
+    }
+
+    public function reset(): void
+    {
+        $this->called = [];
+    }
 }
 
 class Tag extends AbstractDataMapper
@@ -135,7 +209,7 @@ class Article extends AbstractDataMapper
     protected array $fields = [
         'id', 'title','body','author_id','created_at','updated_at'
     ];
-    
+
     public function createEntity(): ArticleEntity
     {
         return new ArticleEntity();
@@ -169,7 +243,7 @@ class Article extends AbstractDataMapper
         $this->stopOn = $method;
     }
 
-    public function reset() : void 
+    public function reset(): void
     {
         $this->called = [];
         $this->stopOn = null;
@@ -279,6 +353,7 @@ class Article extends AbstractDataMapper
     {
         $result = parent::afterFind($result, $query); // code coverage friendly
         $this->wasCalled('afterFind');
+
         return $result;
     }
 }
@@ -294,7 +369,7 @@ final class AbstractDataMapperTest extends TestCase
 
     public function setUp(): void
     {
-        $this->pdo = ( new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
+        $this->pdo = (new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 
         $this->storage = new DatabaseDataSource($this->pdo, new QueryBuilder());
         $this->hydrator = new Hydrator();
@@ -305,7 +380,7 @@ final class AbstractDataMapperTest extends TestCase
             TagsFixture::class,
         ]);
 
-        $this->setEventDispatcher(new TestEventDispatcher(new EventDispatcher(New ListenerProvider())));
+        $this->setEventDispatcher(new TestEventDispatcher(new EventDispatcher(new ListenerProvider())));
     }
 
     public function tearDown(): void
@@ -426,6 +501,8 @@ final class AbstractDataMapperTest extends TestCase
         $entity = $mapper->find(new QueryObject());
         $this->assertEquals('Article #1', $entity->getTitle());
         $this->assertTrue($mapper->isPersisted($entity));
+        $this->assertEquals(['beforeFind','afterFind'], $mapper->getCalled());
+        $this->assertEquals(['onPostLoad'], $entity->getCalled());
     }
 
     public function testFindHookCalled(): void
@@ -482,29 +559,29 @@ final class AbstractDataMapperTest extends TestCase
         $mapper = new Article($this->storage, $this->hydrator);
 
         $article = new ArticleEntity();
-        (new Hydrator())->hydrate($article,[
+        (new Hydrator())->hydrate($article, [
             'title' => 'test',
             'body' => 'none',
             'author_id' => 1234,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
-    
+
         $this->assertTrue($mapper->save($article));
 
         $expected = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'pgsql' ? 1 : 1003;
         $this->assertEquals($expected, $article->getId());
 
         $this->assertEquals(['beforeSave','beforeCreate','afterCreate','afterSave'], $mapper->getCalled());
+        $this->assertEquals(['onPrePersistAndUpdate','onPrePersist','onPostPersistAndUpdate','onPostPersist'], $article->getCalled());
     }
-
 
     public function testCreateBeforeSaveHookCancelled(): void
     {
         $mapper = new Article($this->storage, $this->hydrator);
 
         $article = new ArticleEntity();
-        (new Hydrator())->hydrate($article,[
+        (new Hydrator())->hydrate($article, [
             'title' => 'test',
             'body' => 'none',
             'author_id' => 1234,
@@ -516,6 +593,7 @@ final class AbstractDataMapperTest extends TestCase
         $this->assertFalse($mapper->save($article));
 
         $this->assertEquals(['beforeSave'], $mapper->getCalled());
+        $this->assertEquals([], $article->getCalled());
     }
 
     public function testBeforeCreateHookCancelled(): void
@@ -523,7 +601,7 @@ final class AbstractDataMapperTest extends TestCase
         $mapper = new Article($this->storage, $this->hydrator);
 
         $article = new ArticleEntity();
-        (new Hydrator())->hydrate($article,[
+        (new Hydrator())->hydrate($article, [
             'title' => 'test',
             'body' => 'none',
             'author_id' => 1234,
@@ -535,6 +613,7 @@ final class AbstractDataMapperTest extends TestCase
         $this->assertFalse($mapper->save($article));
 
         $this->assertEquals(['beforeSave','beforeCreate'], $mapper->getCalled());
+        $this->assertEquals([], $article->getCalled());
     }
 
     public function testUpdate(): void
@@ -542,11 +621,13 @@ final class AbstractDataMapperTest extends TestCase
         $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $mapper->reset();
+        $article->reset();
 
         $article->setTitle('foo');
-       
+
         $this->assertTrue($mapper->save($article));
         $this->assertEquals(['beforeSave','beforeUpdate', 'afterUpdate','afterSave'], $mapper->getCalled());
+        $this->assertEquals(['onPrePersistAndUpdate','onPreUpdate','onPostPersistAndUpdate','onPostUpdate'], $article->getCalled());
     }
 
     public function testUpdateBeforeSaveHookCancelled(): void
@@ -554,11 +635,12 @@ final class AbstractDataMapperTest extends TestCase
         $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $mapper->reset();
-
+        $article->reset();
         $mapper->stopOn('beforeSave');
         $this->assertFalse($mapper->save($article));
 
         $this->assertEquals(['beforeSave'], $mapper->getCalled());
+        $this->assertEquals([], $article->getCalled()); // expected
     }
 
     public function testUpdateBeforeUpdateHookCancelled(): void
@@ -575,9 +657,9 @@ final class AbstractDataMapperTest extends TestCase
     public function testUpdateWithNoPrimaryKey(): void
     {
         $mapper = new Article($this->storage, $this->hydrator);
-       
+
         $article = new ArticleEntity();
-        (new Hydrator())->hydrate($article,[
+        (new Hydrator())->hydrate($article, [
             'title' => 'test',
             'body' => 'none',
             'author_id' => 1234,
@@ -585,7 +667,7 @@ final class AbstractDataMapperTest extends TestCase
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
 
-        $mapper->markPersisted($article,true);
+        $mapper->markPersisted($article, true);
 
         $this->expectException(BadMethodCallException::class);
         $this->expectExceptionMessage('Primary key `id` has no value');
@@ -600,7 +682,7 @@ final class AbstractDataMapperTest extends TestCase
         $mapper->reset();
 
         $article->setId(1234);
-     
+
         $this->assertFalse($mapper->save($article));
         $this->assertEquals(['beforeSave','beforeUpdate'], $mapper->getCalled());
     }
@@ -671,9 +753,11 @@ final class AbstractDataMapperTest extends TestCase
         $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $mapper->reset();
+        $article->reset();
 
         $this->assertTrue($mapper->delete($article));
         $this->assertEquals(['beforeDelete','afterDelete'], $mapper->getCalled());
+        $this->assertEquals(['onPreRemove','onPostRemove'], $article->getCalled());
     }
 
     public function testDeleteHookCancelled(): void
@@ -681,6 +765,7 @@ final class AbstractDataMapperTest extends TestCase
         $mapper = new Article($this->storage, $this->hydrator);
         $article = $mapper->find();
         $mapper->reset();
+    
 
         $mapper->stopOn('beforeDelete');
         $this->assertFalse($mapper->delete($article));
@@ -788,67 +873,7 @@ final class AbstractDataMapperTest extends TestCase
         ];
 
         $this->assertEquals(
-           $expected, $mapper->findList(null, ['valueField' => 'title','groupField' => 'author_id'])
+            $expected, $mapper->findList(null, ['valueField' => 'title','groupField' => 'author_id'])
         );
     }
-
-    // public function testBeforeFindHookFail(): void
-    // {
-    //     $mapper = new Article($this->storage, $this->hydrator);
-
-    //     $this->assertNull($mapper->find());
-    //     $this->assertTrue($mapper->findAll()->isEmpty());
-    //     $this->assertEquals([], $mapper->findList());
-    //     $this->assertEquals(0, $mapper->findCount());
-    // }
-
-    // public function testBeforeCreateHookFail(): void
-    // {
-    //     $mapper = new Article($this->storage, $this->hydrator);
-
-    //     $article = $mapper->createEntity([
-    //         'title' => 'test',
-    //         'body' => 'none',
-    //         'author_id' => 1234,
-    //         'created_at' => date('Y-m-d H:i:s'),
-    //         'updated_at' => date('Y-m-d H:i:s'),
-    //     ]);
-
-    //     $this->assertFalse($mapper->save($article));
-    // }
-
-    // public function testBeforeSaveHookFail(): void
-    // {
-    //     $mapper = new Article($this->storage, $this->hydrator);
-
-    //     $article = $mapper->createEntity([
-    //         'title' => 'test',
-    //         'body' => 'none',
-    //         'author_id' => 1234,
-    //         'created_at' => date('Y-m-d H:i:s'),
-    //         'updated_at' => date('Y-m-d H:i:s'),
-    //     ]);
-
-    //     $this->assertFalse($mapper->save($article));
-    // }
-
-    // public function testBeforeDeleteHookFail(): void
-    // {
-    //     $mapper = new Article($this->storage, $this->hydrator);
-    //     $mapper->registerHook('beforeDelete', 'hookFail');
-
-    //     $article = $mapper->find();
-
-    //     $this->assertFalse($mapper->delete($article));
-    // }
-
-    // public function testBeforeUpdateHookFail(): void
-    // {
-    //     $mapper = new Article($this->storage, $this->hydrator);
-    //     $mapper->registerHook('beforeUpdate', 'hookFail');
-
-    //     $article = $mapper->find();
-
-    //     $this->assertFalse($mapper->update($article));
-    // }
 }

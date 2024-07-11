@@ -11,6 +11,7 @@
 
 namespace Lightning\DataMapper;
 
+use ReflectionClass;
 use ReflectionProperty;
 use BadMethodCallException;
 use Lightning\Database\Row;
@@ -39,6 +40,11 @@ abstract class AbstractDataMapper
     private array $persisted = [];
 
     /**
+     * Holds the Entity callbacks
+     */
+    private ?array $entityCallbacks = null;
+
+    /**
      * Constructor
      */
     public function __construct(protected DataSourceInterface $dataSource, protected Hydrator $hydrator)
@@ -46,11 +52,55 @@ abstract class AbstractDataMapper
         $this->initialize();
     }
 
+
     /**
      * A hook that is called when the object is created
      */
     protected function initialize(): void
     {
+    }
+
+    /**
+     * Register Entity Callbacks by reading entity object looking for attributes on the Entity classes that
+     * define the callbacks e.g #[PreUpdate]. 
+     * 
+     * Entity lifecycle callbacks should be executed first and last, rather 
+     */
+    private function registerEntityCallbacks(object $entity): void
+    {
+        $this->entityCallbacks = [];
+
+        $reflection = new \ReflectionClass($entity);
+        /**
+         * Only check metadata for callbacks if there is a [Entity] attribute
+         */
+        if(!$reflection->getAttributes($reflection->getNamespaceName(). '\Entity')){
+            return;
+        }
+
+        foreach ($reflection->getMethods() as $method) {
+            $attributes = $method->getAttributes();
+            $methodName = null;
+            foreach ($attributes as $attribute) {
+                 $attributeName = substr(strrchr($attribute->getName(), '\\'), 1);
+                if (in_array($attributeName, ['PrePersist','PostPersist','PreUpdate','PostUpdate','PostLoad','PreRemove','PostRemove'])) {
+                    $this->entityCallbacks[$attributeName][] = $methodName ?? $method->getName();
+                }
+            }
+        }
+    }
+
+    private function triggerEntityCallback(string $name, object $entity): void
+    {
+        if($this->entityCallbacks === null){
+            $this->registerEntityCallbacks($entity);
+        }
+        
+        if(isset($this->entityCallbacks[$name])){
+            foreach($this->entityCallbacks[$name] as $method){
+                $entity->$method();
+            }
+        }
     }
 
     /**
@@ -103,11 +153,13 @@ abstract class AbstractDataMapper
      * Inserts an Entity into the database
      */
     protected function create(object $entity): bool
-    {
+    {    
         if (! $this->beforeCreate($entity)) {
             return false;
         }
-
+        $this->triggerEntityCallback('PrePersist', $entity);
+        
+    
         $row = array_intersect_key($this->mapEntityToData($entity), array_flip($this->fields));
 
         $result = $this->dataSource->create($this->table, $row);
@@ -120,6 +172,7 @@ abstract class AbstractDataMapper
             }
 
             $this->afterCreate($entity);
+            $this->triggerEntityCallback('PostPersist', $entity);            
         }
 
         return $result;
@@ -319,12 +372,17 @@ abstract class AbstractDataMapper
             return [];
         }
 
+        /**
+         * @internal this is placed here to keep results consistent, as find operations can include or not include
+         * mapping. Objects used in this are ROW not Entity.
+         */
         $result = $this->afterFind($result, $query);
-
+        
         if ($mapResult) {
             foreach ($result as $index => $row) {
                 $result[$index] = $this->mapDataToEntity($row->toArray());
                 $this->markPersisted($result[$index], true);
+                $this->triggerEntityCallback('PostLoad', $result[$index]);
             }
         }
 
@@ -339,14 +397,16 @@ abstract class AbstractDataMapper
         if (! $this->beforeUpdate($entity)) {
             return false;
         }
+        $this->triggerEntityCallback('PreUpdate', $entity);
 
         $row = array_intersect_key($this->mapEntityToData($entity), array_flip($this->fields));
         $query = $this->createQueryObject($this->getConditionsFromState($row));
 
         $result = $this->dataSource->update($this->table, $query, $row) === 1;
 
-        if ($result) {
+        if ($result) {   
             $this->afterUpdate($entity);
+            $this->triggerEntityCallback('PostUpdate', $entity);
         }
 
         return $result;
@@ -416,6 +476,7 @@ abstract class AbstractDataMapper
         if (! $this->beforeDelete($entity)) {
             return false;
         }
+        $this->triggerEntityCallback('PreRemove', $entity);
 
         $row = $this->mapEntityToData($entity);
         $query = $this->createQueryObject($this->getConditionsFromState($row));
@@ -425,6 +486,7 @@ abstract class AbstractDataMapper
         if ($result) {
             $this->markPersisted($entity, false);
             $this->afterDelete($entity);
+            $this->triggerEntityCallback('PostRemove', $entity);
         }
 
         return $result;
