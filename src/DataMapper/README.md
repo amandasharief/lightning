@@ -119,13 +119,6 @@ Finding records, this under the hood uses the `QueryBuilder` component.
 $entity = $article->findBy(['id' => 1000]);
 $entities = $article->findAllBy(['status' => 'new']);
 $count = $article->findCountBy(['status' => 'new']);
-$ids = $article->findListBy(['status <>' => 'draft']);
-$statuses = $article->findListBy(['status <>' => 'draft'],[
-    'keyField'=> 'id', 'valueField' => 'status'
-]);
-$grouped = $article->findListBy(['status <>' => 'draft'],[
-    'keyField'=> 'id', 'valueField' => 'title' ,'groupField' => 'status' 
-    ]);
 ```
 
 You can carry out bulk operations, remember these don't trigger `events` or `hooks`.
@@ -231,9 +224,6 @@ The `DataMapper` also works with entity life cycle callbacks. Create your entity
 so that the `DataMapper` knows that there is metadata on this to read on the entity
 
 The entity lifecycle callbacks are the same names you are familar with if you have used other PHP or java solutions, which are `PrePersist`,`PostPersist`,`PreUpdate`,`PostUpdate`,`PreRemove`,`PostRemove` and `PostLoad`.
-
-> **_NOTE:_**  Since `FindList` returns values from the database only and not entities, therefore consider this when using the `PostLoad`
-
 
 ```php
 #[Entity]

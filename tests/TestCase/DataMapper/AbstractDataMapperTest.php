@@ -805,75 +805,75 @@ final class AbstractDataMapperTest extends TestCase
         $this->assertFalse($mapper->deleteMany([$article]));
     }
 
-    public function testFindList(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $this->assertEquals(
-            [1000,1001,1002],
-            $mapper->findList()
-        );
-    }
+    // public function testFindList(): void
+    // {
+    //     $mapper = new Article($this->storage, $this->hydrator);
+    //     $this->assertEquals(
+    //         [1000,1001,1002],
+    //         $mapper->findList()
+    //     );
+    // }
 
-    public function testFindListWithNoPrimaryKey(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $reflection = new ReflectionClass($mapper);
-        $property = $reflection->getProperty('primaryKey');
-        $property->setAccessible(true);
-        $property->setValue($mapper, ['article_id','author_id']);
+    // public function testFindListWithNoPrimaryKey(): void
+    // {
+    //     $mapper = new Article($this->storage, $this->hydrator);
+    //     $reflection = new ReflectionClass($mapper);
+    //     $property = $reflection->getProperty('primaryKey');
+    //     $property->setAccessible(true);
+    //     $property->setValue($mapper, ['article_id','author_id']);
 
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Cannot determine primary key');
-        $mapper->findList();
-    }
+    //     $this->expectException(InvalidArgumentException::class);
+    //     $this->expectExceptionMessage('Cannot determine primary key');
+    //     $mapper->findList();
+    // }
 
-    public function testFindListWithQuery(): void
-    {
-        $query = new QueryObject(['id !=' => 1001]);
-        $mapper = new Article($this->storage, $this->hydrator);
-        $this->assertEquals(
-            [1000,1002],
-            $mapper->findList($query)
-        );
-    }
+    // public function testFindListWithQuery(): void
+    // {
+    //     $query = new QueryObject(['id !=' => 1001]);
+    //     $mapper = new Article($this->storage, $this->hydrator);
+    //     $this->assertEquals(
+    //         [1000,1002],
+    //         $mapper->findList($query)
+    //     );
+    // }
 
-    public function testFindListBy(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $this->assertEquals(
-            [1000,1002],
-            $mapper->findListBy(['id !=' => 1001])
-        );
-    }
+    // public function testFindListBy(): void
+    // {
+    //     $mapper = new Article($this->storage, $this->hydrator);
+    //     $this->assertEquals(
+    //         [1000,1002],
+    //         $mapper->findListBy(['id !=' => 1001])
+    //     );
+    // }
 
-    public function testFindListWithValues(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $this->assertEquals(
-            [1000 => 'Article #1',1001 => 'Article #2',1002 => 'Article #3'],
-            $mapper->findList(null, ['idField' => 'id','valueField' => 'title'])
-        );
-    }
+    // public function testFindListWithValues(): void
+    // {
+    //     $mapper = new Article($this->storage, $this->hydrator);
+    //     $this->assertEquals(
+    //         [1000 => 'Article #1',1001 => 'Article #2',1002 => 'Article #3'],
+    //         $mapper->findList(null, ['idField' => 'id','valueField' => 'title'])
+    //     );
+    // }
 
-    public function testFindListGrouped(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
+    // public function testFindListGrouped(): void
+    // {
+    //     $mapper = new Article($this->storage, $this->hydrator);
 
-        $mapper->updateAll(new QueryObject(), ['author_id' => 2000]);
-        $mapper->updateAll(new QueryObject(['id !=' => 1001]), ['author_id' => 4000]);
+    //     $mapper->updateAll(new QueryObject(), ['author_id' => 2000]);
+    //     $mapper->updateAll(new QueryObject(['id !=' => 1001]), ['author_id' => 4000]);
 
-        $expected = [
-            4000 => [
-                1000 => 'Article #1',
-                1002 => 'Article #3'
-            ],
-            2000 => [
-                1001 => 'Article #2'
-            ]
-        ];
+    //     $expected = [
+    //         4000 => [
+    //             1000 => 'Article #1',
+    //             1002 => 'Article #3'
+    //         ],
+    //         2000 => [
+    //             1001 => 'Article #2'
+    //         ]
+    //     ];
 
-        $this->assertEquals(
-            $expected, $mapper->findList(null, ['valueField' => 'title','groupField' => 'author_id'])
-        );
-    }
+    //     $this->assertEquals(
+    //         $expected, $mapper->findList(null, ['valueField' => 'title','groupField' => 'author_id'])
+    //     );
+    // }
 }

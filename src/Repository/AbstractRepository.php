@@ -86,19 +86,19 @@ abstract class AbstractRepository
         return $this->mapper->findCount($query);
     }
 
-    /**
-     * Finds a list using the query
-     *
-     * @param array $fields
-     *  - keyField: defaults to primary key if it is a string
-     *  - valueField: optional
-     *  - groupField: optional
-     * @return array
-     */
-    public function findList(?QueryObject $query = null, array $fields = []): array
-    {
-        return $this->mapper->findList($query, $fields);
-    }
+    // /**
+    //  * Finds a list using the query
+    //  *
+    //  * @param array $fields
+    //  *  - keyField: defaults to primary key if it is a string
+    //  *  - valueField: optional
+    //  *  - groupField: optional
+    //  * @return array
+    //  */
+    // public function findList(?QueryObject $query = null, array $fields = []): array
+    // {
+    //     return $this->mapper->findList($query, $fields);
+    // }
 
     /**
      * Returns a single instance

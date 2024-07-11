@@ -243,68 +243,6 @@ abstract class AbstractDataMapper
     }
 
     /**
-     * Finds a list using the query
-     *
-     * @param QueryObject|null $query
-     * @param array $fields
-     *  - keyField: defaults to primary key if it is a string
-     *  - valueField: optional
-     *  - groupField: optional
-     * @return array
-     */
-    public function findList(?QueryObject $query = null, array $fields = []): array
-    {
-        $query = $query ?? $this->createQueryObject();
-
-        $keyField = $fields['keyField'] ?? (is_string($this->primaryKey) ? $this->primaryKey : null);
-        if (! $keyField) {
-            throw new InvalidArgumentException('Cannot determine primary key');
-        }
-
-        return $this->convertCollectionToList(
-            $this->read($query, false),
-            $keyField, $fields['valueField'] ?? null, $fields['groupField'] ?? null
-        );
-    }
-
-    /**
-     * Converts the Collection to a list
-     */
-    private function convertCollectionToList(array $collection, string $keyField, ?string $valueField = null, ?string $groupField = null): array
-    {
-        $result = [];
-
-        // grouped list
-        if ($groupField && $valueField && $keyField) {
-            $result = array_reduce($collection, function (array $entitites, Row $row) use ($keyField, $valueField, $groupField) {
-                $entitites[$row[$groupField] ?? null][$row[$keyField] ?? null] = $row[$valueField] ?? null;
-
-                return $entitites;
-            }, []);
-        }
-
-        // key value list
-        elseif ($valueField && $keyField) {
-            $result = array_reduce($collection, function (array $entitites, Row $row) use ($keyField, $valueField) {
-                $entitites[$row[$keyField] ?? null] = $row[$valueField] ?? null;
-
-                return $entitites;
-            }, []);
-        }
-
-        // value list
-        elseif ($keyField) {
-            $result = array_reduce($collection, function (array $entitites, Row $row) use ($keyField) {
-                $entitites[] = $row[$keyField] ?? null;
-
-                return $entitites;
-            }, []);
-        }
-
-        return $result;
-    }
-
-    /**
      * Gets an Entity or throws an exception
      */
     public function getBy(array $criteria = [], array $options = []): object
@@ -343,22 +281,22 @@ abstract class AbstractDataMapper
         return $this->findCount($this->createQueryObject($criteria, $options));
     }
 
-    /**
-     * Finds a list
-     * @param array $fields
-     *  - keyField: defaults to primary key if it is a string
-     *  - valueField: optional
-     *  - groupField: optional
-     */
-    public function findListBy(array $criteria, array $fields = [], array $options = []): array
-    {
-        return $this->findList($this->createQueryObject($criteria, $options), $fields);
-    }
+    // /**
+    //  * Finds a list
+    //  * @param array $fields
+    //  *  - keyField: defaults to primary key if it is a string
+    //  *  - valueField: optiona§l
+    //  *  - groupField: optional
+    //  */
+    // public function findListBy(array $criteria, array $fields = [], array $options = []): array
+    // {
+    //     return $this->findList($this->createQueryObject($criteria, $options), $fields);
+    // }
 
     /**
      * Reads from the datasource
      */
-    protected function read(QueryObject $query, bool $mapResult = true): array
+    protected function read(QueryObject $query): array
     {
         if (! $this->beforeFind($query)) {
             return [];
@@ -372,19 +310,13 @@ abstract class AbstractDataMapper
             return [];
         }
 
-        /**
-         * @internal this is placed here to keep results consistent, as find operations can include or not include
-         * mapping. Objects used in this are ROW not Entity.
-         */
-        $result = $this->afterFind($result, $query);
-        
-        if ($mapResult) {
-            foreach ($result as $index => $row) {
-                $result[$index] = $this->mapDataToEntity($row->toArray());
-                $this->markPersisted($result[$index], true);
-                $this->triggerEntityCallback('PostLoad', $result[$index]);
-            }
+        foreach ($result as $index => $row) {
+            $result[$index] = $this->mapDataToEntity($row->toArray());
+            $this->markPersisted($result[$index], true);
+            $this->triggerEntityCallback('PostLoad', $result[$index]);
         }
+
+        $result = $this->afterFind($result, $query);
 
         return $result;
     }

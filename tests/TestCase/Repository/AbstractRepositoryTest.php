@@ -100,36 +100,36 @@ final class AbstractRepositoryTest extends TestCase
         $this->assertEquals(0, $respository->findCount(new QueryObject(['id' => 1234])));
     }
 
-    public function testFindList(): void
-    {
-        $respository = $this->createRepository();
-        $expected = [
-            0 => 1000,
-            1 => 1001,
-            2 => 1002
-        ];
+    // public function testFindList(): void
+    // {
+    //     $respository = $this->createRepository();
+    //     $expected = [
+    //         0 => 1000,
+    //         1 => 1001,
+    //         2 => 1002
+    //     ];
 
-        $this->assertEquals($expected, $respository->findList());
-    }
+    //     $this->assertEquals($expected, $respository->findList());
+    // }
 
-    public function testFindListWithOptions(): void
-    {
-        $respository = $this->createRepository();
-        $expected = [
-            1000 => 'Article #1',
-            1001 => 'Article #2',
-            1002 => 'Article #3'
-        ];
+    // public function testFindListWithOptions(): void
+    // {
+    //     $respository = $this->createRepository();
+    //     $expected = [
+    //         1000 => 'Article #1',
+    //         1001 => 'Article #2',
+    //         1002 => 'Article #3'
+    //     ];
 
-        $this->assertEquals($expected, $respository->findList(null, ['keyField' => 'id','valueField' => 'title']));
-    }
+    //     $this->assertEquals($expected, $respository->findList(null, ['keyField' => 'id','valueField' => 'title']));
+    // }
 
-    public function testFindListNone(): void
-    {
-        $respository = $this->createRepository();
+    // public function testFindListNone(): void
+    // {
+    //     $respository = $this->createRepository();
 
-        $this->assertEquals([], $respository->findList(new QueryObject(['id' => 1234])));
-    }
+    //     $this->assertEquals([], $respository->findList(new QueryObject(['id' => 1234])));
+    // }
 
     public function testFindBy(): void
     {
@@ -155,17 +155,17 @@ final class AbstractRepositoryTest extends TestCase
         $this->assertEquals(2, $respository->findCountBy(['id <>' => 1001]));
     }
 
-    public function testFindListBy(): void
-    {
-        $respository = $this->createRepository();
+    // public function testFindListBy(): void
+    // {
+    //     $respository = $this->createRepository();
 
-        $this->assertEmpty($respository->findListBy(['id' => 12345678]));
-        $expected = [
-            0 => 1000,
-            1 => 1002
-        ];
-        $this->assertEquals($expected, $respository->findListBy(['id <>' => 1001]));
-    }
+    //     $this->assertEmpty($respository->findListBy(['id' => 12345678]));
+    //     $expected = [
+    //         0 => 1000,
+    //         1 => 1002
+    //     ];
+    //     $this->assertEquals($expected, $respository->findListBy(['id <>' => 1001]));
+    // }
 
     public function testSave(): void
     {
