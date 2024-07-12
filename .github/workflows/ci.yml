@@ -36,7 +36,7 @@ jobs:
       - name: Setup Redis
         run: docker run -p 6379:6379 -d redis
       - name: Checkout source code
-        uses: "actions/checkout@v3"
+        uses: "actions/checkout@v4"
       - name: Install PHP
         uses: "shivammathur/setup-php@v2"
         with:
