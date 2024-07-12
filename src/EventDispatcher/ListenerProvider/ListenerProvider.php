@@ -35,12 +35,24 @@ final class ListenerProvider implements ListenerProviderInterface
         foreach ($this->listeners[$eventName] ?? [] as $index => &$handler) {
             if ($handler == $callable) {
                 unset($this->listeners[$eventName][$index]);
+                // clean up properly here
+                if (empty($this->listeners[$eventName])) {
+                    unset($this->listeners[$eventName]);
+                }
 
                 break;
             }
         }
 
         return $this;
+    }
+
+    /**
+     * Checks if an event has listeners
+     */
+    public function hasListeners(string $eventName): bool
+    {
+        return isset($this->listeners[$eventName]);
     }
 
     /**

@@ -42,13 +42,24 @@ final class PriorityListenerProvider implements ListenerProviderInterface
             foreach ($listeners as $index => &$handler) {
                 if ($handler == $callable) {
                     unset($this->listeners[$eventName][$priority][$index], $this->sortedListeners[$eventName]);
-
+                    // clean up properly here
+                    if (empty($this->listeners[$eventName])) {
+                        unset($this->listeners[$eventName]);
+                    }
                     break;
                 }
             }
         }
 
         return $this;
+    }
+        
+    /**
+     * Checks if an event has listeners
+     */
+    public function hasListeners(string $eventName): bool
+    {
+        return isset($this->listeners[$eventName]);
     }
 
     /**

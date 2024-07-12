@@ -34,8 +34,8 @@ To work with any `ListenerProviderInterface` object from the code that wishes to
 
 ```php
 $eventDispatcher->configure(function (ListenerProvider $provider){
-        $provider->add(Event::class, [$this, 'beforeSave']);
-    });
+    $provider->add(Event::class, [$this, 'beforeSave']);
+});
 ```
 
 ## Listener Providers
@@ -59,7 +59,7 @@ class OrderListener
 To add a Listener to the Listener Provider
 
 ```php
-$listenerProvider->add(AfterOrder::class, [$this, 'afterOrder'];
+$listenerProvider->add(AfterOrder::class, [$this, 'afterOrder']);
 $listenerProvider->add(AfterOrder::class, function(AfterOrder $order){
     // do something
 });
