@@ -1,38 +1,44 @@
 # DataMapper
 
-DataMapper component implements the [Data Mapper Pattern](https://martinfowler.com/eaaCatalog/dataMapper.html), this uses the `Entity`, `Collection` and `QueryBuilder` components.
+DataMapper component implements the [Data Mapper Pattern](https://martinfowler.com/eaaCatalog/dataMapper.html).
 
-Recently i thought to myself how much code is in an ORM or Data Mapper to save the programmer a few seconds when coding, but then on each script run its doing all kinds of checks and trying to figure out things out, it is totally unnessary. This datamapper, you set the initial configuration, it uses minimal
-magic.
+Recently i thought to myself how much code is in an ORM or Data Mapper to save the programmer a few seconds when coding, but then on each script run its doing all kinds of checks and trying to figure out things out, it is totally unnessary. This datamapper, you set the initial configuration, it uses minimal magic.
 
 ## Example
 
-Create your `DataMapper`, ensuring that you add the `table`, `fields` and the factory method `createEntity`.  
+Create your `DataMapper`, ensuring that you add the `table`, `fields` and the factory method `createEntity`. By default the Data Mapper will set the primary key to `id`. If you want to use something else then override the `primaryKey` property with the name of the field or an array of fields, if it is a composite primary key.
 
-> **_NOTE:_** If you wish to use custom mapping such as `fromState` and `toState` in your entity classes you can override the `mapDataToEntity` and `mapEntityToData` methods.
+> **_NOTE:_** If you wish to use custom mapping such as `fromState` and `toState` in your entity classes you can override the `mapDataToEntity` and `mapEntityToData` methods
 
 ```php
 /**
- * Article Mapper
+ * Article Data Mapper
  * 
- * @method ?ArticleEntity find(QueryObject $query)
- * @method ?ArticleEntity findBy(array $criteria, array $options = [])
- * @method ArticleEntity[] findAll(QueryObject $query)
- * @method ArticleEntity[] findAllBy(array $criteria, array $options = [])
+ * @method ?Article find(int|string|array $id, array $options = [])
+ * @method Article[] findAll(array $options = [])
+ * @method Article[] findAllBy(array criteria array $options = [])
+ * @method ?Article findBy(array $criteria = [], array $options = [])
  */
-class ArticleMapper extends AbstractDataMapper
+class ArticleDataMapper extends AbstractDataMapper
 {
-    protected $primaryKey = 'id';
+   /**
+    * Set the table name
+    */
     protected string $table = 'articles';
 
-    // fields to work with
+   /**
+    * Set the fields for the mapper to work with in the database
+    */
     protected array $fields = [
-        'id', 'title','body','author_id','created_at','updated_at'
+        'id', 'title', 'body','author_id','created_at','updated_at'
     ];
 
-    public function createEntity(): ArticleEntity
+   /**
+    * Create a factory method to
+    */
+    public function createEntity(): Article
     {
-        return new ArticleEntity();
+        return new Article();
     }   
 }
 ```
@@ -42,9 +48,10 @@ The `DataMapper` will use the `Hydrator` to set the properties on your `Entity`.
 Create your entity class (a Plain Old PHP Object (POPO)).
 
 1. Only make a property nullable if the data storage is set to `nullable`.
-2. properties should be `private`
-3. the primary key should not have a setter method, the datamapper will use reflection to set this
-4. the `DataMapper` does not call the setter or getter methods, it uses reflection to set or get values, and properties value should match the fields is/will used in the datasource.
+2. Properties should be `private`.
+3. The primary key should not have a setter method, `DataMapper` will use reflection to set this. The getter method should
+check if the variable has been initialized before getting it.
+4. The `DataMapper` does not call the setter or getter methods, it uses reflection to set or get values, and property names should match the fields that are used in the datasource.
 
 ```php
 final class Article
@@ -113,117 +120,78 @@ final class Article
 }
 ```
 
-Finding records, this under the hood uses the `QueryBuilder` component.
+## Finding Records
+
+Finding records, this under the hood uses the `QueryBuilder` component, whose readme contains more examples on using different criteria to create different conditions.
 
 ```php
-$entity = $article->findBy(['id' => 1000]);
-$entities = $article->findAllBy(['status' => 'new']);
-$count = $article->findCountBy(['status' => 'new']);
-```
+# Count
+$count = $mapper->count();
+$count = $mapper->countBy(['status' => 'approved']);
 
-You can carry out bulk operations, remember these don't trigger `events` or `hooks`.
+$mapper->delete($entity); 
 
-```php
-$count = $article->updateAllBy(
-    ['status'=>'pending','owner'=> 1234], 
-    ['status'=>'approved']
-);
-$count = $aritcle->deleteAllBy([
-    'status'=>'draft',
-    'created_date <' => date('Y-m-d H:i:s',strtotime('- 3 months'))
+$entity = $mapper->find(1234); // load entity with primary key 1234
+$entity = $mapper->findBy(['status' => ['approved','published'],'owner_id !=' => 1234]);
+
+$entity = $mapper->get(1234); // same as find but will throw an entity not found exception if no record is found
+
+$articles = $mapper->findAll();
+$articles = $mapper->findAllBy([
+    'title LIKE' => '%foo', // LIKE or NOT LIKE
+    'status' => ['approved','published'], 
+    'created_at BETWEEN' => ['2024-01-01 12:00:00', '2024-06-01 12:00:00']
 ]);
 ```
 
-## Query Object
-
-Under the hood, the find methods use the `QueryObject`, which is passed to the callbacks. This `QueryObject` represents an SQL query. See [P of EAA Query Object](https://www.martinfowler.com/eaaCatalog/queryObject.html).
+The `DataMapper` no longer has bulk methods such as `update all` or `delete all`, since whilst convinent it does not have anything to do with the mapper. Therefore you should create a query method which uses the PDO object. 
 
 ```php
-$query = new QueryObject(['status' => 'pending'],['order' => 'title DESC']);
-$result = $mapper->find($query);
-$result = $mapper->findAll($query);
-$result = $mapper->findCount($query);
-$mapper->deleteAll($query);
-$mapper->updateAll($query, ['status'=> 'approved']);
+$pdo = $mapper->getDataSource()->getPdo();
+
+// Update 
+$pdo->prepare('UPDATE users SET status = ? WHERE status = ?')
+    ->execute(['active', 'inactive']);
+
+// Delete
+$stmt = $pdo->prepare('DELETE FROM articles WHERE category = ?')
+$stmt->execute(['draft']);
+echo $stmt->rowCount(); // number of records deleted
 ```
 
-## Callbacks
+## Callbacks (PSR-14)
 
-> The design of this deliberately does not include a specific event implementation e.g. PSR-14 events. These methods are provided as the first point of call for getting the desired behavior. Note to myself, the Data Mapper design is not suppose to implement other designs, but rather be used to implement by other designs. Try to keep this as independant as possible.
+The follow callbacks are supported and the `EventManger` which is a tiny and highly efficient `PSR-14` implementation, using a single object to register, unregister and dispatch events. The `EventManagerInterface` is an extension to the `EventDispatcherInterface` offer methods to standardize how to register and unregister events, as well methods to create a more efficient dispatch process which is extremly imporant in classes where there could many events dispatched (e.g Database)
 
-The following callbacks methods are called allowing you modify the behavior of the `DataMapper`, you can create different versions of the `DataMapper` using these methods to carry out different actions such as triggering `PSR-14 events` etc or using hooks or quite simply just placing the logic in the methods.
-
-- `initialize` - This is triggered when the data mapper is constructed
-- `beforeSave`  - triggered before beforeCreate or beforeUpdate
-- `beforeCreate` - triggered on save if the operation is a create
-- `beforeUpdate` - triggered on save if the operation is an update
-- `beforeDelete`
+- `beforeSave`  - triggered before beforeCreate or beforeUpdate. By stopping the Event you abort the save operation
+- `beforeCreate` - triggered on save if the operation is a create. By stopping the Event you abort the create operation
+- `beforeUpdate` - triggered on save if the operation is an update. By stopping the Event you abort the update operation
+- `beforeDelete` - triggered on delete. By stopping the Event you abort the delete operation
 - `afterCreate` - triggered on save if the operation was a create
 - `aterUpdate` - triggered on save if the operation was an update
 - `afterSave` - triggered after afterCreate or afterUpdate
 - `afterDelete`
-- `beforeFind` - triggered on find, findCount and findList
-- `afterFind` - triggered on find and findList.
+- `beforeFind` - triggered on all find operations including count. By stopping the Event you abort the find operation
+- `afterFind` - triggered on all find operations including count.
 
-For example 
+To register a callback pass the name of the event class name and then a callable
 
 ```php
-abstract AppDataMapper extends AbstractDataMapper
+$eventManager->addListener(BeforeFind::class, function(BeforeFind $event)){
+    // do something
+}
+$eventManager->addListener(BeforeFind::class, [$this, 'beforeFind']);
+$eventManager->addListener(BeforeFind::class, new MyListener()); 
+```
+
+Example Listener class:
+
+```php
+class MyListener
 {
-    protected function beforeCreate(object $entity): bool
+    public function __invoke(BeforeFind $event) : void 
     {
-        return true;
-    }
 
-    protected function afterCreate(object $entity): void
-    {
-    }
-
-    protected function beforeUpdate(object $entity): bool
-    {
-        return true;
-    }
-
-    protected function afterUpdate(object $entity): void
-    {
-    }
-
-    protected function beforeSave(object $entity): bool
-    {
-        return true;
-    }
-
-    protected function afterSave(object $entity): void
-    {
-    }
-
-    protected function beforeDelete(object $entity): bool
-    {
-        return true;
-    }
-
-    protected function afterDelete(object $entity): void
-    {
-    }
-
-    protected function beforeFind(QueryObject $query): bool
-    {
-        return true;
-    }
-
-    protected function afterFind(array $resultSet, QueryObject $query): array
-    {
-        return $resultSet;
     }
 }
 ```
-
-## Executing Raw Queries
-
-Sometimes you may need to execute a query directly
-
-```php
-$pdoStatement = $mapper->getDataSource()->execute('SELECT * FROM articles', $params);
-foreach($pdoStatement as $row){
-    // do something
-}

@@ -3,308 +3,46 @@
 namespace Lightning\Test\DataMapper;
 
 use PDO;
-use ReflectionClass;
 use BadMethodCallException;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-
 use Lightning\Hydrator\Hydrator;
 
 use function Lightning\Dotenv\env;
 
-use Lightning\DataMapper\QueryObject;
-
 use Lightning\Fixture\FixtureManager;
 use Lightning\Test\Fixture\TagsFixture;
+use Lightning\EventManager\EventManager;
 use Lightning\QueryBuilder\QueryBuilder;
 use Lightning\Test\PersistentPdoFactory;
+use Lightning\DataMapper\Event\AfterFind;
+use Lightning\DataMapper\Event\AfterSave;
+use Lightning\Hydrator\HydratorInterface;
+use Lightning\DataMapper\Event\BeforeFind;
+use Lightning\DataMapper\Event\BeforeSave;
+use Lightning\DataMapper\Event\AfterCreate;
+use Lightning\DataMapper\Event\AfterDelete;
+use Lightning\DataMapper\Event\AfterUpdate;
 use Lightning\Test\Fixture\ArticlesFixture;
-use Lightning\DataMapper\AbstractDataMapper;
-use Lightning\TestSuite\TestEventDispatcher;
-use Lightning\DataMapper\DataSourceInterface;
-use Lightning\EventDispatcher\EventDispatcher;
-use Lightning\TestSuite\EventDispatcherTestTrait;
+use Lightning\DataMapper\Event\BeforeCreate;
+use Lightning\DataMapper\Event\BeforeDelete;
+use Lightning\DataMapper\Event\BeforeUpdate;
+use Lightning\EventManager\EventManagerInterface;
+use Lightning\Test\TestCase\DataMapper\Entity\Article;
+use Lightning\Test\TestCase\DataMapper\Entity\PostTag;
 use Lightning\DataMapper\DataSource\DatabaseDataSource;
-use Lightning\Test\TestCase\DataMapper\Entity\TagEntity;
+use Lightning\DataMapper\DataSource\DataSourceInterface;
 use Lightning\DataMapper\Exception\EntityNotFoundException;
-use Lightning\EventDispatcher\ListenerProvider\ListenerProvider;
 
-#[Entity]
-#[HasEntityLifecycleCallbacks]
-class ArticleEntity
-{
-    private int $id;
-    private string $title;
-    private string $body;
-    private ?int $author_id = null;
-    private ?string $created_at = null;
-    private ?string $updated_at = null;
-
-    public function getTitle(): string
-    {
-        return $this->title;
-    }
-
-    public function setTitle(string $title): self
-    {
-        $this->title = $title;
-
-        return $this;
-    }
-
-    public function getBody(): string
-    {
-        return $this->body;
-    }
-
-    public function setBody(string $body): self
-    {
-        $this->body = $body;
-
-        return $this;
-    }
-    public function getAuthorId(): int
-    {
-        return $this->author_id;
-    }
-
-    public function setAuthorId(int $author_id): self
-    {
-        $this->author_id = $author_id;
-
-        return $this;
-    }
-
-    public function getCreatedAt(): ?string
-    {
-        return $this->created_at ?: null;
-    }
-
-    public function setCreatedAt(string $created_at): self
-    {
-        $this->created_at = $created_at;
-
-        return $this;
-    }
-
-    public function getUpdatedAt(): ?string
-    {
-        return $this->updated_at ?: null;
-    }
-
-    public function setUpdatedAt(string $updated_at): self
-    {
-        $this->updated_at = $updated_at;
-
-        return $this;
-    }
-
-    public function getId(): ?int
-    {
-        return $this->id ?? null;
-    }
-
-    /**
-     * Set the value of id
-     * @internal Should not do this never
-     */
-    public function setId(?int $id): self
-    {
-        $this->id = $id;
-
-        return $this;
-    }
-}
-
-class Tag extends AbstractDataMapper
-{
-    protected $primaryKey = 'id';
-    protected string $table = 'tags';
-    protected array $fields = [
-        'id', 'name','created_at','updated_at'
-    ];
-
-    public function createEntity(): TagEntity
-    {
-        return new TagEntity();
-    }
-}
-
-class Article extends AbstractDataMapper
-{
-    protected $primaryKey = 'id';
-    protected string $table = 'articles';
-    protected array $fields = [
-        'id', 'title','body','author_id','created_at','updated_at'
-    ];
-
-    public function createEntity(): ArticleEntity
-    {
-        return new ArticleEntity();
-    }
-
-    public function setProperty($property, $value)
-    {
-        $this->$property = $value;
-    }
-
-    public function getProperty($property)
-    {
-        return $this->$property;
-    }
-
-    protected array $called = [];
-    protected ?string $stopOn = null;
-
-    protected function wasCalled(string $method): void
-    {
-        $this->called[] = $method;
-    }
-
-    public function getCalled(): array
-    {
-        return $this->called;
-    }
-
-    public function stopOn(string $method): void
-    {
-        $this->stopOn = $method;
-    }
-
-    public function reset(): void
-    {
-        $this->called = [];
-        $this->stopOn = null;
-    }
-
-    /**
-     * Before create hook
-     */
-    protected function beforeCreate(object $entity): bool
-    {
-        parent::beforeCreate($entity);
-
-        $this->wasCalled('beforeCreate');
-
-        return $this->stopOn === 'beforeCreate' ? false : true;
-    }
-
-    /**
-     * After create hook
-     */
-    protected function afterCreate(object $entity): void
-    {
-        parent::afterCreate($entity);
-
-        $this->wasCalled('afterCreate');
-    }
-
-    /**
-     * Before update hook
-     */
-    protected function beforeUpdate(object $entity): bool
-    {
-        parent::beforeUpdate($entity);
-
-        $this->wasCalled('beforeUpdate');
-
-        return $this->stopOn === 'beforeUpdate' ? false : true;
-    }
-
-    /**
-     * after update hook
-     */
-    protected function afterUpdate(object $entity): void
-    {
-        parent::afterUpdate($entity);
-
-        $this->wasCalled('afterUpdate');
-    }
-
-    /**
-     * Before save hook
-     */
-    protected function beforeSave(object $entity): bool
-    {
-        parent::beforeSave($entity);
-
-        $this->wasCalled('beforeSave');
-
-        return $this->stopOn === 'beforeSave' ? false : true;
-    }
-
-    /**
-     * After save hook
-     */
-    protected function afterSave(object $entity): void
-    {
-        parent::afterSave($entity);
-        $this->wasCalled('afterSave');
-    }
-
-    /**
-     * Before delete hook
-     */
-    protected function beforeDelete(object $entity): bool
-    {
-        parent::beforeDelete($entity);
-
-        $this->wasCalled('beforeDelete');
-
-        return $this->stopOn === 'beforeDelete' ? false : true;
-    }
-
-    /**
-     * after delete hook
-     */
-    protected function afterDelete(object $entity): void
-    {
-        parent::afterDelete($entity); // code cover friendly
-        $this->wasCalled('afterDelete');
-    }
-
-    /**
-     * before find hook
-     */
-    protected function beforeFind(QueryObject $query): bool
-    {
-        parent::beforeFind($query);// code cover friendly
-        $this->wasCalled('beforeFind');
-
-        return $this->stopOn === 'beforeFind' ? false : true;
-    }
-
-    /**
-     * After find hook
-     */
-    protected function afterFind(array $result, QueryObject $query): array
-    {
-        $result = parent::afterFind($result, $query); // code coverage friendly
-        $this->wasCalled('afterFind');
-
-        return $result;
-    }
-
-    public function callIsPersisted(object $entity) : bool 
-    {
-        return $this->isPersisted($entity);
-    }
-
-    public function callMarkIsPersisted(object $entity, bool $value) : void 
-    {
-        $this->markPersisted($entity,$value);
-    }
-}
-
+use Lightning\Test\TestCase\DataMapper\DataMapper\ArticleDataMapper;
+use Lightning\Test\TestCase\DataMapper\DataMapper\PostTagDataMapper;
 
 final class AbstractDataMapperTest extends TestCase
 {
-    use EventDispatcherTestTrait;
-
     protected ?PDO $pdo;
     protected FixtureManager $fixtureManager;
     protected DatabaseDataSource $storage;
     protected Hydrator $hydrator;
+    protected EventManager $eventManager;
 
     public function setUp(): void
     {
@@ -312,14 +50,13 @@ final class AbstractDataMapperTest extends TestCase
 
         $this->storage = new DatabaseDataSource($this->pdo, new QueryBuilder());
         $this->hydrator = new Hydrator();
+        $this->eventManager = new EventManager();
 
         $this->fixtureManager = new FixtureManager($this->pdo);
         $this->fixtureManager->load([
             ArticlesFixture::class,
             TagsFixture::class,
         ]);
-
-        $this->setEventDispatcher(new TestEventDispatcher(new EventDispatcher(new ListenerProvider())));
     }
 
     public function tearDown(): void
@@ -329,483 +66,408 @@ final class AbstractDataMapperTest extends TestCase
 
     public function testGetDataSource(): void
     {
-        $mapper = new Article($this->storage, $this->hydrator);
-
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
         $this->assertInstanceOf(DataSourceInterface::class, $mapper->getDataSource());
     }
 
-    // public function testCreateEntity(): void
-    // {
-    //     $mapper = new Article($this->storage, $this->hydrator);
-
-    //     $data = [
-    //         'title' => 'test',
-    //         'body' => 'none',
-    //         'author_id' => 1234,
-    //         'created_at' => '2022-10-18 09:40:45',
-    //         'updated_at' => '2022-10-18 09:40:45',
-    //     ];
-
-    //     $entity = $mapper->createEntity($data);
-    //     $this->assertInstanceOf(ArticleEntity::class, $entity);
-
-    //     $this->assertEquals('test', $entity->getTitle());
-    //     $this->assertEquals('none', $entity->getBody());
-    //     $this->assertEquals(1234, $entity->getAuthorId());
-    //     $this->assertEquals('2022-10-18 09:40:45', $entity->getCreatedAt());
-    //     $this->assertEquals('2022-10-18 09:40:45', $entity->getUpdatedAt());
-    // }
-
-    // public function testCreateEntities(): void
-    // {
-    //     $mapper = new Article($this->storage, $this->hydrator);
-
-    //     $data = [
-    //         'title' => 'test',
-    //         'body' => 'none',
-    //         'author_id' => 1234,
-    //         'created_at' => date('Y-m-d H:i:s'),
-    //         'updated_at' => date('Y-m-d H:i:s'),
-    //     ];
-
-    //     $result = $mapper->createEntities([$data,$data]);
-    //     $this->assertInstanceOf(ArticleEntity::class, $result[0]);
-    //     $this->assertInstanceOf(ArticleEntity::class, $result[1]);
-    // }
-
-    public function testGetPrimaryKey(): void
+    public function testGetHydrator(): void
     {
-        $this->assertEquals(['id'], (new Article($this->storage, $this->hydrator))->getPrimaryKey());
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $this->assertInstanceOf(HydratorInterface::class, $mapper->getHydrator());
     }
 
-    public function testGet(): void
+    public function testGetEventManager(): void
     {
-        $mapper = new Article($this->storage, $this->hydrator);
-
-        /** @var ArticleEntity $article */
-        $article = $mapper->getBy(['id' => 1000]);
-        $this->assertInstanceOf(ArticleEntity::class, $article);
-        $this->assertSame('Article #1', $article->getTitle());
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $this->assertInstanceOf(EventManagerInterface::class, $mapper->getEventManager());
     }
 
-    /**
-     * Test that only selected fields are used
-     */
-    public function testGetFields(): void
+    public function getPrimaryKey(): void
     {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $mapper->setProperty('fields', [
-            'id', 'title','body','author_id'
-        ]);
-        /** @var ArticleEntity $article */
-        $article = $mapper->getBy(['id' => 1000]);
-
-        $this->assertNull($article->getCreatedAt());
-        $this->assertNull($article->getUpdatedAt());
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $this->assertEquals(['id'], $mapper->getPrimaryKey());
     }
 
-    public function testGetNotFound(): void
+    public function testCount(): void
     {
-        $mapper = new Article($this->storage, $this->hydrator);
-
-        $this->expectException(EntityNotFoundException::class);
-        $this->expectExceptionMessage('Entity Not Found');
-
-        /** @var ArticleEntity $article */
-        $mapper->getBy(['id' => 1234]);
-    }
-
-    public function testFindCount(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
         $this->assertEquals(3, $mapper->count());
     }
 
-    public function testFindCountHookCalled(): void
+    public function testCountBy(): void
     {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $mapper->count();
-    }
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
 
-    public function testFindCountWithQuery(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $this->assertEquals(1, $mapper->findCountBy(['id' => 1000]));
-        $this->assertEquals(0, $mapper->findCountBy(['id' => 1234]));
-    }
-
-    public function testFind(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $entity = $mapper->find(new QueryObject());
-        $this->assertEquals('Article #1', $entity->getTitle());
-        $this->assertTrue($mapper->callIsPersisted($entity));
-        $this->assertEquals(['beforeFind','afterFind'], $mapper->getCalled());
-    }
-
-    public function testFindHookCalled(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $this->assertInstanceOf(ArticleEntity::class, $mapper->find(new QueryObject()));
-        $this->assertEquals(['beforeFind','afterFind'], $mapper->getCalled());
-    }
-
-    public function testFindHookCalledAndCancelled(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $mapper->stopOn('beforeFind');
-        $this->assertNull($mapper->find(new QueryObject()));
-        $this->assertEquals(['beforeFind'], $mapper->getCalled());
-    }
-
-    public function testFindWithCondition(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $entity = $mapper->findBy(['id' => 1000]);
-        $this->assertEquals('Article #1', $entity->getTitle());
-    }
-
-    public function testFindNoResult(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $this->assertNull($mapper->findBy(['id' => 1234]));
-    }
-
-    public function testFindAll(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $result = $mapper->findAll();
-        $this->assertCount(3, $result);
-    }
-
-    public function testFindAllBy(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $this->assertCount(2, $mapper->findAllBy(['id !=' => 1000]));
-    }
-
-    public function testFindAllNoResults(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $items = $mapper->findAll();
-
-        $this->assertEmpty($mapper->findAllBy(['id' => 123456789]));
-    }
-
-    public function testCreate(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-
-        $article = new ArticleEntity();
-        (new Hydrator())->hydrate($article, [
-            'title' => 'test',
-            'body' => 'none',
-            'author_id' => 1234,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
-
-        $this->assertTrue($mapper->save($article));
-
-        $expected = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'pgsql' ? 1 : 1003;
-        $this->assertEquals($expected, $article->getId());
-
-        $this->assertEquals(['beforeSave','beforeCreate','afterCreate','afterSave'], $mapper->getCalled());
-
-    }
-
-    public function testCreateBeforeSaveHookCancelled(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-
-        $article = new ArticleEntity();
-        (new Hydrator())->hydrate($article, [
-            'title' => 'test',
-            'body' => 'none',
-            'author_id' => 1234,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
-
-        $mapper->stopOn('beforeSave');
-        $this->assertFalse($mapper->save($article));
-
-        $this->assertEquals(['beforeSave'], $mapper->getCalled());
-    }
-
-    public function testBeforeCreateHookCancelled(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-
-        $article = new ArticleEntity();
-        (new Hydrator())->hydrate($article, [
-            'title' => 'test',
-            'body' => 'none',
-            'author_id' => 1234,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
-
-        $mapper->stopOn('beforeCreate');
-        $this->assertFalse($mapper->save($article));
-
-        $this->assertEquals(['beforeSave','beforeCreate'], $mapper->getCalled());
-    }
-
-    public function testUpdate(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $article = $mapper->find();
-        $mapper->reset();
-
-        $article->setTitle('foo');
-
-        $this->assertTrue($mapper->save($article));
-        $this->assertEquals(['beforeSave','beforeUpdate', 'afterUpdate','afterSave'], $mapper->getCalled());
-    }
-
-    public function testUpdateBeforeSaveHookCancelled(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $article = $mapper->find();
-        $mapper->reset();
-        
-        $mapper->stopOn('beforeSave');
-        $this->assertFalse($mapper->save($article));
-
-        $this->assertEquals(['beforeSave'], $mapper->getCalled());
-    }
-
-    public function testUpdateBeforeUpdateHookCancelled(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $article = $mapper->find();
-        $mapper->reset();
-        $mapper->stopOn('beforeUpdate');
-        $this->assertFalse($mapper->save($article));
-
-        $this->assertEquals(['beforeSave','beforeUpdate'], $mapper->getCalled());
-    }
-
-    public function testUpdateWithNoPrimaryKey(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-
-        $article = new ArticleEntity();
-        (new Hydrator())->hydrate($article, [
-            'title' => 'test',
-            'body' => 'none',
-            'author_id' => 1234,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
-
-        $mapper->callMarkIsPersisted($article, true);
-
-        $this->expectException(BadMethodCallException::class);
-        $this->expectExceptionMessage('Primary key `id` has no value');
-
-        $mapper->save($article);
-    }
-
-    public function testUpdateFail(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $article = $mapper->find();
-        $mapper->reset();
-
-        $article->setId(1234);
-
-        $this->assertFalse($mapper->save($article));
-        $this->assertEquals(['beforeSave','beforeUpdate'], $mapper->getCalled());
-    }
-
-    public function testSaveMany(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $entities = $mapper->findAll();
-        foreach ($entities as $entity) {
-            $entity->setUpdatedAt(date('Y-m-d H:i:s'));
-        }
-        $this->assertTrue($mapper->saveMany($entities));
-    }
-
-    public function testSaveManyFail(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $article = $mapper->find();
-        $article->setId(1234);
-        $this->assertFalse($mapper->save($article));
-
-        $mapper = new Article($this->storage, $this->hydrator);
-        $article = $mapper->find();
-        $article->setId(1234);
-
-        $this->assertFalse($mapper->saveMany([$article]));
-    }
-
-    public function testUpdateAll(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-
-        $this->assertEquals(2, $mapper->updateAll(new QueryObject(['id !=' => 1001]), ['author_id' => 1111]));
-        $this->assertEquals(0, $mapper->updateAll(new QueryObject(['id' => 1234]), ['author_id' => 1111]));
-    }
-
-    public function testUpdateAllException(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Data cannot be empty');
-
-        $mapper->updateAll(new QueryObject(), []);
-    }
-
-    public function testUpdateAllBy(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-
-        $this->assertEquals(2, $mapper->updateAllBy(['id !=' => 1001], ['author_id' => 1111]));
-    }
-
-    public function testDeleteAll(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $this->assertEquals(2, $mapper->deleteAll(new QueryObject(['id !=' => 1001])));
-        $this->assertEquals(0, $mapper->deleteAll(new QueryObject(['id' => 1234])));
-    }
-
-    public function testDeleteAllBy(): void
-    {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $this->assertEquals(2, $mapper->deleteAllBy(['id !=' => 1001]));
+        // $this->assertEquals(3, $mapper->countBy([]));
+        $this->assertEquals(1, $mapper->countBy(['id' => 1000]));
+        $this->assertEquals(0, $mapper->countBy(['id' => 1234]));
     }
 
     public function testDelete(): void
     {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $article = $mapper->find();
-        $mapper->reset();
-        
-
-        $this->assertTrue($mapper->delete($article));
-        $this->assertEquals(['beforeDelete','afterDelete'], $mapper->getCalled());
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $first = $mapper->find(1000);
+        $this->assertTrue($mapper->delete($first));
+        $this->assertEquals(2, $mapper->count()); // was deleted
+        $this->assertFalse($mapper->delete($first)); // test delete fail
     }
 
-    public function testDeleteHookCancelled(): void
+    public function testFind(): void
     {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $article = $mapper->find();
-        $mapper->reset();
-    
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $entity = $mapper->find(1000);
+        $this->assertEquals('Article #1', $entity->getTitle());
+        $this->assertTrue($mapper->callIsPersisted($entity));
 
-        $mapper->stopOn('beforeDelete');
-        $this->assertFalse($mapper->delete($article));
-        $this->assertEquals(['beforeDelete'], $mapper->getCalled());
+        $this->assertNull($mapper->find(1234));
     }
 
-    public function testDeleteFail(): void
+    public function testFindCompositePrimaryKey(): void
     {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $article = $mapper->find();
-        $mapper->reset();
-        $article->setId(1234);
+        $mapper = new PostTagDataMapper($this->storage, $this->hydrator, $this->eventManager);
 
-        $this->assertFalse($mapper->delete($article));
-        $this->assertEquals(['beforeDelete'], $mapper->getCalled());
+        $entity = $mapper->find([1000,2002]);
+        $this->assertInstanceOf(PostTag::class, $entity);
+        $this->assertEquals(1000, $entity->getPostId());
+        $this->assertEquals(2002, $entity->getTagId());
+
+        $this->assertNull($mapper->find([123,456])); // non existant record
     }
 
-    public function testDeleteMany(): void
+    public function testFindCompositePrimaryKeyException(): void
     {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $articles = $mapper->findAll();
+        $mapper = new PostTagDataMapper($this->storage, $this->hydrator, $this->eventManager);
 
-        $this->assertTrue($mapper->deleteMany($articles));
+        $this->expectException(BadMethodCallException::class);
+        $this->expectExceptionMessage('Invalid Primary Key / ID');
+
+        $this->assertNull($mapper->find([1000])); // bad input check does not cause an error
+    }
+
+    public function testFindAll(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $results = $mapper->findAll();
+        $this->assertEquals('Article #1', $results[0]->getTitle());
+        $this->assertEquals('Article #2', $results[1]->getTitle());
+        $this->assertEquals('Article #3', $results[2]->getTitle());
+    }
+
+    public function testFindAllOrder(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $results = $mapper->findAll(['order' => 'id DESC']);
+        $this->assertEquals('Article #3', $results[0]->getTitle());
+        $this->assertEquals('Article #2', $results[1]->getTitle());
+        $this->assertEquals('Article #1', $results[2]->getTitle());
+    }
+
+    public function testFindAllBy(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $results = $mapper->findAllBy(['title !=' => 'Article #2']);
+        $this->assertCount(2, $results);
+        $this->assertEquals('Article #1', $results[0]->getTitle());
+        $this->assertEquals('Article #3', $results[1]->getTitle());
+    }
+
+    public function testFindAllByOrder(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $results = $mapper->findAllBy(['title !=' => 'Article #2'], ['order' => 'id DESC']);
+        $this->assertCount(2, $results);
+        $this->assertEquals('Article #3', $results[0]->getTitle());
+        $this->assertEquals('Article #1', $results[1]->getTitle());
+    }
+
+    public function testFindBy(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $entity = $mapper->findBy(['title' => 'Article #2']);
+        $this->assertEquals('Article #2', $entity->getTitle());
+        $this->assertNull($mapper->findBy(['title' => 'Article #100']));
+    }
+
+    public function testGet(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $entity = $mapper->get(1000);
+        $this->assertEquals('Article #1', $entity->getTitle());
+        ;
+    }
+
+    public function testGetException(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+
+        $this->expectException(EntityNotFoundException::class);
+        $this->expectExceptionMessage('Entity Not Found');
+
+        $mapper->get(1234);
+    }
+
+    public function testSaveCreate(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $entity = new Article();
+
+        $entity->setTitle('test')
+            ->setBody('---')
+            ->setAuthorId(2000)
+            ->setCreatedAt(date('Y-m-d H:i:s'))
+            ->setUpdatedAt(date('Y-m-d H:i:s'));
+
+        $this->assertTrue($mapper->save($entity));
+        $this->assertEquals(1003, $entity->getId());
+    }
+
+    public function testSaveUpdate(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+
+        $entity = $mapper->find(1000);
+        $entity->setTitle('foo');
+        $this->assertTrue($mapper->save($entity));
+
+        $entity = $mapper->find(1000);
+        $this->assertEquals('foo', $entity->getTitle());
+    }
+
+    public function testSaveUpdateFail(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+
+        $entity = $mapper->find(1000);
+        $entity->setId(1234);
+
+        $this->assertFalse($mapper->save($entity));
+    }
+
+    public function testFindBeforeFindEventDispatch(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $this->eventManager->addListener(BeforeFind::class, function (BeforeFind $event) {
+            $event->setQuery(['limit' => 2]);
+        });
+        $this->assertCount(2, $mapper->findAll());
+    }
+
+    public function testFindAfterFindEventDispatch(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $this->eventManager->addListener(AfterFind::class, function (AfterFind $event) {
+            $result = $event->getResult();
+            $this->assertCount(3, $result);
+            unset($result[2]);
+            $event->setResult($result);
+        });
+        $this->assertCount(2, $mapper->findAll());
+    }
+
+    public function testFindBeforeFindEventStopped(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $this->eventManager->addListener(BeforeFind::class, function (BeforeFind $event) {
+            $event->stopPropagation();
+        });
+
         $this->assertCount(0, $mapper->findAll());
     }
 
-    public function testDeleteManyFail(): void
+    public function testDeleteBeforeDeleteDispatched(): void
     {
-        $mapper = new Article($this->storage, $this->hydrator);
-        $article = $mapper->find();
-        $article->setId(1234);
-        $this->assertFalse($mapper->delete($article));
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $entity = $mapper->find(1000);
 
-        $mapper = new Article($this->storage, $this->hydrator);
-        $article = $mapper->find();
-        $article->setId(1234);
-        $this->assertFalse($mapper->deleteMany([$article]));
+        $this->eventManager->addListener(BeforeDelete::class, function (BeforeDelete $event) {
+            $this->assertTrue(true);
+        });
+        $mapper->delete($entity);
     }
 
-    // public function testFindList(): void
-    // {
-    //     $mapper = new Article($this->storage, $this->hydrator);
-    //     $this->assertEquals(
-    //         [1000,1001,1002],
-    //         $mapper->findList()
-    //     );
-    // }
+    public function testDeleteAfterDeleteDispatched(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $entity = $mapper->find(1000);
 
-    // public function testFindListWithNoPrimaryKey(): void
-    // {
-    //     $mapper = new Article($this->storage, $this->hydrator);
-    //     $reflection = new ReflectionClass($mapper);
-    //     $property = $reflection->getProperty('primaryKey');
-    //     $property->setAccessible(true);
-    //     $property->setValue($mapper, ['article_id','author_id']);
+        $this->eventManager->addListener(AfterDelete::class, function (AfterDelete $event) {
+            $this->assertTrue(true);
+        });
+        $mapper->delete($entity);
+    }
 
-    //     $this->expectException(InvalidArgumentException::class);
-    //     $this->expectExceptionMessage('Cannot determine primary key');
-    //     $mapper->findList();
-    // }
+    /**
+     * @depends testDeleteBeforeDeleteDispatched
+     * @depends testDeleteAfterDeleteDispatched
+     * @depends testDelete
+     *
+     * @return void
+     */
+    public function testDeleteBeforeDeleteStopped(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $entity = $mapper->find(1000);
 
-    // public function testFindListWithQuery(): void
-    // {
-    //     $query = new QueryObject(['id !=' => 1001]);
-    //     $mapper = new Article($this->storage, $this->hydrator);
-    //     $this->assertEquals(
-    //         [1000,1002],
-    //         $mapper->findList($query)
-    //     );
-    // }
+        $this->eventManager->addListener(BeforeDelete::class, function (BeforeDelete $event) {
+            $event->stopPropagation();
+        });
 
-    // public function testFindListBy(): void
-    // {
-    //     $mapper = new Article($this->storage, $this->hydrator);
-    //     $this->assertEquals(
-    //         [1000,1002],
-    //         $mapper->findListBy(['id !=' => 1001])
-    //     );
-    // }
+        $this->eventManager->addListener(AfterDelete::class, function (AfterDelete $event) {
+            $this->assertTrue(false);
+        });
 
-    // public function testFindListWithValues(): void
-    // {
-    //     $mapper = new Article($this->storage, $this->hydrator);
-    //     $this->assertEquals(
-    //         [1000 => 'Article #1',1001 => 'Article #2',1002 => 'Article #3'],
-    //         $mapper->findList(null, ['idField' => 'id','valueField' => 'title'])
-    //     );
-    // }
+        $mapper->delete($entity);
 
-    // public function testFindListGrouped(): void
-    // {
-    //     $mapper = new Article($this->storage, $this->hydrator);
+        $this->assertNotNull($mapper->find(1000));
+    }
 
-    //     $mapper->updateAll(new QueryObject(), ['author_id' => 2000]);
-    //     $mapper->updateAll(new QueryObject(['id !=' => 1001]), ['author_id' => 4000]);
+    public function testSaveBeforeSaveDispatched(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $entity = new Article();
 
-    //     $expected = [
-    //         4000 => [
-    //             1000 => 'Article #1',
-    //             1002 => 'Article #3'
-    //         ],
-    //         2000 => [
-    //             1001 => 'Article #2'
-    //         ]
-    //     ];
+        $entity->setTitle('test')
+            ->setBody('---')
+            ->setAuthorId(2000)
+            ->setCreatedAt(date('Y-m-d H:i:s'))
+            ->setUpdatedAt(date('Y-m-d H:i:s'));
 
-    //     $this->assertEquals(
-    //         $expected, $mapper->findList(null, ['valueField' => 'title','groupField' => 'author_id'])
-    //     );
-    // }
+        $this->eventManager->addListener(BeforeSave::class, function (BeforeSave $event) {
+            $this->assertTrue(true);
+        });
+
+        $mapper->save($entity);
+    }
+
+    public function testSaveBeforeSaveStopped(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $entity = new Article();
+
+        $entity->setTitle('test')
+            ->setBody('---')
+            ->setAuthorId(2000)
+            ->setCreatedAt(date('Y-m-d H:i:s'))
+            ->setUpdatedAt(date('Y-m-d H:i:s'));
+
+        $this->eventManager->addListener(BeforeSave::class, function (BeforeSave $event) {
+            $event->stopPropagation();
+        });
+
+        $this->assertFalse($mapper->save($entity));
+    }
+
+    public function testSaveAfterSaveDispatched(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $entity = new Article();
+
+        $entity->setTitle('test')
+            ->setBody('---')
+            ->setAuthorId(2000)
+            ->setCreatedAt(date('Y-m-d H:i:s'))
+            ->setUpdatedAt(date('Y-m-d H:i:s'));
+
+        $this->eventManager->addListener(AfterSave::class, function (AfterSave $event) {
+            $this->assertTrue(true);
+        });
+
+        $mapper->save($entity);
+    }
+
+    public function testCreateBeforeCreateDispatched(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $entity = new Article();
+
+        $entity->setTitle('test')
+            ->setBody('---')
+            ->setAuthorId(2000)
+            ->setCreatedAt(date('Y-m-d H:i:s'))
+            ->setUpdatedAt(date('Y-m-d H:i:s'));
+
+        $this->eventManager->addListener(BeforeCreate::class, function (BeforeCreate $event) {
+            $this->assertTrue(true);
+        });
+
+        $mapper->save($entity);
+    }
+
+    public function testCreateAfterCreateDispatched(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $entity = new Article();
+
+        $entity->setTitle('test')
+            ->setBody('---')
+            ->setAuthorId(2000)
+            ->setCreatedAt(date('Y-m-d H:i:s'))
+            ->setUpdatedAt(date('Y-m-d H:i:s'));
+
+        $this->eventManager->addListener(AfterCreate::class, function (AfterCreate $event) {
+            $this->assertTrue(true);
+        });
+
+        $mapper->save($entity);
+    }
+
+    public function testCreateBeforeCreateStopped(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $entity = new Article();
+
+        $entity->setTitle('test')
+            ->setBody('---')
+            ->setAuthorId(2000)
+            ->setCreatedAt(date('Y-m-d H:i:s'))
+            ->setUpdatedAt(date('Y-m-d H:i:s'));
+
+        $this->eventManager->addListener(BeforeCreate::class, function (BeforeCreate $event) {
+            $event->stopPropagation();
+        });
+
+        $this->assertFalse($mapper->save($entity));
+    }
+
+    public function testUpdateBeforeUpdateDispatched(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+
+        $entity = $mapper->find(1000);
+        $entity->setTitle('foo');
+
+        $this->eventManager->addListener(BeforeUpdate::class, function (BeforeUpdate $event) {
+            $this->assertTrue(true);
+        });
+
+        $mapper->save($entity);
+    }
+
+    public function testUpdateAfterUpdateDispatched(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+
+        $entity = $mapper->find(1000);
+        $entity->setTitle('foo');
+
+        $this->eventManager->addListener(AfterUpdate::class, function (AfterUpdate $event) {
+            $this->assertTrue(true);
+        });
+
+        $mapper->save($entity);
+    }
+
+    public function testUpdateBeforeUpdateStopped(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+
+        $entity = $mapper->find(1000);
+        $entity->setTitle('foo');
+
+        $this->eventManager->addListener(BeforeUpdate::class, function (BeforeUpdate $event) {
+            $event->stopPropagation();
+        });
+
+        $this->assertFalse($mapper->save($entity));
+    }
 }

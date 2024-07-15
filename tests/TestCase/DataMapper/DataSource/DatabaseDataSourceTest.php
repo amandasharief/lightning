@@ -5,11 +5,12 @@ namespace Lightning\Test\DataMapper\DataSource;
 use PDO;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+
 use function Lightning\Dotenv\env;
-use Lightning\Test\PersistentPdoFactory;
-use Lightning\DataMapper\QueryObject;
+
 use Lightning\Fixture\FixtureManager;
 use Lightning\QueryBuilder\QueryBuilder;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\Test\Fixture\AuthorsFixture;
 
 use Lightning\Test\Fixture\ArticlesFixture;
@@ -23,13 +24,13 @@ final class DatabaseDataSourceTest extends TestCase
     protected function setUp(): void
     {
         // Create Connection
-        $this->pdo = ( new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
-        
+        $this->pdo = (new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
+
         $this->fixtureManager = new FixtureManager($this->pdo);
         $this->fixtureManager->load([ArticlesFixture::class,AuthorsFixture::class]);
     }
 
-    public function tearDown(): void 
+    public function tearDown(): void
     {
         unset($this->pdo);
     }
@@ -42,8 +43,8 @@ final class DatabaseDataSourceTest extends TestCase
     public function testCount(): void
     {
         $storage = $this->createStorage();
-        $this->assertEquals(3, $storage->count('articles', new QueryObject()));
-        $this->assertEquals(2, $storage->count('articles', new QueryObject(['id !=' => 1000])));
+        $this->assertEquals(3, $storage->count('articles'));
+        $this->assertEquals(2, $storage->count('articles', ['criteria' => ['id !=' => 1000]]));
     }
 
     /**
@@ -62,13 +63,13 @@ final class DatabaseDataSourceTest extends TestCase
         ];
 
         $this->assertEquals(1003, $storage->create('articles', $article));
-        $this->assertEquals(4, $storage->count('articles', new QueryObject()));
+        $this->assertEquals(4, $storage->count('articles'));
     }
 
     public function testRead(): void
     {
         $storage = $this->createStorage();
-        $records = $storage->read('articles', new QueryObject());
+        $records = $storage->read('articles');
         $this->assertCount(3, $records);
     }
 
@@ -76,7 +77,7 @@ final class DatabaseDataSourceTest extends TestCase
     {
         $storage = $this->createStorage();
 
-        $records = $storage->read('articles', new QueryObject(['id !=' => 1000]));
+        $records = $storage->read('articles', ['criteria' => ['id !=' => 1000]]);
         $this->assertCount(2, $records);
     }
 
@@ -84,24 +85,21 @@ final class DatabaseDataSourceTest extends TestCase
     {
         $storage = $this->createStorage();
 
-        $query = new QueryObject(
-            [],
-            ['fields' => [
-                'id',
-                'title',
-                'authors.name'
-            ],
-                'joins' => [
-                    [
-                        'table' => 'authors',
-                        'conditions' => [
-                            'articles.author_id = authors.id'
-                        ]
+        $options = ['fields' => [
+            'id',
+            'title',
+            'authors.name'
+        ],
+            'joins' => [
+                [
+                    'table' => 'authors',
+                    'conditions' => [
+                        'articles.author_id = authors.id'
                     ]
-                ]]
-                    );
+                ]
+            ]];
 
-        $records = $storage->read('articles', $query);
+        $records = $storage->read('articles', $options);
 
         $this->assertEquals('Claire', $records[1]['name']);
     }
@@ -113,16 +111,17 @@ final class DatabaseDataSourceTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Join configuration array is missing `table`');
 
-        $query = new QueryObject();
-        $query->setOption('joins', [
-            [
-                'conditions' => [
-                    'articles.author_id = authors.id'
+        $options = [
+            'joins' => [
+                [
+                    'conditions' => [
+                        'articles.author_id = authors.id'
+                    ]
                 ]
             ]
-        ]);
+        ];
 
-        $records = $storage->read('articles', $query);
+        $storage->read('articles', $options);
     }
 
     public function testReadJoinsInvalidJoin(): void
@@ -132,28 +131,22 @@ final class DatabaseDataSourceTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid join type `foo`');
 
-        $query = new QueryObject();
-        $query->setOption('joins', [
+        $storage->read('articles', ['joins' => [
             [
                 'table' => 'something',
                 'type' => 'FOO',
 
             ]
-        ]);
-
-        $records = $storage->read('articles', $query);
+        ]]);
     }
 
     public function testReadOrder(): void
     {
         $storage = $this->createStorage();
 
-        $query = new QueryObject();
-        $query->setOption('order', [
+        $records = $storage->read('articles', ['order' => [
             'id' => 'DESC'
-        ]);
-
-        $records = $storage->read('articles', $query);
+        ]]);
         $this->assertEquals(1002, $records[0]['id']);
     }
 
@@ -177,7 +170,7 @@ final class DatabaseDataSourceTest extends TestCase
                 'author_id'
             ]
         ];
-        $records = $storage->read('articles', new QueryObject([], $options));
+        $records = $storage->read('articles', $options);
 
         $this->assertEquals(1, $records[0]['count']);
         $this->assertEquals(2, $records[1]['count']); // It worked
@@ -197,8 +190,7 @@ final class DatabaseDataSourceTest extends TestCase
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
 
-        $query = new QueryObject();
-        $query->setOptions([
+        $records = $storage->read('articles', [
             'fields' => [
                 'author_id','COUNT(id)'
             ],
@@ -210,8 +202,6 @@ final class DatabaseDataSourceTest extends TestCase
             ]
         ]);
 
-        $records = $storage->read('articles', $query);
-
         $this->assertCount(1, $records);
         $this->assertEquals(2001, $records[0]['author_id']);
     }
@@ -220,12 +210,9 @@ final class DatabaseDataSourceTest extends TestCase
     {
         $storage = $this->createStorage();
 
-        $query = new QueryObject();
-        $query->setOptions([
+        $records = $storage->read('articles', [
             'limit' => 1
         ]);
-
-        $records = $storage->read('articles', $query);
         $this->assertCount(1, $records);
         $this->assertEquals(1000, $records[0]['id']);
     }
@@ -233,13 +220,11 @@ final class DatabaseDataSourceTest extends TestCase
     public function testLimitOffset(): void
     {
         $storage = $this->createStorage();
-        $query = new QueryObject();
-        $query->setOptions([
+
+        $records = $storage->read('articles', [
             'limit' => 1,
             'offset' => 1
         ]);
-
-        $records = $storage->read('articles', $query);
         $this->assertCount(1, $records);
         $this->assertEquals(1001, $records[0]['id']);
     }
@@ -247,10 +232,10 @@ final class DatabaseDataSourceTest extends TestCase
     public function testUpdate(): void
     {
         $storage = $this->createStorage();
-        $query = new QueryObject(['id' => 1000]);
-        $this->assertEquals(1, $storage->update('articles', $query, ['title' => 'foo']));
 
-        $records = $storage->read('articles', new QueryObject([], ['order' => ['id ASC']]));
+        $this->assertEquals(1, $storage->update('articles', ['title' => 'foo'], ['criteria' => ['id' => 1000]]));
+
+        $records = $storage->read('articles', ['order' => ['id ASC']]);
 
         $this->assertEquals('foo', $records[0]['title']);
         $this->assertNotEquals('foo', $records[1]['title']);
@@ -260,10 +245,10 @@ final class DatabaseDataSourceTest extends TestCase
     public function testUpdateAll(): void
     {
         $storage = $this->createStorage();
-        $query = new QueryObject();
-        $this->assertEquals(3, $storage->update('articles', $query, ['title' => 'foo']));
 
-        $records = $storage->read('articles', new QueryObject());
+        $this->assertEquals(3, $storage->update('articles', ['title' => 'foo']));
+
+        $records = $storage->read('articles');
 
         $this->assertEquals('foo', $records[0]['title']);
         $this->assertEquals('foo', $records[1]['title']);
@@ -276,10 +261,9 @@ final class DatabaseDataSourceTest extends TestCase
     public function testDelete(): void
     {
         $storage = $this->createStorage();
-        $query = new QueryObject(['id' => 1000]);
 
-        $this->assertEquals(1, $storage->delete('articles', $query));
-        $this->assertEquals(2, $storage->count('articles', new QueryObject()));
+        $this->assertEquals(1, $storage->delete('articles', ['criteria' => ['id' => 1000]]));
+        $this->assertEquals(2, $storage->count('articles'));
     }
 
     /**
@@ -288,9 +272,8 @@ final class DatabaseDataSourceTest extends TestCase
     public function testDeleteAll(): void
     {
         $storage = $this->createStorage();
-        $query = new QueryObject();
 
-        $this->assertEquals(3, $storage->delete('articles', $query));
-        $this->assertEquals(0, $storage->count('articles', new QueryObject()));
+        $this->assertEquals(3, $storage->delete('articles'));
+        $this->assertEquals(0, $storage->count('articles'));
     }
 }

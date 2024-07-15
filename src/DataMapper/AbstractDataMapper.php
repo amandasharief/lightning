@@ -11,21 +11,33 @@
 
 namespace Lightning\DataMapper;
 
-use ReflectionClass;
 use ReflectionProperty;
 use BadMethodCallException;
-use InvalidArgumentException;
 use Lightning\Hydrator\Hydrator;
+use Lightning\DataMapper\Event\AfterFind;
+use Lightning\DataMapper\Event\AfterSave;
+use Lightning\Hydrator\HydratorInterface;
+use Lightning\DataMapper\Event\BeforeFind;
+use Lightning\DataMapper\Event\BeforeSave;
+use Lightning\DataMapper\Event\AfterCreate;
+use Lightning\DataMapper\Event\AfterDelete;
+use Lightning\DataMapper\Event\AfterUpdate;
+use Lightning\DataMapper\Event\BeforeCreate;
+use Lightning\DataMapper\Event\BeforeDelete;
+use Lightning\DataMapper\Event\BeforeUpdate;
+use Lightning\EventManager\EventManagerInterface;
+use Lightning\DataMapper\DataSource\DataSourceInterface;
 use Lightning\DataMapper\Exception\EntityNotFoundException;
 
-abstract class AbstractDataMapper
+/**
+ * Data Mapper
+ */
+abstract class AbstractDataMapper implements DataMapperInterface
 {
     /**
-     * Primary Key
-     *
-     * @var array<string>|string
+     * @var string|array<string>
      */
-    protected $primaryKey = 'id';
+    protected string|array $primaryKey = 'id';
     protected string $table = 'none';
 
     /**
@@ -33,14 +45,9 @@ abstract class AbstractDataMapper
      */
     protected array $fields = [];
 
-    //hashes of entities persisted
-    private array $persisted = [];
-    private ?array $entityCallbacks = null;
+    private array $persisted = [];  //hashes of entities persisted
 
-    /**
-     * Constructor
-     */
-    public function __construct(protected DataSourceInterface $dataSource, protected Hydrator $hydrator)
+    public function __construct(protected DataSourceInterface $dataSource, protected Hydrator $hydrator, protected EventManagerInterface $eventManager)
     {
         $this->initialize();
     }
@@ -57,29 +64,131 @@ abstract class AbstractDataMapper
      */
     abstract public function createEntity(): object;
 
+    # # # # START INTERFACE FUNCTIONS # # # #
+
     /**
-     * Checks if the Entity is persisted
+     * Finds the count of Entities that match the query
      */
-    protected function isPersisted(object $entity): bool
+    public function count(array $options = []): int
     {
-        return in_array(spl_object_id($entity), $this->persisted);
+        return $this->doCount($options + ['criteria' => []]);
     }
 
     /**
-     * Marks an entity as persisted
+     * Finds the count of Entities that match the query
      */
-    protected function markPersisted(object $entity, bool $status): void
+    public function countBy(array $criteria, array $options = []): int
     {
-        if ($status) {
-            array_push($this->persisted, spl_object_id($entity));
+        return $this->doCount($options + ['criteria' => $criteria]);
+    }
 
-            return;
+    /**
+     * Deletes an entity
+     */
+    public function delete(object $entity, array $options = []): bool
+    {
+        return $this->doDelete($entity, $options);
+    }
+
+    /**
+     * Finds a single Entity
+     */
+    public function find(int|string|array $id, array $options = []): ?object
+    {
+        return $this->doFind(array_merge($options, ['criteria' => $this->createCriteriaFromId($id), 'limit' => 1]))[0] ?? null;
+    }
+
+    /**
+     * Finds multiple Entities
+     * @param array $options The following options are supported
+     * - order: e.g id DESC
+     * - limit: e.g 5
+     */
+    public function findAll(array $options = []): array
+    {
+        return $this->doFind(array_merge($options, ['criteria' => []]));
+    }
+
+    /**
+     * Finds multiple Entities
+     * @param array $options The following options are supported
+     * - order: e.g id DESC
+     * - limit: e.g 5
+     */
+    public function findAllBy(array $criteria = [], array $options = []): array
+    {
+        return $this->doFind(array_merge($options, ['criteria' => $criteria]));
+    }
+
+    /**
+     * @param array $options The following options are supported
+     * - order: e.g id DESC
+     */
+    public function findBy(array $criteria = [], array $options = []): ?object
+    {
+        return $this->doFind(array_merge($options, ['criteria' => $criteria, 'limit' => 1]))[0] ?? null;
+    }
+
+    /**
+     * Gets an Entity by the ID if not throws an exception
+     *
+     * @throws EntityNotFoundException
+     */
+    public function get(int|string|array $id, array $options = []): object
+    {
+        $result = $this->doFind(array_merge($options, ['criteria' => $this->createCriteriaFromId($id), 'limit' => 1]))[0] ?? null;
+        if (! $result) {
+            throw new EntityNotFoundException('Entity Not Found');
         }
 
-        $key = array_search(spl_object_hash($entity), $this->persisted);
-        if ($key !== false) {
-            unset($this->persisted[$key]);
+        return $result;
+    }
+
+    /**
+     * Save the Entity
+     */
+    public function save(object $entity, array $options = []): bool
+    {
+        if ($this->eventManager->hasListeners(BeforeSave::class)) {
+            if ($this->eventManager->dispatch(new BeforeSave($this, $entity))->isPropagationStopped()) {
+                return false;
+            }
         }
+
+        $result = $this->isPersisted($entity) ? $this->doUpdate($entity) : $this->doCreate($entity);
+
+        if ($result) {
+            $this->markPersisted($entity, true);
+            if ($this->eventManager->hasListeners(AfterSave::class)) {
+                $this->eventManager->dispatch(new AfterSave($this, $entity));
+            }
+        }
+
+        return $result;
+    }
+
+    # # # # END INTERFACE FUNCTIONS # # # #
+
+    /**
+     * Converts a row from the storage into an Entity object
+     */
+    public function mapDataToEntity(array $data): object
+    {
+        $entity = $this->createEntity();
+
+        $this->hydrator->hydrate($entity, array_intersect_key($data, array_flip($this->fields)));
+
+        return $entity;
+    }
+
+    /**
+     * Converts Entity object into an array ready to be persisted to storage
+     */
+    public function mapEntityToData(object $entity): array
+    {
+        $extracted = $this->hydrator->extract($entity);
+
+        return array_intersect_key($extracted, array_flip($this->fields));
     }
 
     /**
@@ -90,21 +199,40 @@ abstract class AbstractDataMapper
         return (array) $this->primaryKey;
     }
 
-    /**
-     * Gets the DataSource for this Mapper
-     */
     public function getDataSource(): DataSourceInterface
     {
         return $this->dataSource;
     }
 
-    /**
-     * Inserts an Entity into the database
-     */
-    protected function create(object $entity): bool
-    {    
-        if (! $this->beforeCreate($entity)) {
-            return false;
+    public function getHydrator(): HydratorInterface
+    {
+        return $this->hydrator;
+    }
+
+    public function getEventManager(): EventManagerInterface
+    {
+        return $this->eventManager;
+    }
+
+    protected function doCount(array $query): int
+    {
+        if ($this->eventManager->hasListeners(BeforeFind::class)) {
+            $event = $this->eventManager->dispatch(new BeforeFind($this, $query));
+            if ($event->isPropagationStopped()) {
+                return 0;
+            }
+            $query = $event->getQuery();
+        }
+
+        return $this->dataSource->count($this->table, $query);
+    }
+
+    protected function doCreate(object $entity): bool
+    {
+        if ($this->eventManager->hasListeners(BeforeCreate::class)) {
+            if ($this->eventManager->dispatch(new BeforeCreate($this, $entity))->isPropagationStopped()) {
+                return false;
+            }
         }
 
         $row = array_intersect_key($this->mapEntityToData($entity), array_flip($this->fields));
@@ -118,141 +246,52 @@ abstract class AbstractDataMapper
                 $reflectionProperty->setValue($entity, $id);
             }
 
-            $this->afterCreate($entity);            
+            if ($this->eventManager->hasListeners(AfterCreate::class)) {
+                $this->eventManager->dispatch(new AfterCreate($this, $entity));
+            }
         }
 
         return $result;
     }
 
     /**
-     * Saves an Entity
+     * Updates an Entity
      */
-    public function save(object $entity): bool
+    protected function doUpdate(object $entity): bool
     {
-        if (! $this->beforeSave($entity)) {
-            return false;
+        if ($this->eventManager->hasListeners(BeforeUpdate::class)) {
+            if ($this->eventManager->dispatch(new BeforeUpdate($this, $entity))->isPropagationStopped()) {
+                return false;
+            }
         }
 
-        $result = $this->isPersisted($entity) ? $this->update($entity) : $this->create($entity);
+        $row = array_intersect_key($this->mapEntityToData($entity), array_flip($this->fields));
 
-        if ($result) {
-            $this->markPersisted($entity, true);
-            $this->afterSave($entity);
-        }
+        $result = $this->dataSource->update(
+            $this->table, $row, ['criteria' => $this->createCriteriaFromState($row)]
+        ) === 1;
 
-        return $result;
-    }
-
-    /**
-     * Gets an Entity or throws an exception
-     * @throws EntityNotFoundException
-     */
-    public function get(QueryObject $query): object
-    {
-        $result = $this->find($query);
-        if (! $result) {
-            throw new EntityNotFoundException('Entity Not Found');
+        if ($this->eventManager->hasListeners(AfterUpdate::class)) {
+            $this->eventManager->dispatch(new AfterUpdate($this, $entity));
         }
 
         return $result;
     }
-
-    /**
-     * Finds a single Entity
-     */
-    public function find(?QueryObject $query = null): ?object
-    {
-        $query = $query ?? $this->createQueryObject();
-
-        return $this->read($query->setOption('limit', 1))[0] ?? null;
-    }
-
-    /**
-     * Finds multiple Entities
-     * @return object[]
-     */
-    public function findAll(?QueryObject $query = null): array
-    {
-        $query = $query ?? $this->createQueryObject();
-
-        return $this->read($query);
-    }
-
-    /**
-     * Finds the count of Entities that match the query
-     */
-    public function count(?QueryObject $query = null): int
-    {
-        $query = $query ?? $this->createQueryObject();
-
-        return $this->beforeFind($query) === false ? 0 : $this->dataSource->count($this->table, $query);
-    }
-
-    /**
-     * Gets an Entity or throws an exception
-     */
-    public function getBy(array $criteria = [], array $options = []): object
-    {
-        return $this->get($this->createQueryObject($criteria, $options));
-    }
-
-    /**
-     * Returns a single instance
-     *
-     * @param array $options Options vary between datasources, but the following should be supported
-     *  - limit
-     *  - offset
-     *  - sort
-     * @return object|null
-     */
-    public function findBy(array $criteria = [], array $options = []): ?object
-    {
-        return $this->find($this->createQueryObject($criteria, $options));
-    }
-
-    /**
-     * Finds multiple instances
-     * @return object[]
-     */
-    public function findAllBy(array $criteria, array $options = []): array
-    {
-        return $this->findAll($this->createQueryObject($criteria, $options));
-    }
-
-    /**
-     * Finds the count of the number of instances
-     */
-    public function findCountBy(array $criteria, array $options = []): int
-    {
-        return $this->count($this->createQueryObject($criteria, $options));
-    }
-
-    // /**
-    //  * Finds a list
-    //  * @param array $fields
-    //  *  - keyField: defaults to primary key if it is a string
-    //  *  - valueField: optiona§l
-    //  *  - groupField: optional
-    //  */
-    // public function findListBy(array $criteria, array $fields = [], array $options = []): array
-    // {
-    //     return $this->findList($this->createQueryObject($criteria, $options), $fields);
-    // }
 
     /**
      * Reads from the datasource
      */
-    protected function read(QueryObject $query): array
+    protected function doFind(array $query): array
     {
-        if (! $this->beforeFind($query)) {
-            return [];
+        if ($this->eventManager->hasListeners(BeforeFind::class)) {
+            $event = $this->eventManager->dispatch(new BeforeFind($this, $query));
+            if ($event->isPropagationStopped()) {
+                return [];
+            }
+            $query = $event->getQuery();
         }
 
-        if ($this->fields && ! $query->getOption('fields')) {
-            $query->setOption('fields', $this->fields);
-        }
-
-        if (! $result = $this->dataSource->read($this->table, $query)) {
+        if (! $result = $this->dataSource->read($this->table, ['fields' => $this->fields] + $query)) {
             return [];
         }
 
@@ -261,154 +300,63 @@ abstract class AbstractDataMapper
             $this->markPersisted($result[$index], true);
         }
 
-        $result = $this->afterFind($result, $query);
-
-        return $result;
-    }
-
-    /**
-     * Updates an Entity
-     */
-    public function update(object $entity): bool
-    {
-        if (! $this->beforeUpdate($entity)) {
-            return false;
-        }
-
-        $row = array_intersect_key($this->mapEntityToData($entity), array_flip($this->fields));
-        $query = $this->createQueryObject($this->getConditionsFromState($row));
-
-        $result = $this->dataSource->update($this->table, $query, $row) === 1;
-
-        if ($result) {   
-            $this->afterUpdate($entity);
+        if ($this->eventManager->hasListeners(AfterFind::class)) {
+            $result = $this->eventManager->dispatch(new AfterFind($this, $result))->getResult();
         }
 
         return $result;
     }
 
     /**
-     * Updates records that match query with the data provided but no events or hooks will be triggered
+     * Do delete
      */
-    public function updateAll(QueryObject $query, array $data): int
+    protected function doDelete(object $entity, array $options = []): bool
     {
-        if (empty($data)) {
-            throw new InvalidArgumentException('Data cannot be empty');
-        }
-
-        return $this->dataSource->update($this->table, $query, $data);
-    }
-
-    /**
-     * Deletes records that match the query but no events or hooks will be triggered
-     */
-    public function deleteAll(QueryObject $query): int
-    {
-        return $this->dataSource->delete($this->table, $query);
-    }
-
-    /**
-     * Saves a collection of entities
-     */
-    public function saveMany(iterable $entities): bool
-    {
-        foreach ($entities as $entity) {
-            if (! $this->save($entity)) {
+        if ($this->eventManager->hasListeners(BeforeDelete::class)) {
+            if ($this->eventManager->dispatch(new BeforeDelete($this, $entity))->isPropagationStopped()) {
                 return false;
             }
         }
 
-        return true;
-    }
-
-    /**
-     * Deletes a collection of entities
-     */
-    public function deleteMany(iterable $entities): bool
-    {
-        foreach ($entities as $entity) {
-            if (! $this->delete($entity)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Creates a new Query object
-     */
-    public function createQueryObject(array $criteria = [], array $options = []): QueryObject
-    {
-        return new QueryObject($criteria, $options);
-    }
-
-    /**
-     * Deletes an entity
-     */
-    public function delete(object $entity): bool
-    {
-        if (! $this->beforeDelete($entity)) {
-            return false;
-        }
-
-        $row = $this->mapEntityToData($entity);
-        $query = $this->createQueryObject($this->getConditionsFromState($row));
-
-        $result = $this->dataSource->delete($this->table, $query) === 1;
+        $criteria = $this->createCriteriaFromState($this->mapEntityToData($entity));
+        $result = $this->dataSource->delete($this->table, array_merge($options, ['criteria' => $criteria])) === 1;
 
         if ($result) {
             $this->markPersisted($entity, false);
-            $this->afterDelete($entity);
+            if ($this->eventManager->hasListeners(AfterDelete::class)) {
+                $this->eventManager->dispatch(new AfterDelete($this, $entity));
+            }
         }
 
         return $result;
     }
 
     /**
-     * Deletes records that match the criteria but no events or hooks will be triggered
+     * Checks if the Entity is persisted
      */
-    public function deleteAllBy(array $criteria, array $options = []): int
+    protected function isPersisted(object $entity): bool
     {
-        return $this->deleteAll($this->createQueryObject($criteria, $options));
+        return isset($this->persisted[spl_object_id($entity)]);
     }
 
     /**
-     * Updates records that match criteria with the data provided but no events or hooks will be triggered
+     * Marks an entity as persisted
      */
-    public function updateAllBy(array $criteria, array $data, array $options = []): int
+    protected function markPersisted(object $entity, bool $status): void
     {
-        return $this->updateAll($this->createQueryObject($criteria, $options), $data);
-    }
+        if ($status) {
+            $this->persisted[spl_object_id($entity)] = $status;
 
-    /**
-     * Converts a row from the storage into an Entity object
-     */
-    public function mapDataToEntity(array $state): object
-    {
-        $entity = $this->createEntity();
+            return;
+        }
 
-        $this->hydrator->hydrate(
-            $entity, array_intersect_key($state, array_flip((array) $this->fields))
-        );
-
-        return $entity;
-    }
-
-    /**
-     * Converts Entity object into an array ready to be persisted to storage
-     */
-    public function mapEntityToData(object $entity): array
-    {
-        $extracted = $this->hydrator->extract($entity);
-
-        return  array_intersect_key($extracted, array_flip((array) $this->fields));
+        unset($this->persisted[spl_object_id($entity)]);
     }
 
     /**
      * Creates the conditions array from a particular entity
      */
-    protected function getConditionsFromState(array $state): array
+    private function createCriteriaFromState(array $state): array
     {
         $conditions = [];
 
@@ -423,78 +371,22 @@ abstract class AbstractDataMapper
     }
 
     /**
-     * Before create callback
+     * If the primary key is ['post_id','tag_id'] the ID should be something like [1000,1001]
      */
-    protected function beforeCreate(object $entity): bool
+    private function createCriteriaFromId(int|string|array $id): array
     {
-        return true;
-    }
+        $id = (array) $id;
+        $primaryKey = (array) $this->primaryKey;
 
-    /**
-     * After create callback
-     */
-    protected function afterCreate(object $entity): void
-    {
-    }
+        if (count($id) !== count($primaryKey)) {
+            throw new BadMethodCallException('Invalid Primary Key / ID');
+        }
 
-    /**
-     * Before update callback
-     */
-    protected function beforeUpdate(object $entity): bool
-    {
-        return true;
-    }
+        $criteria = [];
+        foreach ($primaryKey as $index => $field) {
+            $criteria[$field] = $id[$index];
+        }
 
-    /**
-     * after update callback
-     */
-    protected function afterUpdate(object $entity): void
-    {
-    }
-
-    /**
-     * Before save callback
-     */
-    protected function beforeSave(object $entity): bool
-    {
-        return true;
-    }
-
-    /**
-     * After save callback
-     */
-    protected function afterSave(object $entity): void
-    {
-    }
-
-    /**
-     * Before delete callback
-     */
-    protected function beforeDelete(object $entity): bool
-    {
-        return true;
-    }
-
-    /**
-     * after delete callback
-     */
-    protected function afterDelete(object $entity): void
-    {
-    }
-
-    /**
-     * before find callback
-     */
-    protected function beforeFind(QueryObject $query): bool
-    {
-        return true;
-    }
-
-    /**
-     * After find callback
-     */
-    protected function afterFind(array $results, QueryObject $query): array
-    {
-        return $results;
+        return $criteria;
     }
 }

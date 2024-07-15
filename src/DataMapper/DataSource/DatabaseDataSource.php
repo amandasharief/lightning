@@ -16,9 +16,7 @@ use PDOStatement;
 use RuntimeException;
 use Lightning\Database\Row;
 use InvalidArgumentException;
-use Lightning\DataMapper\QueryObject;
 use Lightning\QueryBuilder\QueryBuilder;
-use Lightning\DataMapper\DataSourceInterface;
 
 class DatabaseDataSource implements DataSourceInterface
 {
@@ -72,18 +70,15 @@ class DatabaseDataSource implements DataSourceInterface
     /**
      * Reads from the DataSource
      */
-    public function read(string $table, QueryObject $query): array
+    public function read(string $table, array $query = []): array
     {
-        $criteria = $query->getCriteria();
-        $options = $query->getOptions();
-
         $builder = $this->builder
-            ->select(empty($options['fields']) ? ['*'] : $options['fields'])
+            ->select(empty($query['fields']) ? ['*'] : $query['fields'])
             ->from($table);
-        if ($criteria) {
-            $builder->where($criteria);
+        if ($query['criteria'] ?? []) {
+            $builder->where($query['criteria']);
         }
-        $this->applyOptions($builder, $options);
+        $this->applyOptions($builder, $query);
 
         return $this->execute($builder->toString(), $builder->getParameters())->fetchAll(PDO::FETCH_CLASS, Row::class);
     }
@@ -91,15 +86,13 @@ class DatabaseDataSource implements DataSourceInterface
     /**
      * Updates records in the datasource
      */
-    public function update(string $table, QueryObject $query, array $data): int
+    public function update(string $table, array $data, array $query = []): int
     {
-        $criteria = $query->getCriteria();
-
         $builder = $this->builder->update($table)->set($data);
-        if ($criteria) {
-            $builder->where($criteria);
+        if ($query['criteria'] ?? []) {
+            $builder->where($query['criteria']);
         }
-        $this->applyOptions($builder, $query->getOptions());
+        $this->applyOptions($builder, $query);
 
         return $this->execute($builder->toString(), $builder->getParameters())->rowCount();
     }
@@ -107,29 +100,26 @@ class DatabaseDataSource implements DataSourceInterface
     /**
      * Deletes records from the Datasource
      */
-    public function delete(string $table, QueryObject $query): int
+    public function delete(string $table, array $query = []): int
     {
-        $criteria = $query->getCriteria();
-
         $builder = $this->builder->delete()->from($table);
-        if ($criteria) {
-            $builder->where($criteria);
+        if ($query['criteria'] ?? []) {
+            $builder->where($query['criteria']);
         }
-        $this->applyOptions($builder, $query->getOptions());
+        $this->applyOptions($builder, $query);
 
         return $this->execute($builder->toString(), $builder->getParameters())->rowCount();
     }
 
-    public function count(string $table, QueryObject $query): int
+    public function count(string $table, array $query = []): int
     {
-        $criteria = $query->getCriteria();
-        $fields = array_merge(['COUNT(*) as count'], $query->getOption('group', []));
+        $fields = array_merge(['COUNT(*) as count'], $query['group'] ?? []);
 
         $builder = $this->builder->select($fields)->from($table);
-        if ($criteria) {
-            $builder->where($criteria);
+        if ($query['criteria'] ?? []) {
+            $builder->where($query['criteria']);
         }
-        $this->applyOptions($builder, $query->getOptions());
+        $this->applyOptions($builder, $query);
 
         return (int) $this->execute($builder->toString(), $builder->getParameters())->fetchColumn(0);
     }

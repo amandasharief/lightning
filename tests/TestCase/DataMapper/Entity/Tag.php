@@ -2,8 +2,7 @@
 
 namespace Lightning\Test\TestCase\DataMapper\Entity;
 
-
-class TagEntity
+class Tag
 {
     private ?int $id = null;
     private string $name;
