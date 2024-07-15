@@ -14,9 +14,9 @@ namespace Lightning\Orm;
 use LogicException;
 use ReflectionProperty;
 use Lightning\Hydrator\Hydrator;
-use Lightning\DataMapper\QueryObject;
 use Lightning\DataMapper\AbstractDataMapper;
-use Lightning\DataMapper\DataSourceInterface;
+use Lightning\EventManager\EventManagerInterface;
+use Lightning\DataMapper\DataSource\DataSourceInterface;
 
 /**
  * AbstractORM
@@ -78,11 +78,9 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
     /**
      * Constructor
      */
-    public function __construct(protected DataSourceInterface $dataSource, protected Hydrator $hydrator, protected DataMapperManager $manager)
+    public function __construct(protected DataSourceInterface $dataSource, protected Hydrator $hydrator, protected EventManagerInterface $eventManager, protected DataMapperManager $manager)
     {
-        parent::__construct($dataSource, $hydrator);
-        
-        $manager->add($this);
+        parent::__construct($dataSource, $hydrator, $eventManager); // Best practice call parent construct first
 
         $this->initializeOrm();
     }
@@ -90,14 +88,14 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
     /**
      * Reads from the DataSource
      */
-    protected function read(QueryObject $query, bool $mapResult = true): array
+    protected function doFind(array $query): array
     {
-        $resultSet = parent::read($query, $mapResult);
+        $resultSet = parent::doFind($query);
 
-        return $query->getOption('with') && ! empty($resultSet) ? $this->loadRelatedData($resultSet, $query) : $resultSet;
+        return ! empty($query['with']) && ! empty($resultSet) ? $this->loadRelatedData($resultSet, $query) : $resultSet;
     }
 
-    public function delete(object $entity): bool
+    public function delete(object $entity, array $options = []): bool
     {
         if ($result = parent::delete($entity) && is_string($this->primaryKey)) {
             if ($id = $this->getEntityProperty($entity, $this->primaryKey)) {
@@ -119,7 +117,6 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
                     'foreignKey' => null,
                     'className' => null,
                     'dependent' => false,
-                    'fields' => [],
                     'conditions' => [],
                     'association' => $assoc,
                     'order' => null,
@@ -137,10 +134,6 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
 
     /**
      * Validates the defintion array has all the correct keys
-     *
-     * @param string $assoc
-     * @param array $config
-     * @return void
      */
     protected function validateAssociationDefinition(string $assoc, array $config): void
     {
@@ -170,16 +163,14 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
      * Loads the related data
      *
      */
-    protected function loadRelatedData(array $resultSet, QueryObject $query): array
+    protected function loadRelatedData(array $resultSet, array $query): array
     {
-        $options = $query->getOptions();
-
         // Preload
         $associations = [];
         foreach ($this->associations as $assoc) {
             foreach ($this->$assoc as $config) {
                 $property = $config['propertyName'];
-                if (in_array($property, $options['with'])) {
+                if (in_array($property, $query['with'])) {
                     $associations[$assoc][$property] = $config;
                 }
             }
@@ -193,12 +184,13 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
             foreach ($associations as $type => $association) {
                 foreach ($association as $config) {
                     $conditions = $config['conditions'];
-                    $options = ['fields' => $config['fields'], 'order' => $config['order']];
+                    $options = ['order' => $config['order']];
 
                     $mapper = $this->manager->get($config['className']);
                     $bindingKey = $mapper->getPrimaryKey()[0];
 
                     switch ($type) {
+                        // TODO: this could be way more effecient, like loading ids then adding later. as right it would depend highly on mysql query cache
                         case 'belongsTo':
                             $conditions[$bindingKey] = $row[$config['foreignKey']];
                             $result = $mapper->findAllBy($conditions, $options);
@@ -218,8 +210,9 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
 
                             break;
                         case 'belongsToMany':
+
                             $result = $this->dataSource->read(
-                                $config['joinTable'], new QueryObject([$config['foreignKey'] => $row[$primaryKey]])
+                                $config['joinTable'], ['criteria' => [$config['foreignKey'] => $row[$primaryKey]]]
                             );
 
                             $otherForeignKey = $config['otherForeignKey'];
@@ -261,24 +254,16 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
 
         foreach ($this->belongsToMany as $config) {
             if (! empty($config['dependent'])) {
-                $this->dataSource->delete($config['joinTable'], new QueryObject([$config['foreignKey'] => $id]));
+                $this->dataSource->delete($config['joinTable'], ['foreignKey' => $id]);
             }
         }
     }
 
     private function getEntityProperty(object $entity, string $property): mixed
     {
-        $result = null;
         $reflectionProperty = new ReflectionProperty($entity, $property);
-        if ($reflectionProperty->isPrivate()) {
-            $reflectionProperty->setAccessible(true); // Only required for PHP 8.0 and lower
-        }
 
-        if ($reflectionProperty->isInitialized($entity)) {
-            $result = $reflectionProperty->getValue($entity);
-        }
-
-        return  $result ;
+        return $reflectionProperty->isInitialized($entity) ? $reflectionProperty->getValue($entity) : null;
     }
 
     /**

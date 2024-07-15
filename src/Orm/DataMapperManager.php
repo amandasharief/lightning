@@ -44,6 +44,6 @@ final class DataMapperManager
             return $this->dataMappers[$class];
         }
 
-        return $this->dataMappers[$class] = $this->factory->create($class , $this);
+        return $this->dataMappers[$class] = $this->factory->create($class, $this);
     }
 }

@@ -13,32 +13,33 @@ namespace Lightning\Orm;
 
 use Lightning\Hydrator\Hydrator;
 use Lightning\DataMapper\AbstractDataMapper;
-use Lightning\DataMapper\DataSourceInterface;
+use Lightning\EventManager\EventManagerInterface;
+use Lightning\DataMapper\DataSource\DataSourceInterface;
 
 /**
  * DataMapperFactory
- * 
+ *
  */
 class DataMapperFactory implements DataMapperFactoryInterface
 {
-    public function __construct(protected DataSourceInterface $dataSource, protected Hydrator $hydrator)
+    public function __construct(protected DataSourceInterface $dataSource, protected Hydrator $hydrator, protected EventManagerInterface $eventManager)
     {
     }
 
     /**
      * Create the Data Mapper object using the class name
-     * 
-     * @todo Due to the bidirectional nature of the mappers in ORM, i am passing the manager here. Previously 
-     * creation code was in manager, however it was a more DI container 
+     *
+     * @todo Due to the bidirectional nature of the mappers in ORM, i am passing the manager here. Previously
+     * creation code was in manager, however it was a more DI container
      */
     public function create(string $dataMapperClass, DataMapperManager $manager): AbstractDataMapper
     {
         switch ($dataMapperClass) {
             // case User::class:
-            //     return new $dataMapperClass($this->dataSource, $this->hydrator, $this->someOtherDep);
+            //     return new $dataMapperClass($this->dataSource, $this->hydrator, $this->eventManager, $manager, $this->someOtherDep);
             //     break;
             default:
-                return new $dataMapperClass($this->dataSource, $this->hydrator, $manager);
+                return new $dataMapperClass($this->dataSource, $this->hydrator, $this->eventManager, $manager);
         }
     }
 }

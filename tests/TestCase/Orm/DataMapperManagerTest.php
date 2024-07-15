@@ -2,14 +2,16 @@
 
 namespace Lightning\Test\TestCase\Orm;
 
+use PDO;
 use PHPUnit\Framework\TestCase;
-use Lightning\Orm\DataMapperManager;
-
-use Lightning\DataMapper\DataSourceInterface;
-use Lightning\Orm\AbstractObjectRelationalMapper;
-use Lightning\DataMapper\DataSource\MemoryDataSource;
 use Lightning\Hydrator\Hydrator;
+
 use Lightning\Orm\DataMapperFactory;
+use Lightning\Orm\DataMapperManager;
+use Lightning\EventManager\EventManager;
+use Lightning\QueryBuilder\QueryBuilder;
+use Lightning\Orm\AbstractObjectRelationalMapper;
+use Lightning\DataMapper\DataSource\DatabaseDataSource;
 
 class DummyArticleEntity
 {
@@ -20,83 +22,6 @@ class DummyArticleEntity
     private ?string $created_at = null;
     private ?string $updated_at = null;
     private ?object $author = null;
-
-    public function getTitle(): string
-    {
-        return $this->title;
-    }
-
-    public function setTitle(string $title): self
-    {
-        $this->title = $title;
-
-        return $this;
-    }
-
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
-
-    public function getBody(): string
-    {
-        return $this->body;
-    }
-
-    public function setBody(string $body): self
-    {
-        $this->body = $body;
-
-        return $this;
-    }
-
-    public function getAuthorId(): int
-    {
-        return $this->author_id;
-    }
-
-    public function setAuthorId(int $author_id): self
-    {
-        $this->author_id = $author_id;
-
-        return $this;
-    }
-
-    public function getCreatedAt(): ?string
-    {
-        return $this->created_at;
-    }
-
-    public function setCreatedAt(?string $created_at): self
-    {
-        $this->created_at = $created_at;
-
-        return $this;
-    }
-
-    public function getUpdatedAt(): ?string
-    {
-        return $this->updated_at;
-    }
-
-    public function setUpdatedAt(?string $updated_at): self
-    {
-        $this->updated_at = $updated_at;
-
-        return $this;
-    }
-
-    public function getAuthor(): ?object
-    {
-        return $this->author;
-    }
-
-    public function setAuthor(?object $author): self
-    {
-        $this->author = $author;
-
-        return $this;
-    }
 }
 
 class DummyArticle extends AbstractObjectRelationalMapper
@@ -113,7 +38,8 @@ final class DataMapperManagerTest extends TestCase
 {
     public function testGet(): void
     {
-        $manager = new DataMapperManager(new DataMapperFactory(new MemoryDataSource(), new Hydrator()));
+        $dataSource = new DatabaseDataSource(new Pdo('sqlite::memory:'), new QueryBuilder());
+        $manager = new DataMapperManager(new DataMapperFactory($dataSource, new Hydrator(), new EventManager()));
 
         $this->assertInstanceOf(
             DummyArticle::class, $manager->get(DummyArticle::class)
@@ -125,12 +51,12 @@ final class DataMapperManagerTest extends TestCase
      */
     public function testAdd(): void
     {
-        
-        $manager = new DataMapperManager(new DataMapperFactory(new MemoryDataSource(), new Hydrator()));
-        $mapper = new DummyArticle(new MemoryDataSource(), new Hydrator(), $manager);
+        $dataSource = new DatabaseDataSource(new Pdo('sqlite::memory:'), new QueryBuilder());
+        $manager = new DataMapperManager(new DataMapperFactory($dataSource, new Hydrator(), new EventManager()));
+        $mapper = new DummyArticle($dataSource, new Hydrator(), new EventManager(), $manager);
 
         $this->assertInstanceOf(
-          DataMapperManager::class, $manager->add($mapper)
+            DataMapperManager::class, $manager->add($mapper)
         );
 
         $this->assertSame($mapper, $manager->get(DummyArticle::class));
@@ -141,18 +67,12 @@ final class DataMapperManagerTest extends TestCase
      */
     public function testGetExisting(): void
     {
-        $dataSource = new MemoryDataSource();
-        
-        $manager = new DataMapperManager(new DataMapperFactory($dataSource, new Hydrator()));
+        $dataSource = new DatabaseDataSource(new Pdo('sqlite::memory:'), new QueryBuilder());
+        $manager = new DataMapperManager(new DataMapperFactory($dataSource, new Hydrator(), new EventManager()));
 
-        $mapper = new DummyArticle($dataSource, new Hydrator(), $manager);
+        $mapper = new DummyArticle($dataSource, new Hydrator(), new EventManager(), $manager);
+        $id = spl_object_id($mapper);
 
-        $mapper->foo = 'bar'; // test its not being created
-
-        $manager->add($mapper);
-
-        $this->assertEquals(
-          $mapper, $manager->get(DummyArticle::class)
-        );
+        $this->assertEquals($id, spl_object_id($manager->add($mapper)->get(DummyArticle::class)));
     }
 }
