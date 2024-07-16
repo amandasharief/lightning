@@ -80,7 +80,7 @@ class DatabaseDataSource implements DataSourceInterface
         }
         $this->applyOptions($builder, $query);
 
-        return $this->execute($builder->toString(), $builder->getParameters())->fetchAll(PDO::FETCH_CLASS, Row::class);
+        return $this->execute($builder->toString(), $builder->getParameters())->fetchAll();
     }
 
     /**
