@@ -1,4 +1,4 @@
-# ORM (Object Relational Mapper)
+# ORM (Object Relational Mapper) [Experimental]
 
 The Object Relational Mapper extends the `DataMapper` to work with related data, this provides `hasOne`, `hasMany`, `belongsTo` and `belongsToMany` associations.
 
@@ -92,7 +92,7 @@ The following options are supported:
 - propertyName: the name of the property where the data will be set
 - foreignKey: the name of the foreign key in the other table
 - dependent: When set to true associated records will also be deleted
-- fields: An array of fields to select, if not provided it will use the Data Mapper default
+- fields: An array of fields to select, if not provided it will use the Data Mapper default TODO: no longer relevant
 - conditions: An array of additional criteria to use. e.g. `['tenant_id' => TENANT_ID]`
 
 ## Has Many (one-to-many)

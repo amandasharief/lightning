@@ -88,7 +88,7 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
     /**
      * Reads from the DataSource
      */
-    protected function doFind(array $query): array
+    protected function doFind(array $query): iterable
     {
         $resultSet = parent::doFind($query);
 
@@ -163,7 +163,7 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
      * Loads the related data
      *
      */
-    protected function loadRelatedData(array $resultSet, array $query): array
+    protected function loadRelatedData(iterable $resultSet, array $query): iterable
     {
         // Preload
         $associations = [];
@@ -193,24 +193,23 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
                         // TODO: this could be way more effecient, like loading ids then adding later. as right it would depend highly on mysql query cache
                         case 'belongsTo':
                             $conditions[$bindingKey] = $row[$config['foreignKey']];
-                            $result = $mapper->findAllBy($conditions, $options);
+                            $result = $mapper->findAll($conditions, $options);
                             $this->setObjectProperty($entity, $config['propertyName'], $result ? $result[0] : null);
 
                             break;
                         case 'hasOne':
 
                             $conditions[$config['foreignKey']] = $row[$primaryKey];
-                            $result = $mapper->findAllBy($conditions, $options);
+                            $result = $mapper->findAll($conditions, $options);
                             $this->setObjectProperty($entity, $config['propertyName'], $result ? $result[0] : null);
 
                             break;
                         case 'hasMany':
                             $conditions[$config['foreignKey']] = $row[$bindingKey];
-                            $this->setObjectProperty($entity, $config['propertyName'], $mapper->findAllBy($conditions, $options));
+                            $this->setObjectProperty($entity, $config['propertyName'], $mapper->findAll($conditions, $options));
 
                             break;
                         case 'belongsToMany':
-
                             $result = $this->dataSource->read(
                                 $config['joinTable'], ['criteria' => [$config['foreignKey'] => $row[$primaryKey]]]
                             );
@@ -221,7 +220,7 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
                             }, $result);
 
                             $conditions[$primaryKey] = $ids;
-                            $this->setObjectProperty($entity, $config['propertyName'], $mapper->findAllBy($conditions, $options));
+                            $this->setObjectProperty($entity, $config['propertyName'], $mapper->findAll($conditions, $options));
 
                             break;
                     }
@@ -245,7 +244,7 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
             foreach ($this->$assoc as $config) {
                 if (! empty($config['dependent'])) {
                     $mapper = $this->manager->get($config['className']);
-                    foreach ($mapper->findAllBy([$config['foreignKey'] => $id]) as $entity) {
+                    foreach ($mapper->findAll([$config['foreignKey'] => $id]) as $entity) {
                         $mapper->delete($entity);
                     }
                 }

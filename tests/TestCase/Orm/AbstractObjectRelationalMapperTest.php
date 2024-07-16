@@ -249,7 +249,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
     {
         $article = new Article($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
 
-        $result = $article->findBy(['id' => 1000], ['with' => ['author']]);
+        $result = $article->find(['id' => 1000], ['with' => ['author']]);
 
         # Important check with array not toJson
         $expected = [
@@ -289,7 +289,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
             ]
 
         ]);
-        $result = $article->findBy(['id' => 1000], ['with' => ['author']]);
+        $result = $article->find(['id' => 1000], ['with' => ['author']]);
 
         # Important check with array not toJson
         $expected = [
@@ -311,7 +311,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
 
         $article = new Article($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
 
-        $result = $article->findBy(['id' => 1000], ['with' => ['author']]);
+        $result = $article->find(['id' => 1000], ['with' => ['author']]);
         $expected = [
             'id' => 1000,
             'title' => 'Article #1',
@@ -328,7 +328,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
     {
         $user = new User($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
 
-        $result = $user->findBy(['id' => 1000], ['with' => ['profile']]);
+        $result = $user->find(['id' => 1000], ['with' => ['profile']]);
 
         # Important check with array not toJson
         $expected = [
@@ -374,7 +374,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
             ]
         ]);
 
-        $result = $user->findBy(['id' => 1000], ['with' => ['profile']]);
+        $result = $user->find(['id' => 1000], ['with' => ['profile']]);
 
         # Important check with array not toJson
         $expected = [
@@ -398,7 +398,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
         $this->dataSource->delete('profiles', []);
         $user = new User($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
 
-        $result = $user->findBy(['id' => 1000], ['with' => ['profile']]);
+        $result = $user->find(['id' => 1000], ['with' => ['profile']]);
 
         # Important check with array not toJson
         $expected = [
@@ -429,7 +429,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
 
         $author = new Author($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
 
-        $result = $author->findBy(['id' => 2000], ['with' => ['articles']]);
+        $result = $author->find(['id' => 2000], ['with' => ['articles']]);
 
         $expected = [
             'id' => 2000,
@@ -479,7 +479,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
             ]
         ]);
 
-        $result = $author->findBy(['id' => 2000], ['with' => ['articles']]);
+        $result = $author->find(['id' => 2000], ['with' => ['articles']]);
 
         $expected = [
             'id' => 2000,
@@ -508,7 +508,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
         $author = new Author($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
         $author->setOrder('hasMany', 'articles', 'id DESC');
 
-        $result = $author->findBy(['id' => 2000], ['with' => ['articles']]);
+        $result = $author->find(['id' => 2000], ['with' => ['articles']]);
 
         $expected = [
             'id' => 2000,
@@ -556,7 +556,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
 
         $author = new Author($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
 
-        $result = $author->findBy(['id' => 2000], ['with' => ['articles']]);
+        $result = $author->find(['id' => 2000], ['with' => ['articles']]);
 
         $expected = [
             'id' => 2000,
@@ -574,7 +574,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
         $this->dataSource->update('posts_tags', ['post_id' => 1000], ['criteria' => ['post_id' => 1002]]);
 
         $post = new Post($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
-        $result = $post->findBy(['id' => 1000], ['with' => ['tags']]);
+        $result = $post->find(['id' => 1000], ['with' => ['tags']]);
 
         $expected = [
             'id' => 1000,
@@ -624,7 +624,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
             ]
         ]);
 
-        $result = $post->findBy(['id' => 1000], ['with' => ['tags']]);
+        $result = $post->find(['id' => 1000], ['with' => ['tags']]);
 
         $expected = [
             'id' => 1000,
@@ -665,7 +665,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
                 'propertyName' => 'tags'
             ]]);
 
-        $result = $post->findBy(['id' => 1000], ['with' => ['tags']]);
+        $result = $post->find(['id' => 1000], ['with' => ['tags']]);
 
         $expected = [
             'id' => 1000,
@@ -699,7 +699,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
         $this->dataSource->update('posts_tags', ['post_id' => 1000], ['criteria' => ['post_id' => 1002]]);
 
         $post = new Post($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
-        $result = $post->findBy(['id' => 1000], ['with' => ['tags']]);
+        $result = $post->find(['id' => 1000], ['with' => ['tags']]);
 
         $expected = [
             'id' => 1000,
