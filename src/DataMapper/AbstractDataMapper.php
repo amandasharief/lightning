@@ -31,6 +31,9 @@ use Lightning\DataMapper\Exception\EntityNotFoundException;
 
 /**
  * Data Mapper
+ *
+ * @internal I think original naming conventions e.g findBy findAllBy is not necessary. PDO uses fetch, fetchAll, so going to
+ * follow this. In the repository findAllByXX methods dont need to call a findAllBy method in the data mapper.
  */
 abstract class AbstractDataMapper implements DataMapperInterface
 {
@@ -60,7 +63,7 @@ abstract class AbstractDataMapper implements DataMapperInterface
     }
 
     /**
-     * Factory method for creating an Entity associated with this Data Mapper
+     * Factory method for creating a new and empty entity associated with this Data Mapper
      */
     abstract public function createEntity(): object;
 
@@ -69,17 +72,9 @@ abstract class AbstractDataMapper implements DataMapperInterface
     /**
      * Finds the count of Entities that match the query
      */
-    public function count(array $options = []): int
+    public function count(array $criteria = [], array $options = []): int
     {
-        return $this->doCount($options + ['criteria' => []]);
-    }
-
-    /**
-     * Finds the count of Entities that match the query
-     */
-    public function countBy(array $criteria, array $options = []): int
-    {
-        return $this->doCount($options + ['criteria' => $criteria]);
+        return $this->doCount(array_merge(['criteria' => $criteria], $options));
     }
 
     /**
@@ -91,11 +86,19 @@ abstract class AbstractDataMapper implements DataMapperInterface
     }
 
     /**
-     * Finds a single Entity
+     * @param array $options The following options are supported
+     * - order: e.g id DESC
      */
-    public function find(int|string|array $id, array $options = []): ?object
+    public function find(array $criteria = [], array $options = []): ?object
     {
-        return $this->doFind(array_merge($options, ['criteria' => $this->createCriteriaFromId($id), 'limit' => 1]))[0] ?? null;
+        $options['limit'] = 1;
+        $results = $this->doFind(array_merge(['criteria' => $criteria], $options));
+
+        foreach ($results as $result) {
+            return $result;
+        }
+
+        return null;
     }
 
     /**
@@ -104,29 +107,9 @@ abstract class AbstractDataMapper implements DataMapperInterface
      * - order: e.g id DESC
      * - limit: e.g 5
      */
-    public function findAll(array $options = []): array
+    public function findAll(array $criteria = [], array $options = []): iterable
     {
-        return $this->doFind(array_merge($options, ['criteria' => []]));
-    }
-
-    /**
-     * Finds multiple Entities
-     * @param array $options The following options are supported
-     * - order: e.g id DESC
-     * - limit: e.g 5
-     */
-    public function findAllBy(array $criteria = [], array $options = []): array
-    {
-        return $this->doFind(array_merge($options, ['criteria' => $criteria]));
-    }
-
-    /**
-     * @param array $options The following options are supported
-     * - order: e.g id DESC
-     */
-    public function findBy(array $criteria = [], array $options = []): ?object
-    {
-        return $this->doFind(array_merge($options, ['criteria' => $criteria, 'limit' => 1]))[0] ?? null;
+        return $this->doFind(array_merge(['criteria' => $criteria], $options));
     }
 
     /**
@@ -136,12 +119,13 @@ abstract class AbstractDataMapper implements DataMapperInterface
      */
     public function get(int|string|array $id, array $options = []): object
     {
-        $result = $this->doFind(array_merge($options, ['criteria' => $this->createCriteriaFromId($id), 'limit' => 1]))[0] ?? null;
-        if (! $result) {
-            throw new EntityNotFoundException('Entity Not Found');
+        $options['limit'] = 1;
+        $resultSet = $this->doFind(array_merge(['criteria' => $this->createCriteriaFromId($id)], $options));
+        foreach ($resultSet as $result) {
+            return $result;
         }
 
-        return $result;
+        throw new EntityNotFoundException('Entity Not Found');
     }
 
     /**
@@ -199,6 +183,14 @@ abstract class AbstractDataMapper implements DataMapperInterface
         return (array) $this->primaryKey;
     }
 
+    /**
+     * Gets the table used by this mapper
+     */
+    public function getTable(): string
+    {
+        return $this->table;
+    }
+
     public function getDataSource(): DataSourceInterface
     {
         return $this->dataSource;
@@ -242,8 +234,7 @@ abstract class AbstractDataMapper implements DataMapperInterface
             // Add generated ID
             $id = $this->dataSource->getGeneratedId();
             if ($id && is_string($this->primaryKey)) {
-                $reflectionProperty = new ReflectionProperty($entity, $this->primaryKey);
-                $reflectionProperty->setValue($entity, $id);
+                (new ReflectionProperty($entity, $this->primaryKey))->setValue($entity, $id);
             }
 
             if ($this->eventManager->hasListeners(AfterCreate::class)) {
@@ -281,24 +272,26 @@ abstract class AbstractDataMapper implements DataMapperInterface
     /**
      * Reads from the datasource
      */
-    protected function doFind(array $query): array
+    protected function doFind(array $query): iterable
     {
         if ($this->eventManager->hasListeners(BeforeFind::class)) {
             $event = $this->eventManager->dispatch(new BeforeFind($this, $query));
             if ($event->isPropagationStopped()) {
-                return [];
+                return $this->createCollection([]);
             }
             $query = $event->getQuery();
         }
 
         if (! $result = $this->dataSource->read($this->table, ['fields' => $this->fields] + $query)) {
-            return [];
+            return $this->createCollection([]);
         }
 
         foreach ($result as $index => $row) {
-            $result[$index] = $this->mapDataToEntity($row->toArray());
+            $result[$index] = $this->mapDataToEntity($row);
             $this->markPersisted($result[$index], true);
         }
+
+        $result = $this->createCollection($result);
 
         if ($this->eventManager->hasListeners(AfterFind::class)) {
             $result = $this->eventManager->dispatch(new AfterFind($this, $result))->getResult();
@@ -351,6 +344,15 @@ abstract class AbstractDataMapper implements DataMapperInterface
         }
 
         unset($this->persisted[spl_object_id($entity)]);
+    }
+
+    /**
+     * Factory method to create a collection of entities used by find or findAll. Override this method
+     * to use a custom collection class
+     */
+    protected function createCollection(array $entities): iterable
+    {
+        return $entities; // return new Collection($entities);
     }
 
     /**

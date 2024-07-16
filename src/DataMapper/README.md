@@ -4,6 +4,8 @@ DataMapper component implements the [Data Mapper Pattern](https://martinfowler.c
 
 Recently i thought to myself how much code is in an ORM or Data Mapper to save the programmer a few seconds when coding, but then on each script run its doing all kinds of checks and trying to figure out things out, it is totally unnessary. This datamapper, you set the initial configuration, it uses minimal magic.
 
+> Naming conventions : find for a single record, findAll for finding multiple records
+
 ## Example
 
 Create your `DataMapper`, ensuring that you add the `table`, `fields` and the factory method `createEntity`. By default the Data Mapper will set the primary key to `id`. If you want to use something else then override the `primaryKey` property with the name of the field or an array of fields, if it is a composite primary key.
@@ -14,7 +16,6 @@ Create your `DataMapper`, ensuring that you add the `table`, `fields` and the fa
 /**
  * Article Data Mapper
  * 
- * @method ?Article find(int|string|array $id, array $options = [])
  * @method Article[] findAll(array $options = [])
  * @method Article[] findAllBy(array criteria array $options = [])
  * @method ?Article findBy(array $criteria = [], array $options = [])
@@ -127,37 +128,52 @@ Finding records, this under the hood uses the `QueryBuilder` component, whose re
 ```php
 # Count
 $count = $mapper->count();
-$count = $mapper->countBy(['status' => 'approved']);
+$count = $mapper->count(['status' => 'approved']);
 
 $mapper->delete($entity); 
 
-$entity = $mapper->find(1234); // load entity with primary key 1234
-$entity = $mapper->findBy(['status' => ['approved','published'],'owner_id !=' => 1234]);
+$entity = $mapper->find(['status' => ['approved','published'],'owner_id !=' => 1234]);
 
-$entity = $mapper->get(1234); // same as find but will throw an entity not found exception if no record is found
+$entity = $mapper->get(1234); // same as findById but will throw an entity not found exception if no record is found
 
 $articles = $mapper->findAll();
-$articles = $mapper->findAllBy([
+$articles = $mapper->findAll([
     'title LIKE' => '%foo', // LIKE or NOT LIKE
     'status' => ['approved','published'], 
     'created_at BETWEEN' => ['2024-01-01 12:00:00', '2024-06-01 12:00:00']
 ]);
 ```
 
-The `DataMapper` no longer has bulk methods such as `update all` or `delete all`, since whilst convinent it does not have anything to do with the mapper. Therefore you should create a query method which uses the PDO object. 
+The `DataMapper` no longer has bulk methods such as `update all` or `delete all`, since whilst convinent it does not have anything to do with the mapper. Therefore you should create a query method in your Repository (an abstraction layer that uses the datamapper) which uses the PDO object. (The DatabaseDataSource object has update and delete methods as well, but i think perhaps for these type of operations you should use something native)
+
+See [Repository Pattern](https://martinfowler.com/eaaCatalog/repository.html)
 
 ```php
-$pdo = $mapper->getDataSource()->getPdo();
+// just an example not tested
+class UserRepository
+{
+    public function __construct(private UserDataMapper $user) {
 
-// Update 
-$pdo->prepare('UPDATE users SET status = ? WHERE status = ?')
-    ->execute(['active', 'inactive']);
+    }
 
-// Delete
-$stmt = $pdo->prepare('DELETE FROM articles WHERE category = ?')
-$stmt->execute(['draft']);
-echo $stmt->rowCount(); // number of records deleted
+    public function deleteAllByCategoryDraft() : int 
+    {
+        $pdo = $this->user->getDataSource()->getPDO();
+        $stmt = $pdo->prepare('DELETE FROM articles WHERE category = ?')
+        $stmt->execute(['draft']);
+        return $stmt->rowCount(); // number of records deleted
+    }
+
+    public function updateAllInactiveUsersToActive()
+    {
+        $pdo = $this->user->getDataSource()->getPDO();
+        $pdo->prepare('UPDATE users SET status = ? WHERE status = ?')
+            ->execute(['active', 'inactive']);
+    }
+}
 ```
+
+By default the Data Mapper returns collection of entities in an array, however sometimes you might prefer this in a collection style object, simply override the internal factory method `createCollection` to create the collection object of your choice.
 
 ## Callbacks (PSR-14)
 

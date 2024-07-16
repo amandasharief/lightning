@@ -18,7 +18,7 @@ use Lightning\DataMapper\DataMapperInterface;
  */
 final class AfterFind
 {
-    public function __construct(private DataMapperInterface $mapper, private array $result)
+    public function __construct(private DataMapperInterface $mapper, private iterable $result)
     {
     }
 
@@ -27,12 +27,12 @@ final class AfterFind
         return $this->mapper;
     }
 
-    public function getResult(): array
+    public function getResult(): iterable
     {
         return $this->result;
     }
 
-    public function setResult($result): self
+    public function setResult(iterable $result): self
     {
         $this->result = $result;
 

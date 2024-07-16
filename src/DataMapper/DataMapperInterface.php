@@ -19,15 +19,25 @@ namespace Lightning\DataMapper;
  */
 interface DataMapperInterface
 {
-    public function count(array $options = []): int;
-    public function countBy(array $criteria, array $options = []): int;
+    /**
+     * Gets the count of entities in the datasource
+     */
+    public function count(array $criteria = [], array $options = []): int;
 
+    /**
+     * Deletes an entity from the datasource
+     */
     public function delete(object $entity, array $options = []): bool;
 
-    public function find(int|string|array $id, array $options = []): ?object;
-    public function findAll(array $options = []): iterable;
-    public function findAllBy(array $criteria = [], array $options = []): iterable;
-    public function findBy(array $criteria = [], array $options = []): ?object;
+    /**
+     * Finds a single entity by the criteria
+     */
+    public function find(array $criteria = [], array $options = []): ?object;
+
+    /**
+     * Finds entities that match the criteria
+     */
+    public function findAll(array $criteria = [], array $options = []): iterable;
 
     /**
      * Gets an Entity by the ID if not throws an exception

@@ -97,16 +97,14 @@ final class AbstractDataMapperTest extends TestCase
     public function testCountBy(): void
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
-
-        // $this->assertEquals(3, $mapper->countBy([]));
-        $this->assertEquals(1, $mapper->countBy(['id' => 1000]));
-        $this->assertEquals(0, $mapper->countBy(['id' => 1234]));
+        $this->assertEquals(1, $mapper->count(['id' => 1000]));
+        $this->assertEquals(0, $mapper->count(['id' => 1234]));
     }
 
     public function testDelete(): void
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
-        $first = $mapper->find(1000);
+        $first = $mapper->find();
         $this->assertTrue($mapper->delete($first));
         $this->assertEquals(2, $mapper->count()); // was deleted
         $this->assertFalse($mapper->delete($first)); // test delete fail
@@ -115,23 +113,19 @@ final class AbstractDataMapperTest extends TestCase
     public function testFind(): void
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
-        $entity = $mapper->find(1000);
+        $entity = $mapper->find();
         $this->assertEquals('Article #1', $entity->getTitle());
         $this->assertTrue($mapper->callIsPersisted($entity));
-
-        $this->assertNull($mapper->find(1234));
     }
 
     public function testFindCompositePrimaryKey(): void
     {
         $mapper = new PostTagDataMapper($this->storage, $this->hydrator, $this->eventManager);
 
-        $entity = $mapper->find([1000,2002]);
+        $entity = $mapper->get([1000,2002]);
         $this->assertInstanceOf(PostTag::class, $entity);
         $this->assertEquals(1000, $entity->getPostId());
         $this->assertEquals(2002, $entity->getTagId());
-
-        $this->assertNull($mapper->find([123,456])); // non existant record
     }
 
     public function testFindCompositePrimaryKeyException(): void
@@ -141,7 +135,7 @@ final class AbstractDataMapperTest extends TestCase
         $this->expectException(BadMethodCallException::class);
         $this->expectExceptionMessage('Invalid Primary Key / ID');
 
-        $this->assertNull($mapper->find([1000])); // bad input check does not cause an error
+        $this->assertNull($mapper->get([1000])); // bad input check does not cause an error
     }
 
     public function testFindAll(): void
@@ -156,7 +150,7 @@ final class AbstractDataMapperTest extends TestCase
     public function testFindAllOrder(): void
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
-        $results = $mapper->findAll(['order' => 'id DESC']);
+        $results = $mapper->findAll([], ['order' => 'id DESC']);
         $this->assertEquals('Article #3', $results[0]->getTitle());
         $this->assertEquals('Article #2', $results[1]->getTitle());
         $this->assertEquals('Article #1', $results[2]->getTitle());
@@ -165,7 +159,7 @@ final class AbstractDataMapperTest extends TestCase
     public function testFindAllBy(): void
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
-        $results = $mapper->findAllBy(['title !=' => 'Article #2']);
+        $results = $mapper->findAll(['title !=' => 'Article #2']);
         $this->assertCount(2, $results);
         $this->assertEquals('Article #1', $results[0]->getTitle());
         $this->assertEquals('Article #3', $results[1]->getTitle());
@@ -174,7 +168,7 @@ final class AbstractDataMapperTest extends TestCase
     public function testFindAllByOrder(): void
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
-        $results = $mapper->findAllBy(['title !=' => 'Article #2'], ['order' => 'id DESC']);
+        $results = $mapper->findAll(['title !=' => 'Article #2'],['order' => 'id DESC']);
         $this->assertCount(2, $results);
         $this->assertEquals('Article #3', $results[0]->getTitle());
         $this->assertEquals('Article #1', $results[1]->getTitle());
@@ -183,9 +177,9 @@ final class AbstractDataMapperTest extends TestCase
     public function testFindBy(): void
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
-        $entity = $mapper->findBy(['title' => 'Article #2']);
+        $entity = $mapper->find(['title' => 'Article #2']);
         $this->assertEquals('Article #2', $entity->getTitle());
-        $this->assertNull($mapper->findBy(['title' => 'Article #100']));
+        $this->assertNull($mapper->find(['title' => 'Article #100']));
     }
 
     public function testGet(): void
@@ -225,11 +219,11 @@ final class AbstractDataMapperTest extends TestCase
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
 
-        $entity = $mapper->find(1000);
+        $entity = $mapper->find();
         $entity->setTitle('foo');
         $this->assertTrue($mapper->save($entity));
 
-        $entity = $mapper->find(1000);
+        $entity = $mapper->find();
         $this->assertEquals('foo', $entity->getTitle());
     }
 
@@ -237,7 +231,7 @@ final class AbstractDataMapperTest extends TestCase
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
 
-        $entity = $mapper->find(1000);
+        $entity = $mapper->find();
         $entity->setId(1234);
 
         $this->assertFalse($mapper->save($entity));
@@ -277,7 +271,7 @@ final class AbstractDataMapperTest extends TestCase
     public function testDeleteBeforeDeleteDispatched(): void
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
-        $entity = $mapper->find(1000);
+        $entity = $mapper->find();
 
         $this->eventManager->addListener(BeforeDelete::class, function (BeforeDelete $event) {
             $this->assertTrue(true);
@@ -288,7 +282,7 @@ final class AbstractDataMapperTest extends TestCase
     public function testDeleteAfterDeleteDispatched(): void
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
-        $entity = $mapper->find(1000);
+        $entity = $mapper->find();
 
         $this->eventManager->addListener(AfterDelete::class, function (AfterDelete $event) {
             $this->assertTrue(true);
@@ -306,7 +300,7 @@ final class AbstractDataMapperTest extends TestCase
     public function testDeleteBeforeDeleteStopped(): void
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
-        $entity = $mapper->find(1000);
+        $entity = $mapper->find();
 
         $this->eventManager->addListener(BeforeDelete::class, function (BeforeDelete $event) {
             $event->stopPropagation();
@@ -318,7 +312,7 @@ final class AbstractDataMapperTest extends TestCase
 
         $mapper->delete($entity);
 
-        $this->assertNotNull($mapper->find(1000));
+        $this->assertNotNull($mapper->find());
     }
 
     public function testSaveBeforeSaveDispatched(): void
@@ -433,7 +427,7 @@ final class AbstractDataMapperTest extends TestCase
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
 
-        $entity = $mapper->find(1000);
+        $entity = $mapper->find();
         $entity->setTitle('foo');
 
         $this->eventManager->addListener(BeforeUpdate::class, function (BeforeUpdate $event) {
@@ -447,7 +441,7 @@ final class AbstractDataMapperTest extends TestCase
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
 
-        $entity = $mapper->find(1000);
+        $entity = $mapper->find();
         $entity->setTitle('foo');
 
         $this->eventManager->addListener(AfterUpdate::class, function (AfterUpdate $event) {
@@ -461,7 +455,7 @@ final class AbstractDataMapperTest extends TestCase
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
 
-        $entity = $mapper->find(1000);
+        $entity = $mapper->find();
         $entity->setTitle('foo');
 
         $this->eventManager->addListener(BeforeUpdate::class, function (BeforeUpdate $event) {
