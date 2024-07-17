@@ -179,7 +179,9 @@ abstract class AbstractDataMapper implements DataMapperInterface
                 }
             }
 
-            if ($result = $this->processUpdate($entity) && $this->eventManager->hasListeners(AfterUpdate::class)) {
+            $result = $this->processUpdate($entity);
+
+            if ($result && $this->eventManager->hasListeners(AfterUpdate::class)) {
                 $this->eventManager->dispatch(new AfterUpdate($this, $entity));
             }
         } else {
@@ -189,11 +191,12 @@ abstract class AbstractDataMapper implements DataMapperInterface
                 }
             }
 
-            if ($result = $this->processCreate($entity) && $this->eventManager->hasListeners(AfterCreate::class)) {
+            $result = $this->processCreate($entity);
+
+            if ($result && $this->eventManager->hasListeners(AfterCreate::class)) {
                 $this->eventManager->dispatch(new AfterCreate($this, $entity));
             }
         }
-
         if ($result && $this->eventManager->hasListeners(AfterSave::class)) {
             $this->eventManager->dispatch(new AfterSave($this, $entity));
         }
