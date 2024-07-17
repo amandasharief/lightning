@@ -98,7 +98,7 @@ abstract class AbstractDataMapper implements DataMapperInterface
         }
 
         $result = $this->processDelete($entity, $options);
- 
+
         if ($result && $this->eventManager->hasListeners(AfterDelete::class)) {
             $this->eventManager->dispatch(new AfterDelete($this, $entity));
         }
@@ -113,6 +113,7 @@ abstract class AbstractDataMapper implements DataMapperInterface
     public function find(array $criteria = [], array $options = []): ?object
     {
         $options['limit'] = 1;
+
         return $this->findAll($criteria, $options)[0] ?? null;
     }
 
@@ -134,9 +135,9 @@ abstract class AbstractDataMapper implements DataMapperInterface
             $query = $event->getQuery();
         }
 
-       if(! $result = $this->processRead($query)){
+        if (! $result = $this->processRead($query)) {
             return [];
-       }
+        }
 
         if ($this->eventManager->hasListeners(AfterFind::class)) {
             $result = $this->eventManager->dispatch(new AfterFind($this, $result))->getResult();
@@ -153,7 +154,7 @@ abstract class AbstractDataMapper implements DataMapperInterface
     public function get(int|string|array $id, array $options = []): object
     {
         $options['limit'] = 1;
-        if($result = $this->findAll($this->createCriteriaFromId($id), $options)){
+        if ($result = $this->findAll($this->createCriteriaFromId($id), $options)) {
             return $result[0];
         }
 
@@ -171,37 +172,30 @@ abstract class AbstractDataMapper implements DataMapperInterface
             }
         }
 
-        if($this->isPersisted($entity)){
+        if ($this->isPersisted($entity)) {
             if ($this->eventManager->hasListeners(BeforeUpdate::class)) {
                 if ($this->eventManager->dispatch(new BeforeUpdate($this, $entity))->isPropagationStopped()) {
                     return false;
                 }
             }
-    
-            $result = $this->processUpdate($entity);
-            
-            if ($this->eventManager->hasListeners(AfterUpdate::class)) {
+
+            if ($result = $this->processUpdate($entity) && $this->eventManager->hasListeners(AfterUpdate::class)) {
                 $this->eventManager->dispatch(new AfterUpdate($this, $entity));
             }
-        }
-        else{
+        } else {
             if ($this->eventManager->hasListeners(BeforeCreate::class)) {
                 if ($this->eventManager->dispatch(new BeforeCreate($this, $entity))->isPropagationStopped()) {
                     return false;
                 }
             }
-    
-            $result = $this->processCreate($entity);
-    
-            if ($this->eventManager->hasListeners(AfterCreate::class)) {
+
+            if ($result = $this->processCreate($entity) && $this->eventManager->hasListeners(AfterCreate::class)) {
                 $this->eventManager->dispatch(new AfterCreate($this, $entity));
             }
         }
 
-        if ($result){
-            if ($this->eventManager->hasListeners(AfterSave::class)) {
-                $this->eventManager->dispatch(new AfterSave($this, $entity));
-            }
+        if ($result && $this->eventManager->hasListeners(AfterSave::class)) {
+            $this->eventManager->dispatch(new AfterSave($this, $entity));
         }
 
         return $result;
@@ -268,25 +262,24 @@ abstract class AbstractDataMapper implements DataMapperInterface
     protected function processCreate(object $entity): bool
     {
         $row = array_intersect_key($this->mapEntityToData($entity), array_flip($this->fields));
-
         $result = $this->dataSource->create($this->table, $row);
         if ($result) {
-            // Add generated ID
             $id = $this->dataSource->getGeneratedId();
             if ($id && is_string($this->primaryKey)) {
                 (new ReflectionProperty($entity, $this->primaryKey))->setValue($entity, $id);
             }
             $this->markPersisted($entity, true);
         }
+
         return $result;
     }
 
     /**
      * Find logic
      */
-    protected function processRead(array $query) : array
+    protected function processRead(array $query): array
     {
-         if (! $result = $this->dataSource->read($this->table, $query)) {
+        if (! $result = $this->dataSource->read($this->table, $query)) {
             return [];
         }
 
@@ -295,32 +288,34 @@ abstract class AbstractDataMapper implements DataMapperInterface
             $this->markPersisted($result[$index], true);
         }
 
-       return $result;
+        return $result;
     }
 
     /**
      * Update logic
      */
-    protected function processUpdate($entity): bool 
+    protected function processUpdate($entity): bool
     {
         $row = array_intersect_key($this->mapEntityToData($entity), array_flip($this->fields));
 
         $result = $this->dataSource->update(
             $this->table, $row, ['criteria' => $this->createCriteriaFromState($row)]
         ) === 1;
-        
-        if($result){
+
+        if ($result) {
             $this->markPersisted($entity, true);
         }
+
         return $result;
     }
 
-    protected function processDelete(object $entity, array $options =[]): bool 
+    protected function processDelete(object $entity, array $options = []): bool
     {
         $criteria = $this->createCriteriaFromState($this->mapEntityToData($entity));
-        if($result = $this->dataSource->delete($this->table, array_merge(['criteria' => $criteria], $options)) === 1){
+        if ($result = $this->dataSource->delete($this->table, array_merge(['criteria' => $criteria], $options)) === 1) {
             $this->markPersisted($entity, false);
         }
+
         return $result;
     }
 

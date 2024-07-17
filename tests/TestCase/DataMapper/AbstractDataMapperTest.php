@@ -118,11 +118,11 @@ final class AbstractDataMapperTest extends TestCase
         $this->assertTrue($mapper->callIsPersisted($entity));
     }
 
-    public function testFindNone(): void 
+    public function testFindNone(): void
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
 
-        $this->assertNull($mapper->find( ['id' => 1234]));
+        $this->assertNull($mapper->find(['id' => 1234]));
     }
 
     public function testFindCompositePrimaryKey(): void
@@ -157,7 +157,7 @@ final class AbstractDataMapperTest extends TestCase
     public function testFindAllNoResult(): void
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
-        $this->assertEquals([],$mapper->findAll(['title'=>'not set']));
+        $this->assertEquals([], $mapper->findAll(['title' => 'not set']));
     }
 
     public function testFindAllOrder(): void
@@ -181,7 +181,7 @@ final class AbstractDataMapperTest extends TestCase
     public function testFindAllByOrder(): void
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
-        $results = $mapper->findAll(['title !=' => 'Article #2'],['order' => 'id DESC']);
+        $results = $mapper->findAll(['title !=' => 'Article #2'], ['order' => 'id DESC']);
         $this->assertCount(2, $results);
         $this->assertEquals('Article #3', $results[0]->getTitle());
         $this->assertEquals('Article #1', $results[1]->getTitle());
@@ -418,6 +418,28 @@ final class AbstractDataMapperTest extends TestCase
         $mapper->save($entity);
     }
 
+    public function testCreateAfterCreateNotDispatched(): void
+    {
+        $this->markTestIncomplete('Not Implemented');
+    }
+    // {
+    //     $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+    //     $entity = new Article();
+
+    //     $entity->setId(1000)
+    //         ->setTitle('test')
+    //         ->setBody('---')
+    //         ->setAuthorId(2000)
+    //         ->setCreatedAt(date('Y-m-d H:i:s'))
+    //         ->setUpdatedAt(date('Y-m-d H:i:s'));
+
+    //     $this->eventManager->addListener(AfterCreate::class, function (AfterCreate $event) {
+    //         $this->assertTrue(false);
+    //     });
+
+    //     $this->assertFalse($mapper->save($entity));
+    // }
+
     public function testCreateBeforeCreateStopped(): void
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
@@ -462,6 +484,11 @@ final class AbstractDataMapperTest extends TestCase
         });
 
         $mapper->save($entity);
+    }
+
+    public function testUpdateAfterUpdateNotDispatched(): void
+    {
+        $this->markTestIncomplete('Not Implemeneted');
     }
 
     public function testUpdateBeforeUpdateStopped(): void
