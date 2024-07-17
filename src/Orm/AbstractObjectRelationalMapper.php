@@ -76,6 +76,11 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
     protected array $associations = ['belongsTo','hasMany','hasOne','belongsToMany'];
 
     /**
+     * Keeps an array of reflection property objects during the loadRelatedData
+     */
+    private array $reflectionProperties = [];
+
+    /**
      * Constructor
      */
     public function __construct(protected DataSourceInterface $dataSource, protected Hydrator $hydrator, protected EventManagerInterface $eventManager, protected DataMapperManager $manager)
@@ -86,19 +91,29 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
     }
 
     /**
-     * Reads from the DataSource
+     * Overwriting the AbstractDataMapper::processRead
+     * @todo In future complete method should be here I think.
      */
-    protected function doFind(array $query): iterable
+    protected function processRead(array $query): array
     {
-        $resultSet = parent::doFind($query);
+        $result = parent::processRead($query);
 
-        return ! empty($query['with']) && ! empty($resultSet) ? $this->loadRelatedData($resultSet, $query) : $resultSet;
+        if (! empty($query['with'])) {
+            $query['with'] = 
+            $result = $this->loadRelatedData($result, $query);
+        }
+
+        return $result;
     }
 
-    public function delete(object $entity, array $options = []): bool
+    /**
+     * Overwriting the AbstractDataMapper::processDelete
+     * @todo In future complete method should be here I think.
+     */
+    protected function processDelete(object $entity, array $options = []): bool
     {
-        if ($result = parent::delete($entity) && is_string($this->primaryKey)) {
-            if ($id = $this->getEntityProperty($entity, $this->primaryKey)) {
+        if ($result = parent::processDelete($entity, $options)) {
+            if (is_string($this->primaryKey) && $id = $this->getEntityProperty($entity, $this->primaryKey)) {
                 $this->deleteDependent($id);
             }
         }
@@ -163,9 +178,9 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
      * Loads the related data
      *
      */
-    protected function loadRelatedData(iterable $resultSet, array $query): iterable
+    protected function loadRelatedData(array $resultSet, array $query): array
     {
-        // Preload
+        // Create associations data from with param
         $associations = [];
         foreach ($this->associations as $assoc) {
             foreach ($this->$assoc as $config) {
@@ -176,11 +191,9 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
             }
         }
 
-        $primaryKey = $this->getPrimaryKey()[0];
+        $primaryKey = $this->getPrimaryKey()[0]; 
 
         foreach ($resultSet as &$entity) {
-            $row = $this->mapEntityToData($entity);
-
             foreach ($associations as $type => $association) {
                 foreach ($association as $config) {
                     $conditions = $config['conditions'];
@@ -190,28 +203,30 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
                     $bindingKey = $mapper->getPrimaryKey()[0];
 
                     switch ($type) {
-                        // TODO: this could be way more effecient, like loading ids then adding later. as right it would depend highly on mysql query cache
                         case 'belongsTo':
-                            $conditions[$bindingKey] = $row[$config['foreignKey']];
-                            $result = $mapper->findAll($conditions, $options);
-                            $this->setObjectProperty($entity, $config['propertyName'], $result ? $result[0] : null);
+                            /**
+                             * @todo not efficient. Options: loop through get ids lots of reflection (and even more), single join query like before, caching
+                             */
+                            $conditions[$bindingKey] = $this->getEntityProperty($entity, $config['foreignKey']);
+                            $this->setObjectProperty($entity, $config['propertyName'], $mapper->find($conditions, $options));
 
                             break;
                         case 'hasOne':
 
-                            $conditions[$config['foreignKey']] = $row[$primaryKey];
-                            $result = $mapper->findAll($conditions, $options);
-                            $this->setObjectProperty($entity, $config['propertyName'], $result ? $result[0] : null);
+                            $conditions[$config['foreignKey']] = $this->getEntityProperty($entity, $primaryKey);
+                            $this->setObjectProperty($entity, $config['propertyName'], $mapper->find($conditions, $options));
 
                             break;
                         case 'hasMany':
-                            $conditions[$config['foreignKey']] = $row[$bindingKey];
+                            $conditions[$config['foreignKey']] = $this->getEntityProperty($entity,$bindingKey);
                             $this->setObjectProperty($entity, $config['propertyName'], $mapper->findAll($conditions, $options));
 
                             break;
                         case 'belongsToMany':
                             $result = $this->dataSource->read(
-                                $config['joinTable'], ['criteria' => [$config['foreignKey'] => $row[$primaryKey]]]
+                                $config['joinTable'], ['criteria' => [
+                                    $config['foreignKey'] => $this->getEntityProperty($entity,$primaryKey)
+                                    ]]
                             );
 
                             $otherForeignKey = $config['otherForeignKey'];
@@ -228,14 +243,13 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
             }
         }
 
+        $this->reflectionProperties = [];
+
         return $resultSet;
     }
 
     /**
      * Deletes dependent records for the hasOne, hasMany and belongsToMany associations
-     *
-     * @param string|integer $id
-     * @return void
      */
     private function deleteDependent($id): void
     {
@@ -258,18 +272,23 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
         }
     }
 
+    private function getReflectionProperty(object $entity, string $property) : ReflectionProperty
+    {
+        if(isset($this->reflectionProperties[$property])){
+            $this->reflectionProperties[$property];
+        }
+        return $this->reflectionProperties[$property] = new ReflectionProperty($entity::class, $property);
+    }
+
     private function getEntityProperty(object $entity, string $property): mixed
     {
-        $reflectionProperty = new ReflectionProperty($entity, $property);
+        $reflectionProperty = $this->getReflectionProperty($entity ,$property);
 
         return $reflectionProperty->isInitialized($entity) ? $reflectionProperty->getValue($entity) : null;
     }
 
-    /**
-     * @internal this is not checking fields, since we are adding RELATED data which is not part of field
-     */
     private function setObjectProperty(object $entity, string $property, mixed $value): void
     {
-        (new ReflectionProperty($entity, $property))->setValue($entity, $value);
+        $this->getReflectionProperty($entity ,$property)->setValue($entity, $value);
     }
 }
