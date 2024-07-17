@@ -173,8 +173,6 @@ class UserRepository
 }
 ```
 
-By default the Data Mapper returns collection of entities in an array, however sometimes you might prefer this in a collection style object, simply override the internal factory method `createCollection` to create the collection object of your choice.
-
 ## Callbacks (PSR-14)
 
 The follow callbacks are supported and the `EventManger` which is a tiny and highly efficient `PSR-14` implementation, using a single object to register, unregister and dispatch events. The `EventManagerInterface` is an extension to the `EventDispatcherInterface` offer methods to standardize how to register and unregister events, as well methods to create a more efficient dispatch process which is extremly imporant in classes where there could many events dispatched (e.g Database)

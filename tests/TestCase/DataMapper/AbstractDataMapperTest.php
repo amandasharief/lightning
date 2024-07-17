@@ -118,6 +118,13 @@ final class AbstractDataMapperTest extends TestCase
         $this->assertTrue($mapper->callIsPersisted($entity));
     }
 
+    public function testFindNone(): void 
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+
+        $this->assertNull($mapper->find( ['id' => 1234]));
+    }
+
     public function testFindCompositePrimaryKey(): void
     {
         $mapper = new PostTagDataMapper($this->storage, $this->hydrator, $this->eventManager);
@@ -145,6 +152,12 @@ final class AbstractDataMapperTest extends TestCase
         $this->assertEquals('Article #1', $results[0]->getTitle());
         $this->assertEquals('Article #2', $results[1]->getTitle());
         $this->assertEquals('Article #3', $results[2]->getTitle());
+    }
+
+    public function testFindAllNoResult(): void
+    {
+        $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
+        $this->assertEquals([],$mapper->findAll(['title'=>'not set']));
     }
 
     public function testFindAllOrder(): void

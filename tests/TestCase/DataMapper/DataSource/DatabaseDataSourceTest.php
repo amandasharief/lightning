@@ -172,9 +172,25 @@ final class DatabaseDataSourceTest extends TestCase
         ];
         $records = $storage->read('articles', $options);
 
-        $this->assertEquals(1, $records[0]['count']);
-        $this->assertEquals(2, $records[1]['count']); // It worked
-        $this->assertEquals(1, $records[2]['count']);
+        $expected = [
+            0 =>
+             [
+                 'count' => 1,
+                 'author_id' => 2000,
+             ],
+            1 =>
+             [
+                 'count' => 2,
+                 'author_id' => 2001, // It worked
+             ],
+            2 =>
+             [
+                 'count' => 1,
+                 'author_id' => 2002,
+             ],
+        ];
+
+        $this->assertEquals($expected, $records);
     }
 
     public function testReadHaving(): void

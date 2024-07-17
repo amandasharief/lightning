@@ -37,7 +37,7 @@ interface DataMapperInterface
     /**
      * Finds entities that match the criteria
      */
-    public function findAll(array $criteria = [], array $options = []): iterable;
+    public function findAll(array $criteria = [], array $options = []): array;
 
     /**
      * Gets an Entity by the ID if not throws an exception

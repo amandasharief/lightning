@@ -14,7 +14,6 @@ namespace Lightning\DataMapper\DataSource;
 use PDO;
 use PDOStatement;
 use RuntimeException;
-use Lightning\Database\Row;
 use InvalidArgumentException;
 use Lightning\QueryBuilder\QueryBuilder;
 
@@ -84,7 +83,9 @@ class DatabaseDataSource implements DataSourceInterface
     }
 
     /**
-     * Updates records in the datasource
+     * Updates a record in the DataSource
+     * @param array $query
+     *   - criteria an array of sql like conditions e.g ['id'=>1000]
      */
     public function update(string $table, array $data, array $query = []): int
     {
@@ -99,7 +100,9 @@ class DatabaseDataSource implements DataSourceInterface
 
     /**
      * Deletes records from the Datasource
-     */
+     * @param array $query
+    *   - criteria an array of sql like conditions e.g ['id'=>1000]
+    */
     public function delete(string $table, array $query = []): int
     {
         $builder = $this->builder->delete()->from($table);
@@ -111,14 +114,18 @@ class DatabaseDataSource implements DataSourceInterface
         return $this->execute($builder->toString(), $builder->getParameters())->rowCount();
     }
 
+    /**
+     * Counts the number of records in the database (DOES NOT SUPPORT GROUP)
+     */
     public function count(string $table, array $query = []): int
     {
-        $fields = array_merge(['COUNT(*) as count'], $query['group'] ?? []);
+        $fields = ['COUNT(*) as count'];
 
         $builder = $this->builder->select($fields)->from($table);
         if ($query['criteria'] ?? []) {
             $builder->where($query['criteria']);
         }
+
         $this->applyOptions($builder, $query);
 
         return (int) $this->execute($builder->toString(), $builder->getParameters())->fetchColumn(0);

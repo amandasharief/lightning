@@ -74,7 +74,16 @@ abstract class AbstractDataMapper implements DataMapperInterface
      */
     public function count(array $criteria = [], array $options = []): int
     {
-        return $this->doCount(array_merge(['criteria' => $criteria], $options));
+        $query = array_merge(['criteria' => $criteria], $options);
+        if ($this->eventManager->hasListeners(BeforeFind::class)) {
+            $event = $this->eventManager->dispatch(new BeforeFind($this, $query));
+            if ($event->isPropagationStopped()) {
+                return 0;
+            }
+            $query = $event->getQuery();
+        }
+
+        return $this->dataSource->count($this->table, $query);
     }
 
     /**
@@ -82,7 +91,19 @@ abstract class AbstractDataMapper implements DataMapperInterface
      */
     public function delete(object $entity, array $options = []): bool
     {
-        return $this->doDelete($entity, $options);
+        if ($this->eventManager->hasListeners(BeforeDelete::class)) {
+            if ($this->eventManager->dispatch(new BeforeDelete($this, $entity))->isPropagationStopped()) {
+                return false;
+            }
+        }
+
+        $result = $this->processDelete($entity, $options);
+ 
+        if ($result && $this->eventManager->hasListeners(AfterDelete::class)) {
+            $this->eventManager->dispatch(new AfterDelete($this, $entity));
+        }
+
+        return $result;
     }
 
     /**
@@ -92,13 +113,7 @@ abstract class AbstractDataMapper implements DataMapperInterface
     public function find(array $criteria = [], array $options = []): ?object
     {
         $options['limit'] = 1;
-        $results = $this->doFind(array_merge(['criteria' => $criteria], $options));
-
-        foreach ($results as $result) {
-            return $result;
-        }
-
-        return null;
+        return $this->findAll($criteria, $options)[0] ?? null;
     }
 
     /**
@@ -107,9 +122,27 @@ abstract class AbstractDataMapper implements DataMapperInterface
      * - order: e.g id DESC
      * - limit: e.g 5
      */
-    public function findAll(array $criteria = [], array $options = []): iterable
+    public function findAll(array $criteria = [], array $options = []): array
     {
-        return $this->doFind(array_merge(['criteria' => $criteria], $options));
+        $query = array_merge(['criteria' => $criteria, 'fields' => $this->fields], $options);
+
+        if ($this->eventManager->hasListeners(BeforeFind::class)) {
+            $event = $this->eventManager->dispatch(new BeforeFind($this, $query));
+            if ($event->isPropagationStopped()) {
+                return [];
+            }
+            $query = $event->getQuery();
+        }
+
+       if(! $result = $this->processRead($query)){
+            return [];
+       }
+
+        if ($this->eventManager->hasListeners(AfterFind::class)) {
+            $result = $this->eventManager->dispatch(new AfterFind($this, $result))->getResult();
+        }
+
+        return $result;
     }
 
     /**
@@ -120,9 +153,8 @@ abstract class AbstractDataMapper implements DataMapperInterface
     public function get(int|string|array $id, array $options = []): object
     {
         $options['limit'] = 1;
-        $resultSet = $this->doFind(array_merge(['criteria' => $this->createCriteriaFromId($id)], $options));
-        foreach ($resultSet as $result) {
-            return $result;
+        if($result = $this->findAll($this->createCriteriaFromId($id), $options)){
+            return $result[0];
         }
 
         throw new EntityNotFoundException('Entity Not Found');
@@ -139,10 +171,34 @@ abstract class AbstractDataMapper implements DataMapperInterface
             }
         }
 
-        $result = $this->isPersisted($entity) ? $this->doUpdate($entity) : $this->doCreate($entity);
+        if($this->isPersisted($entity)){
+            if ($this->eventManager->hasListeners(BeforeUpdate::class)) {
+                if ($this->eventManager->dispatch(new BeforeUpdate($this, $entity))->isPropagationStopped()) {
+                    return false;
+                }
+            }
+    
+            $result = $this->processUpdate($entity);
+            
+            if ($this->eventManager->hasListeners(AfterUpdate::class)) {
+                $this->eventManager->dispatch(new AfterUpdate($this, $entity));
+            }
+        }
+        else{
+            if ($this->eventManager->hasListeners(BeforeCreate::class)) {
+                if ($this->eventManager->dispatch(new BeforeCreate($this, $entity))->isPropagationStopped()) {
+                    return false;
+                }
+            }
+    
+            $result = $this->processCreate($entity);
+    
+            if ($this->eventManager->hasListeners(AfterCreate::class)) {
+                $this->eventManager->dispatch(new AfterCreate($this, $entity));
+            }
+        }
 
-        if ($result) {
-            $this->markPersisted($entity, true);
+        if ($result){
             if ($this->eventManager->hasListeners(AfterSave::class)) {
                 $this->eventManager->dispatch(new AfterSave($this, $entity));
             }
@@ -206,27 +262,11 @@ abstract class AbstractDataMapper implements DataMapperInterface
         return $this->eventManager;
     }
 
-    protected function doCount(array $query): int
+    /**
+     * Create logic
+     */
+    protected function processCreate(object $entity): bool
     {
-        if ($this->eventManager->hasListeners(BeforeFind::class)) {
-            $event = $this->eventManager->dispatch(new BeforeFind($this, $query));
-            if ($event->isPropagationStopped()) {
-                return 0;
-            }
-            $query = $event->getQuery();
-        }
-
-        return $this->dataSource->count($this->table, $query);
-    }
-
-    protected function doCreate(object $entity): bool
-    {
-        if ($this->eventManager->hasListeners(BeforeCreate::class)) {
-            if ($this->eventManager->dispatch(new BeforeCreate($this, $entity))->isPropagationStopped()) {
-                return false;
-            }
-        }
-
         $row = array_intersect_key($this->mapEntityToData($entity), array_flip($this->fields));
 
         $result = $this->dataSource->create($this->table, $row);
@@ -236,54 +276,18 @@ abstract class AbstractDataMapper implements DataMapperInterface
             if ($id && is_string($this->primaryKey)) {
                 (new ReflectionProperty($entity, $this->primaryKey))->setValue($entity, $id);
             }
-
-            if ($this->eventManager->hasListeners(AfterCreate::class)) {
-                $this->eventManager->dispatch(new AfterCreate($this, $entity));
-            }
+            $this->markPersisted($entity, true);
         }
-
         return $result;
     }
 
     /**
-     * Updates an Entity
+     * Find logic
      */
-    protected function doUpdate(object $entity): bool
+    protected function processRead(array $query) : array
     {
-        if ($this->eventManager->hasListeners(BeforeUpdate::class)) {
-            if ($this->eventManager->dispatch(new BeforeUpdate($this, $entity))->isPropagationStopped()) {
-                return false;
-            }
-        }
-
-        $row = array_intersect_key($this->mapEntityToData($entity), array_flip($this->fields));
-
-        $result = $this->dataSource->update(
-            $this->table, $row, ['criteria' => $this->createCriteriaFromState($row)]
-        ) === 1;
-
-        if ($this->eventManager->hasListeners(AfterUpdate::class)) {
-            $this->eventManager->dispatch(new AfterUpdate($this, $entity));
-        }
-
-        return $result;
-    }
-
-    /**
-     * Reads from the datasource
-     */
-    protected function doFind(array $query): iterable
-    {
-        if ($this->eventManager->hasListeners(BeforeFind::class)) {
-            $event = $this->eventManager->dispatch(new BeforeFind($this, $query));
-            if ($event->isPropagationStopped()) {
-                return $this->createCollection([]);
-            }
-            $query = $event->getQuery();
-        }
-
-        if (! $result = $this->dataSource->read($this->table, ['fields' => $this->fields] + $query)) {
-            return $this->createCollection([]);
+         if (! $result = $this->dataSource->read($this->table, $query)) {
+            return [];
         }
 
         foreach ($result as $index => $row) {
@@ -291,36 +295,32 @@ abstract class AbstractDataMapper implements DataMapperInterface
             $this->markPersisted($result[$index], true);
         }
 
-        $result = $this->createCollection($result);
-
-        if ($this->eventManager->hasListeners(AfterFind::class)) {
-            $result = $this->eventManager->dispatch(new AfterFind($this, $result))->getResult();
-        }
-
-        return $result;
+       return $result;
     }
 
     /**
-     * Do delete
+     * Update logic
      */
-    protected function doDelete(object $entity, array $options = []): bool
+    protected function processUpdate($entity): bool 
     {
-        if ($this->eventManager->hasListeners(BeforeDelete::class)) {
-            if ($this->eventManager->dispatch(new BeforeDelete($this, $entity))->isPropagationStopped()) {
-                return false;
-            }
-        }
+        $row = array_intersect_key($this->mapEntityToData($entity), array_flip($this->fields));
 
+        $result = $this->dataSource->update(
+            $this->table, $row, ['criteria' => $this->createCriteriaFromState($row)]
+        ) === 1;
+        
+        if($result){
+            $this->markPersisted($entity, true);
+        }
+        return $result;
+    }
+
+    protected function processDelete(object $entity, array $options =[]): bool 
+    {
         $criteria = $this->createCriteriaFromState($this->mapEntityToData($entity));
-        $result = $this->dataSource->delete($this->table, array_merge($options, ['criteria' => $criteria])) === 1;
-
-        if ($result) {
+        if($result = $this->dataSource->delete($this->table, array_merge(['criteria' => $criteria], $options)) === 1){
             $this->markPersisted($entity, false);
-            if ($this->eventManager->hasListeners(AfterDelete::class)) {
-                $this->eventManager->dispatch(new AfterDelete($this, $entity));
-            }
         }
-
         return $result;
     }
 
@@ -344,15 +344,6 @@ abstract class AbstractDataMapper implements DataMapperInterface
         }
 
         unset($this->persisted[spl_object_id($entity)]);
-    }
-
-    /**
-     * Factory method to create a collection of entities used by find or findAll. Override this method
-     * to use a custom collection class
-     */
-    protected function createCollection(array $entities): iterable
-    {
-        return $entities; // return new Collection($entities);
     }
 
     /**
