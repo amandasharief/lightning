@@ -245,7 +245,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
         unset($this->pdo);
     }
 
-    public function testBelongsTo(): void
+    public function testBelongsToA(): void
     {
         $article = new Article($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
 

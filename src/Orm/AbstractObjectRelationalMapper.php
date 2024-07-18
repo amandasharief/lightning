@@ -76,11 +76,6 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
     protected array $associations = ['belongsTo','hasMany','hasOne','belongsToMany'];
 
     /**
-     * Keeps an array of reflection property objects during the loadRelatedData
-     */
-    private array $reflectionProperties = [];
-
-    /**
      * Constructor
      */
     public function __construct(protected DataSourceInterface $dataSource, protected Hydrator $hydrator, protected EventManagerInterface $eventManager, protected DataMapperManager $manager)
@@ -99,7 +94,6 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
         $result = parent::processRead($query);
 
         if (! empty($query['with'])) {
-            $query['with'] = 
             $result = $this->loadRelatedData($result, $query);
         }
 
@@ -113,8 +107,11 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
     protected function processDelete(object $entity, array $options = []): bool
     {
         if ($result = parent::processDelete($entity, $options)) {
-            if (is_string($this->primaryKey) && $id = $this->getEntityProperty($entity, $this->primaryKey)) {
-                $this->deleteDependent($id);
+            if (is_string(($this->primaryKey))) {
+                $reflectionProperty = new ReflectionProperty($entity, $this->primaryKey);
+                if ($id = $reflectionProperty->isInitialized($entity) ? $reflectionProperty->getValue($entity) : null) {
+                    $this->deleteDependent($id);
+                }
             }
         }
 
@@ -191,9 +188,9 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
             }
         }
 
-        $primaryKey = $this->getPrimaryKey()[0]; 
+        $primaryKey = $this->getPrimaryKey()[0];
 
-        foreach ($resultSet as &$entity) {
+        foreach ($resultSet as &$row) {
             foreach ($associations as $type => $association) {
                 foreach ($association as $config) {
                     $conditions = $config['conditions'];
@@ -207,26 +204,27 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
                             /**
                              * @todo not efficient. Options: loop through get ids lots of reflection (and even more), single join query like before, caching
                              */
-                            $conditions[$bindingKey] = $this->getEntityProperty($entity, $config['foreignKey']);
-                            $this->setObjectProperty($entity, $config['propertyName'], $mapper->find($conditions, $options));
+                            $conditions[$bindingKey] = $row[$config['foreignKey']] ?? null;
+                            $row[$config['propertyName']] = $mapper->find($conditions, $options);
 
                             break;
                         case 'hasOne':
 
-                            $conditions[$config['foreignKey']] = $this->getEntityProperty($entity, $primaryKey);
-                            $this->setObjectProperty($entity, $config['propertyName'], $mapper->find($conditions, $options));
+                            $conditions[$config['foreignKey']] = $row[$primaryKey] ?? null;
+                            $row[$config['propertyName']] = $mapper->find($conditions, $options);
 
                             break;
                         case 'hasMany':
-                            $conditions[$config['foreignKey']] = $this->getEntityProperty($entity,$bindingKey);
-                            $this->setObjectProperty($entity, $config['propertyName'], $mapper->findAll($conditions, $options));
+
+                            $conditions[$config['foreignKey']] = $row[$bindingKey];
+                            $row[$config['propertyName']] = $mapper->findAll($conditions, $options);
 
                             break;
                         case 'belongsToMany':
                             $result = $this->dataSource->read(
                                 $config['joinTable'], ['criteria' => [
-                                    $config['foreignKey'] => $this->getEntityProperty($entity,$primaryKey)
-                                    ]]
+                                    $config['foreignKey'] => $row[$primaryKey] ?? null
+                                ]]
                             );
 
                             $otherForeignKey = $config['otherForeignKey'];
@@ -235,16 +233,14 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
                             }, $result);
 
                             $conditions[$primaryKey] = $ids;
-                            $this->setObjectProperty($entity, $config['propertyName'], $mapper->findAll($conditions, $options));
+                            $row[$config['propertyName']] = $mapper->findAll($conditions, $options);
 
                             break;
                     }
                 }
             }
         }
-
-        $this->reflectionProperties = [];
-
+        
         return $resultSet;
     }
 
@@ -270,25 +266,5 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
                 $this->dataSource->delete($config['joinTable'], ['foreignKey' => $id]);
             }
         }
-    }
-
-    private function getReflectionProperty(object $entity, string $property) : ReflectionProperty
-    {
-        if(isset($this->reflectionProperties[$property])){
-            $this->reflectionProperties[$property];
-        }
-        return $this->reflectionProperties[$property] = new ReflectionProperty($entity::class, $property);
-    }
-
-    private function getEntityProperty(object $entity, string $property): mixed
-    {
-        $reflectionProperty = $this->getReflectionProperty($entity ,$property);
-
-        return $reflectionProperty->isInitialized($entity) ? $reflectionProperty->getValue($entity) : null;
-    }
-
-    private function setObjectProperty(object $entity, string $property, mixed $value): void
-    {
-        $this->getReflectionProperty($entity ,$property)->setValue($entity, $value);
     }
 }
