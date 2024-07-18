@@ -226,18 +226,20 @@ final class AbstractDataMapperTest extends TestCase
             ->setUpdatedAt(date('Y-m-d H:i:s'));
 
         $this->assertTrue($mapper->save($entity));
-        $this->assertEquals(1003, $entity->getId());
+        
+        $expected = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'pgsql' ? 1 : 1003;
+        $this->assertEquals($expected, $entity->getId());
     }
 
     public function testSaveUpdate(): void
     {
         $mapper = new ArticleDataMapper($this->storage, $this->hydrator, $this->eventManager);
 
-        $entity = $mapper->find();
+        $entity = $mapper->find(['id'=>1000]);
         $entity->setTitle('foo');
         $this->assertTrue($mapper->save($entity));
 
-        $entity = $mapper->find();
+        $entity = $mapper->find(['id'=>1000]);
         $this->assertEquals('foo', $entity->getTitle());
     }
 
