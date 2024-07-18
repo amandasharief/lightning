@@ -44,7 +44,7 @@ abstract class AbstractDataMapper implements DataMapperInterface
     protected string $table = 'none';
 
     /**
-     * These are the fields that DataMapper works with
+     * These are the fields that will be read from the database
      */
     protected array $fields = [];
 
@@ -217,11 +217,11 @@ abstract class AbstractDataMapper implements DataMapperInterface
     /**
      * Converts a row from the storage into an Entity object
      */
-    public function mapDataToEntity(array $data): object
+    protected function mapDataToEntity(array $data): object
     {
         $entity = $this->createEntity();
 
-        $this->hydrator->hydrate($entity, array_intersect_key($data, array_flip($this->fields)));
+        $this->hydrator->hydrate($entity, $data);
 
         return $entity;
     }
@@ -229,11 +229,9 @@ abstract class AbstractDataMapper implements DataMapperInterface
     /**
      * Converts Entity object into an array ready to be persisted to storage
      */
-    public function mapEntityToData(object $entity): array
+    protected function mapEntityToData(object $entity): array
     {
-        $extracted = $this->hydrator->extract($entity);
-
-        return array_intersect_key($extracted, array_flip($this->fields));
+        return $this->hydrator->extract($entity);
     }
 
     /**
