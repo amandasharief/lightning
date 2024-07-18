@@ -26,13 +26,13 @@ use Lightning\Test\Fixture\ArticlesFixture;
 use Lightning\DataMapper\Event\BeforeCreate;
 use Lightning\DataMapper\Event\BeforeDelete;
 use Lightning\DataMapper\Event\BeforeUpdate;
+use Lightning\Test\Fixture\PostsTagsFixture;
 use Lightning\EventManager\EventManagerInterface;
 use Lightning\Test\TestCase\DataMapper\Entity\Article;
 use Lightning\Test\TestCase\DataMapper\Entity\PostTag;
 use Lightning\DataMapper\DataSource\DatabaseDataSource;
 use Lightning\DataMapper\DataSource\DataSourceInterface;
 use Lightning\DataMapper\Exception\EntityNotFoundException;
-
 use Lightning\Test\TestCase\DataMapper\DataMapper\ArticleDataMapper;
 use Lightning\Test\TestCase\DataMapper\DataMapper\PostTagDataMapper;
 
@@ -56,6 +56,7 @@ final class AbstractDataMapperTest extends TestCase
         $this->fixtureManager->load([
             ArticlesFixture::class,
             TagsFixture::class,
+            PostsTagsFixture::class,
         ]);
     }
 
