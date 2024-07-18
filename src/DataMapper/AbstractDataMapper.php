@@ -125,7 +125,7 @@ abstract class AbstractDataMapper implements DataMapperInterface
      */
     public function findAll(array $criteria = [], array $options = []): array
     {
-        $query = array_merge(['criteria' => $criteria, 'fields' => $this->fields], $options);
+        $query = array_merge(['criteria' => $criteria, 'fields' => $this->fields, 'order' => null, 'limit' => null], $options);
 
         if ($this->eventManager->hasListeners(BeforeFind::class)) {
             $event = $this->eventManager->dispatch(new BeforeFind($this, $query));
@@ -141,6 +141,14 @@ abstract class AbstractDataMapper implements DataMapperInterface
 
         if ($this->eventManager->hasListeners(AfterFind::class)) {
             $result = $this->eventManager->dispatch(new AfterFind($this, $result))->getResult();
+        }
+
+        /**
+         * Mapping processs
+         */
+        foreach ($result as $index => $row) {
+            $result[$index] = $this->mapDataToEntity($row);
+            $this->markPersisted($result[$index], true);
         }
 
         return $result;
@@ -278,20 +286,11 @@ abstract class AbstractDataMapper implements DataMapperInterface
     }
 
     /**
-     * Find logic
+     * Read logic
      */
     protected function processRead(array $query): array
     {
-        if (! $result = $this->dataSource->read($this->table, $query)) {
-            return [];
-        }
-
-        foreach ($result as $index => $row) {
-            $result[$index] = $this->mapDataToEntity($row);
-            $this->markPersisted($result[$index], true);
-        }
-
-        return $result;
+        return $this->dataSource->read($this->table, $query);
     }
 
     /**
