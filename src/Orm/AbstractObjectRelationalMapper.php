@@ -28,22 +28,23 @@ use Lightning\DataMapper\DataSource\DataSourceInterface;
 abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
 {
     /**
-      * This also assumes $this->profile is the Profile mapper injected during construction
       *
       * @example
-      *  'profile' => [
+      *  [
       *       'className' => Profile::class
       *       'foreignKey' => 'user_id', // in other table
       *       'dependent' => false
+      *       'propertyName' => 'profile'
       *   ]
       */
     protected array $hasOne = [];
 
     /**
      * @example
-     *   'user' => [
+     *   [
      *       'className' => User::class
      *       'foreignKey' => 'user_id' // in this table
+     *       'propertyName' => 'user'
      *   ]
      */
 
@@ -52,28 +53,27 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
     /**
      * @example
      *
-     *  'comments' => [
+     *  [
      *      'className' => User::class
      *      'foreignKey' => 'user_id', // in other table
-      *     'dependent' => false
+     *      'dependent' => false
+     *      'propertyName' => 'comments'
      *  ]
      */
     protected array $hasMany = [];
 
     /**
      * @example
-     *
-     *  'tags' => [
+     *  [
      *      'className' => User::class
      *      'joinTable' => 'tags_users',
      *      'foreignKey' => 'tag_id',
      *      'otherForeignKey' => 'user_id', // the foreignKey for the associated model
      *      'dependent' => true
+     *      'propertyName' => 'tags'
      * ]
      */
     protected array $belongsToMany = [];
-
-    protected array $associations = ['belongsTo','hasMany','hasOne','belongsToMany'];
 
     /**
      * Constructor
@@ -123,16 +123,17 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
      */
     private function initializeOrm(): void
     {
-        foreach ($this->associations as $assoc) {
+        foreach (['belongsTo','hasMany','hasOne','belongsToMany'] as $assoc) {
             foreach ($this->$assoc as $property => &$config) {
                 $config += [
                     'foreignKey' => null,
                     'className' => null,
+                    'propertyName' => $property,
                     'dependent' => false,
                     'conditions' => [],
                     'association' => $assoc,
                     'order' => null,
-                    'propertyName' => $property
+
                 ];
 
                 if ($assoc === 'belongsTo') {
@@ -171,15 +172,52 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
         }
     }
 
+    private function loadBelongsTo(array $associations, array $ids): array
+    {
+        $data = [];
+
+        foreach ($associations['belongsTo'] as $property => $config) {
+            $conditions = $config['conditions'];
+            $mapper = $this->manager->get($config['className']);
+            $bindingKey = $mapper->getPrimaryKey()[0];
+
+            $conditions[$bindingKey] = $ids[$property];
+            $reflectionProperty = new ReflectionProperty($mapper->createEntity(), $bindingKey);
+            foreach ($mapper->findAll($conditions) as $entity) {
+                $data[$property][$reflectionProperty->getValue($entity)] = $entity;
+            }
+        }
+
+        return $data;
+    }
+
+    private function loadHasOne(array $associations, array $ids): array
+    {
+        $data = [];
+        foreach ($associations['hasOne'] as $property => $config) {
+            $conditions = $config['conditions'];
+            $mapper = $this->manager->get($config['className']);
+
+            $conditions[$config['foreignKey']] = $ids[$property];
+            $reflectionProperty = new ReflectionProperty($mapper->createEntity(), $config['foreignKey']);
+            foreach ($mapper->findAll($conditions) as $entity) {
+                $data[$property][$reflectionProperty->getValue($entity)] = $entity;
+            }
+        }
+
+        return $data;
+    }
+
     /**
      * Loads the related data
-     *
      */
     protected function loadRelatedData(array $resultSet, array $query): array
     {
-        // Create associations data from with param
-        $associations = [];
-        foreach ($this->associations as $assoc) {
+        $primaryKey = $this->getPrimaryKey()[0];
+
+        // Extract associations to work with for this query
+        $associations = ['belongsTo' => [],'hasMany' => [],'hasOne' => [],'belongsToMany' => []];
+        foreach (['belongsTo','hasMany','hasOne','belongsToMany'] as $assoc) {
             foreach ($this->$assoc as $config) {
                 $property = $config['propertyName'];
                 if (in_array($property, $query['with'])) {
@@ -188,39 +226,47 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
             }
         }
 
-        $primaryKey = $this->getPrimaryKey()[0];
+        // Extract ID from results
+        $ids = [];
+        foreach ($resultSet as $row) {
+            foreach ($associations['belongsTo'] as $property => $config) {
+                $ids[$property][] = $row[$config['foreignKey']];
+            }
+            foreach ($associations['hasOne'] as $property => $config) {
+                $ids[$property][] = $row[$primaryKey]; // user id
+            }
+        }
+
+        // Load BelongsTo and hasOne
+        $belongsToRecords = $this->loadBelongsTo($associations, $ids);
+        $hasOneRecords = $this->loadHasOne($associations, $ids);
+        unset($ids);
 
         foreach ($resultSet as &$row) {
             foreach ($associations as $type => $association) {
-                foreach ($association as $config) {
+                foreach ($association as $property => $config) {
                     $conditions = $config['conditions'];
                     $options = ['order' => $config['order']];
 
-                    $mapper = $this->manager->get($config['className']);
-                    $bindingKey = $mapper->getPrimaryKey()[0];
-
                     switch ($type) {
                         case 'belongsTo':
-                            /**
-                             * @todo not efficient. Options: loop through get ids lots of reflection (and even more), single join query like before, caching
-                             */
-                            $conditions[$bindingKey] = $row[$config['foreignKey']] ?? null;
-                            $row[$config['propertyName']] = $mapper->find($conditions, $options);
+                            $row[$property] = $belongsToRecords[$property][$row[$config['foreignKey']]] ?? null;
 
                             break;
                         case 'hasOne':
-
-                            $conditions[$config['foreignKey']] = $row[$primaryKey] ?? null;
-                            $row[$config['propertyName']] = $mapper->find($conditions, $options);
+                            $row[$property] = $hasOneRecords[$property][$row[$primaryKey]] ?? null;
 
                             break;
                         case 'hasMany':
-
+                            $mapper = $this->manager->get($config['className']);
+                            $bindingKey = $mapper->getPrimaryKey()[0];
                             $conditions[$config['foreignKey']] = $row[$bindingKey];
                             $row[$config['propertyName']] = $mapper->findAll($conditions, $options);
 
                             break;
                         case 'belongsToMany':
+                            $mapper = $this->manager->get($config['className']);
+
                             $result = $this->dataSource->read(
                                 $config['joinTable'], ['criteria' => [
                                     $config['foreignKey'] => $row[$primaryKey] ?? null
@@ -240,7 +286,8 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
                 }
             }
         }
-        
+        $belongsToRecords = $hasOneRecords = $resultSet = $associations = [];
+
         return $resultSet;
     }
 

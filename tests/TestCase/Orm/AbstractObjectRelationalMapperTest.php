@@ -4,7 +4,9 @@ namespace Lightning\Test\Orm;
 
 use PDO;
 use LogicException;
+use Lightning\Logger\Logger;
 use PHPUnit\Framework\TestCase;
+
 use Lightning\Hydrator\Hydrator;
 
 use function Lightning\Dotenv\env;
@@ -27,6 +29,7 @@ use Lightning\Test\PersistentPdoFactory;
 use Lightning\Test\Fixture\AuthorsFixture;
 use Lightning\Test\Fixture\ArticlesFixture;
 use Lightning\Test\Fixture\ProfilesFixture;
+use Lightning\Logger\Handler\ConsoleHandler;
 use Lightning\Test\Fixture\PostsTagsFixture;
 use Lightning\EventManager\EventManagerInterface;
 use Lightning\Orm\AbstractObjectRelationalMapper;
@@ -245,7 +248,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
         unset($this->pdo);
     }
 
-    public function testBelongsToA(): void
+    public function testBelongsTo(): void
     {
         $article = new Article($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
 
@@ -272,6 +275,20 @@ final class AbstractObjectRelationalMapperTest extends TestCase
 
         $this->assertEquals($expected, $result->toState());
     }
+
+    // public function testBelongsToFindAll(): void
+    // {
+    //     $article = new Article($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
+
+    //     $logger = new Logger('database');
+    //     $logger->addHandler(new ConsoleHandler());
+
+    //     $this->dataSource->setLogger($logger);
+
+    //     $result = $article->findAll([], ['with' => ['author']]);
+
+    //     dd($result);
+    // }
 
     public function testBelongsToConditions(): void
     {
@@ -355,9 +372,13 @@ final class AbstractObjectRelationalMapperTest extends TestCase
     {
         // Create Extra Record
         $profile = new Profile($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
-        $result = $profile->getDataSource()->update('profiles', ['user_id' => 1000]);
-
         $user = new User($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
+
+        $ds = $profile->getDataSource();
+        $ds->update('profiles', ['user_id' => 1000]);
+
+        $result = $profile->getDataSource()->update('profiles', ['user_id' => 1000]);
+        $this->assertEquals(3, $result);
 
         $user->setAssociation('hasOne', [
             [
@@ -366,9 +387,9 @@ final class AbstractObjectRelationalMapperTest extends TestCase
                 'dependent' => true,
                 'propertyName' => 'profile',
                 'conditions' => [
-                    'profiles.id <>' => 2000
+                    'profiles.id <>' => [2000,2002] // disabling this will cause to fail
                 ],
-                'order' => null,
+                'order' => 'id DESC',
                 'propertyName' => 'profile'
 
             ]
@@ -376,7 +397,6 @@ final class AbstractObjectRelationalMapperTest extends TestCase
 
         $result = $user->find(['id' => 1000], ['with' => ['profile']]);
 
-        # Important check with array not toJson
         $expected = [
             'id' => 1000,
             'name' => 'User #1',
