@@ -286,7 +286,7 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
                 }
             }
         }
-        $belongsToRecords = $hasOneRecords = $resultSet = $associations = [];
+        $belongsToRecords = $hasOneRecords = $associations = [];
 
         return $resultSet;
     }
