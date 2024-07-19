@@ -3,23 +3,57 @@
 namespace Lightning\Test\DataMapper\DataSource;
 
 use PDO;
+use Psr\Log\LoggerTrait;
+use Psr\Log\LoggerInterface;
+
 use InvalidArgumentException;
+
 use PHPUnit\Framework\TestCase;
 
 use function Lightning\Dotenv\env;
 
 use Lightning\Fixture\FixtureManager;
 use Lightning\QueryBuilder\QueryBuilder;
+
 use Lightning\Test\PersistentPdoFactory;
 use Lightning\Test\Fixture\AuthorsFixture;
-
 use Lightning\Test\Fixture\ArticlesFixture;
 use Lightning\DataMapper\DataSource\DatabaseDataSource;
+use Lightning\DataMapper\Exception\DataSourceException;
+
+class FileLogger implements LoggerInterface
+{
+    use LoggerTrait;
+
+    public function __construct(private string $path)
+    {
+    }
+
+    public function log($level, string|\Stringable $message, array $context = [])
+    {
+        file_put_contents($this->path, implode(',', [$level,$message, json_encode($context)]) ."\n", FILE_APPEND);
+    }
+
+    public function getLog(): string
+    {
+        return file_get_contents($this->path);
+    }
+
+    public function clearLog(): bool
+    {
+        if (file_exists($this->path)) {
+            return unlink($this->path);
+        }
+
+        return false;
+    }
+}
 
 final class DatabaseDataSourceTest extends TestCase
 {
     protected ?PDO $pdo;
     protected FixtureManager $fixtureManager;
+    protected FileLogger $logger;
 
     protected function setUp(): void
     {
@@ -28,6 +62,8 @@ final class DatabaseDataSourceTest extends TestCase
 
         $this->fixtureManager = new FixtureManager($this->pdo);
         $this->fixtureManager->load([ArticlesFixture::class,AuthorsFixture::class]);
+
+        $this->logger = new FileLogger(sys_get_temp_dir() . '/DataSourceTest.log');
     }
 
     public function tearDown(): void
@@ -35,14 +71,14 @@ final class DatabaseDataSourceTest extends TestCase
         unset($this->pdo);
     }
 
-    private function createStorage(): DatabaseDataSource
+    private function createDataSource(): DatabaseDataSource
     {
         return new DatabaseDataSource($this->pdo, new QueryBuilder());
     }
 
     public function testCount(): void
     {
-        $storage = $this->createStorage();
+        $storage = $this->createDataSource();
         $this->assertEquals(3, $storage->count('articles'));
         $this->assertEquals(2, $storage->count('articles', ['criteria' => ['id !=' => 1000]]));
     }
@@ -52,7 +88,7 @@ final class DatabaseDataSourceTest extends TestCase
      */
     public function testCreate(): void
     {
-        $storage = $this->createStorage();
+        $storage = $this->createDataSource();
 
         $article = [
             'title' => 'Article #' . time(),
@@ -68,14 +104,14 @@ final class DatabaseDataSourceTest extends TestCase
 
     public function testRead(): void
     {
-        $storage = $this->createStorage();
+        $storage = $this->createDataSource();
         $records = $storage->read('articles');
         $this->assertCount(3, $records);
     }
 
     public function testReadConditions(): void
     {
-        $storage = $this->createStorage();
+        $storage = $this->createDataSource();
 
         $records = $storage->read('articles', ['criteria' => ['id !=' => 1000]]);
         $this->assertCount(2, $records);
@@ -83,7 +119,7 @@ final class DatabaseDataSourceTest extends TestCase
 
     public function testReadJoins(): void
     {
-        $storage = $this->createStorage();
+        $storage = $this->createDataSource();
 
         $options = ['fields' => [
             'id',
@@ -106,7 +142,7 @@ final class DatabaseDataSourceTest extends TestCase
 
     public function testReadJoinsNoTable(): void
     {
-        $storage = $this->createStorage();
+        $storage = $this->createDataSource();
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Join configuration array is missing `table`');
@@ -126,7 +162,7 @@ final class DatabaseDataSourceTest extends TestCase
 
     public function testReadJoinsInvalidJoin(): void
     {
-        $storage = $this->createStorage();
+        $storage = $this->createDataSource();
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid join type `foo`');
@@ -142,7 +178,7 @@ final class DatabaseDataSourceTest extends TestCase
 
     public function testReadOrder(): void
     {
-        $storage = $this->createStorage();
+        $storage = $this->createDataSource();
 
         $records = $storage->read('articles', ['order' => [
             'id' => 'DESC'
@@ -152,7 +188,7 @@ final class DatabaseDataSourceTest extends TestCase
 
     public function testReadGroup(): void
     {
-        $storage = $this->createStorage();
+        $storage = $this->createDataSource();
 
         // create a new record to test group is working
         $storage->create('articles', [
@@ -195,7 +231,7 @@ final class DatabaseDataSourceTest extends TestCase
 
     public function testReadHaving(): void
     {
-        $storage = $this->createStorage();
+        $storage = $this->createDataSource();
 
         // create a new record to test group is working
         $storage->create('articles', [
@@ -224,7 +260,7 @@ final class DatabaseDataSourceTest extends TestCase
 
     public function testLimit(): void
     {
-        $storage = $this->createStorage();
+        $storage = $this->createDataSource();
 
         $records = $storage->read('articles', [
             'limit' => 1
@@ -235,7 +271,7 @@ final class DatabaseDataSourceTest extends TestCase
 
     public function testLimitOffset(): void
     {
-        $storage = $this->createStorage();
+        $storage = $this->createDataSource();
 
         $records = $storage->read('articles', [
             'limit' => 1,
@@ -247,7 +283,7 @@ final class DatabaseDataSourceTest extends TestCase
 
     public function testUpdate(): void
     {
-        $storage = $this->createStorage();
+        $storage = $this->createDataSource();
 
         $this->assertEquals(1, $storage->update('articles', ['title' => 'foo'], ['criteria' => ['id' => 1000]]));
 
@@ -260,7 +296,7 @@ final class DatabaseDataSourceTest extends TestCase
 
     public function testUpdateAll(): void
     {
-        $storage = $this->createStorage();
+        $storage = $this->createDataSource();
 
         $this->assertEquals(3, $storage->update('articles', ['title' => 'foo']));
 
@@ -276,7 +312,7 @@ final class DatabaseDataSourceTest extends TestCase
      */
     public function testDelete(): void
     {
-        $storage = $this->createStorage();
+        $storage = $this->createDataSource();
 
         $this->assertEquals(1, $storage->delete('articles', ['criteria' => ['id' => 1000]]));
         $this->assertEquals(2, $storage->count('articles'));
@@ -287,9 +323,65 @@ final class DatabaseDataSourceTest extends TestCase
     */
     public function testDeleteAll(): void
     {
-        $storage = $this->createStorage();
+        $storage = $this->createDataSource();
 
         $this->assertEquals(3, $storage->delete('articles'));
         $this->assertEquals(0, $storage->count('articles'));
+    }
+
+    public function testExecuteLogged(): void
+    {
+        $this->logger->clearLog();
+
+        $dataSource = $this->createDataSource();
+        $dataSource->setLogger($this->logger);
+        // $dataSource->getPDO()->setAttribute(PDO::ATTR_EMULATE_PREPARES,false);
+
+        $dataSource->read('articles', ['criteria' => ['id !=' => 1000]]);
+        $this->assertStringContainsString('debug,SELECT * FROM articles WHERE articles.id <> 1000,[]', $this->logger->getLog());
+    }
+
+    /**
+     * The exception is thrown during the prepare statement, not execute, so this test disables exception mode
+     * to ensure that it is tested if use has this disabled
+     */
+    public function testExecutePrepareDoesNotReturnStatement(): void
+    {
+        $this->logger->clearLog();
+
+        $dataSource = $this->createDataSource();
+        $dataSource->setLogger($this->logger);
+        $dataSource->getPDO()->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_SILENT); // disable exceptions throwing
+
+        $this->expectException(DataSourceException::class);
+        $dataSource->execute('SELECT * FROM pink_potatoes');
+    }
+
+    /**
+     * @depends testExecutePrepareDoesNotReturnStatement
+     */
+    public function testExceptionWasLogged(): void
+    {
+        $dataSource = $this->createDataSource();
+        $dataSource->setLogger($this->logger);
+
+        $this->assertStringContainsString('error,no such table: pink_potatoes,[]', $this->logger->getLog());
+    }
+
+    public function testGetPDO(): void
+    {
+        $this->assertInstanceOf(PDO::class, $this->createDataSource()->getPDO());
+    }
+
+    public function testGetQueryBuilder(): void
+    {
+        $this->assertInstanceOf(QueryBuilder::class, $this->createDataSource()->getQueryBuilder());
+    }
+
+    public function testSetGetLogger(): void
+    {
+        $dataSource = $this->createDataSource();
+        $this->assertNull($dataSource->getLogger());
+        $this->assertInstanceOf(LoggerInterface::class, $dataSource->setLogger($this->logger)->getLogger());
     }
 }

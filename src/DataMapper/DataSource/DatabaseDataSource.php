@@ -12,15 +12,19 @@
 namespace Lightning\DataMapper\DataSource;
 
 use PDO;
+use PDOException;
 use PDOStatement;
-use RuntimeException;
+use Psr\Log\LogLevel;
+use Psr\Log\LoggerInterface;
 use InvalidArgumentException;
 use Lightning\QueryBuilder\QueryBuilder;
+use Lightning\DataMapper\Exception\DataSourceException;
 
 class DatabaseDataSource implements DataSourceInterface
 {
     protected PDO $pdo;
     protected QueryBuilder $builder;
+    private ?LoggerInterface $logger = null;
 
     /**
      * Mixed
@@ -144,12 +148,44 @@ class DatabaseDataSource implements DataSourceInterface
      */
     public function execute(string $sql, array $params = []): PDOStatement
     {
-        $statement = $this->pdo->prepare($sql);
-        if ($statement->execute($params)) {
-            return $statement;
+        if ($this->logger) {
+            $this->logger->log(LogLevel::DEBUG, $this->prepareStatement($sql, $params));
         }
 
-        throw new RuntimeException($statement->errorInfo()[2] ?? sprintf('ERROR Executing: %s', $sql));
+        try {
+            if ($statement = $this->pdo->prepare($sql)) {
+                $statement->execute($params);
+
+                return $statement;
+            }
+
+            throw new PDOException($this->pdo->errorInfo()[2] ?? sprintf('ERROR Executing: %s', $sql));
+        } catch(PDOException $e) {
+            if ($this->logger) {
+                $this->logger->log(LogLevel::ERROR, $e->getMessage());
+            }
+
+            throw new DataSourceException($e->getMessage());
+        }
+    }
+
+    /**
+     * unprepares an SQL statement
+     */
+    private function prepareStatement(string $sql, array $params = []): string
+    {
+        $data = [];
+        foreach ($params as $needle => $replace) {
+            if (is_string($replace)) {
+                $replace = "'{$replace}'";
+            }
+            if ($replace === null) {
+                $replace = 'NULL';
+            }
+            $data[$needle] = $replace;
+        }
+
+        return strtr($sql, $data);
     }
 
     private function applyOptions(QueryBuilder $builder, array $options): void
@@ -184,5 +220,33 @@ class DatabaseDataSource implements DataSourceInterface
         if (! empty($options['limit'])) {
             $builder->limit($options['limit'], $options['offset'] ?? null);
         }
+    }
+
+    /**
+     * Sets the PSR-3 logger and enables query logging
+     */
+    public function setLogger(LoggerInterface $logger): static
+    {
+        $this->logger = $logger;
+
+        return $this;
+    }
+
+    /**
+     * Gets the PSR-3 logger if set
+     */
+    public function getLogger(): ?LoggerInterface
+    {
+        return $this->logger;
+    }
+
+    public function getPDO(): PDO
+    {
+        return $this->pdo;
+    }
+
+    public function getQueryBuilder(): QueryBuilder
+    {
+        return $this->builder;
     }
 }
