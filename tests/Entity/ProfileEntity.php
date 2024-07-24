@@ -2,7 +2,6 @@
 
 namespace Lightning\Test\Entity;
 
-
 class ProfileEntity extends AbstractEntity
 {
     private int $id;

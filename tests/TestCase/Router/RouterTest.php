@@ -19,15 +19,15 @@ final class DummyController
 {
     public function index()
     {
-        $response = new Response(); 
+        $response = new Response();
         $response->getBody()->write('ok');
+
         return $response;
     }
 }
 
 class SingleActionController
 {
-
     public function __invoke(ServerRequestInterface $request, ResponseInterface $response)
     {
         return new Response(200, [], 'ok');
@@ -60,6 +60,7 @@ class LemonLimeMiddleware extends BaseTestMiddleware
     {
         $response = $handler->handle($request);
         $response->getBody()->write('lemon');
+
         return $response;
     }
 }
@@ -70,6 +71,7 @@ class GreenAppleMiddleware extends BaseTestMiddleware
     {
         $response = $handler->handle($request);
         $response->getBody()->write('apple');
+
         return $response;
     }
 }
@@ -182,7 +184,8 @@ final class RouterTest extends TestCase
 
         $this->assertNull(
             $router->match(new ServerRequest('GET', 'http://localhost/login'))
-        );;
+        );
+        ;
     }
 
     public function testGroupWithMiddleware(): void
@@ -226,7 +229,6 @@ final class RouterTest extends TestCase
         $this->assertCount(3, $route->getMiddlewares());
     }
 
-
     public function testDispatch(): void
     {
         $router = new Router();
@@ -251,7 +253,7 @@ final class RouterTest extends TestCase
     {
         $router = new Router();
         $router->get('/articles', 'FunkyController::action');
-        $route =  $router->match(new ServerRequest('GET', '/articles'));
+        $route = $router->match(new ServerRequest('GET', '/articles'));
 
         $this->expectException(RouterException::class);
         $this->expectExceptionMessage('Error resolving `FunkyController`');

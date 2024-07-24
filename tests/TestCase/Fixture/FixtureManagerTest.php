@@ -4,10 +4,12 @@ namespace Lightning\Test\Fixture;
 
 use PDO;
 use PHPUnit\Framework\TestCase;
+
 use function Lightning\Dotenv\env;
-use Lightning\Test\PersistentPdoFactory;
 
 use Lightning\Fixture\FixtureManager;
+
+use Lightning\Test\PersistentPdoFactory;
 
 final class FixtureManagerTest extends TestCase
 {
@@ -17,12 +19,12 @@ final class FixtureManagerTest extends TestCase
     protected function setUp(): void
     {
         // Create Connection
-        $this->pdo = ( new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
+        $this->pdo = (new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 
         $this->fixtureManager = new FixtureManager($this->pdo);
     }
 
-    public function tearDown(): void 
+    public function tearDown(): void
     {
         unset($this->pdo);
     }

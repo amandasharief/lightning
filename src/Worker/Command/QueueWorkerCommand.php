@@ -33,11 +33,10 @@ class QueueWorkerCommand extends AbstractCommand
      * Constructor
      */
     public function __construct(
-        Console $console, 
-        protected MessageConsumer $consumer, 
+        Console $console,
+        protected MessageConsumer $consumer,
         protected AnsiStyleFormatter $formatter
-        )
-    {
+    ) {
         parent::__construct($console);
 
         if (! $console->stdout->isatty() || getenv('NO_COLOR')) {

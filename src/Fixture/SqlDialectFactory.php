@@ -30,15 +30,15 @@ class SqlDialectFactory
             case 'mysql':
                 $dialect = $this->createMysqlDialect();
 
-            break;
+                break;
             case 'pgsql':
                 $dialect = $this->createPostgresDialect();
 
-            break;
+                break;
             case 'sqlite':
                 $dialect = $this->createSqliteDialect();
 
-            break;
+                break;
             default:
                 throw new InvalidArgumentException("No SQL dialect available for `{$driver}`");
         }

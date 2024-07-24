@@ -4,6 +4,7 @@ namespace Lightning\Test\TestCase\MessageQueue;
 
 use Redis;
 use PHPUnit\Framework\TestCase;
+
 use function Lightning\Dotenv\env;
 
 use Lightning\MessageQueue\RedisMessageQueue;

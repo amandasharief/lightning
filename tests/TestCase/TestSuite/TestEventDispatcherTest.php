@@ -3,10 +3,9 @@
 namespace Lightning\Test\TestSuite;
 
 use PHPUnit\Framework\TestCase;
+use Lightning\TestSuite\TestEventDispatcher;
 use Lightning\EventDispatcher\EventDispatcher;
 use Lightning\EventDispatcher\ListenerProvider\ListenerProvider;
-use Lightning\EventDispatcher\ListenerRegistry;
-use Lightning\TestSuite\TestEventDispatcher;
 
 class TestEvent
 {

@@ -46,7 +46,6 @@ trait EntityTrait
     }
 }
 
-
 class Product
 {
     use EntityTrait;
@@ -62,7 +61,7 @@ class Person
 
     private int $id;
     private string $name;
-    private ?string $description = null;    
+    private ?string $description = null;
 }
 
 final class HydratorTest extends TestCase
@@ -123,7 +122,6 @@ final class HydratorTest extends TestCase
 
         $result = (new Hydrator())->extract($product);
 
-
         $this->assertEquals($expected, $result);
     }
 
@@ -137,9 +135,9 @@ final class HydratorTest extends TestCase
             'name' => 'Amanda',
             'description' => null
         ];
-        
+
         $result = (new Hydrator())->extract($product);
-       
+
         $this->assertEquals($expected, $result);
     }
 

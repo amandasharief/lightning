@@ -8,10 +8,10 @@ use Lightning\Fixture\FixtureManager;
 use Lightning\MessageQueue\MessageConsumer;
 
 use Lightning\MessageQueue\MessageProducer;
-use Lightning\Console\Formatter\AnsiStyleFormatter;
 use Lightning\MessageQueue\MemoryMessageQueue;
 use Lightning\Worker\Command\QueueWorkerCommand;
 use Lightning\MessageQueue\MessageQueueInterface;
+use Lightning\Console\Formatter\AnsiStyleFormatter;
 use Lightning\Console\TestSuite\ConsoleIntegrationTestTrait;
 
 class Message

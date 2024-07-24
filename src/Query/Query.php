@@ -291,7 +291,7 @@ class Query implements IteratorAggregate
     {
         $statement = $this->run();
         $meta = $this->getColumnMeta($statement);
-     
+
         return array_map(function ($row) use ($meta) {
             return $this->mapRow($row, $meta);
         }, $statement->fetchAll(PDO::FETCH_NUM) ?: []);

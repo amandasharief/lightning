@@ -4,6 +4,7 @@ namespace Lightning\Test\Translator;
 
 use PHPUnit\Framework\TestCase;
 use Lightning\Translator\Translator;
+
 use function Lightning\Translator\__;
 
 use Lightning\Translator\TranslatorManager;

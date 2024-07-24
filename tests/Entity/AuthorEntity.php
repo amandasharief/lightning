@@ -2,8 +2,6 @@
 
 namespace Lightning\Test\Entity;
 
-use Lightning\Utility\Collection;
-
 class AuthorEntity extends AbstractEntity
 {
     private int $id;

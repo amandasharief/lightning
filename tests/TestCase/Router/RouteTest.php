@@ -2,14 +2,14 @@
 
 namespace Lightning\Test\Router;
 
-use Lightning\Router\Route;
 use Nyholm\Psr7\Response;
+use Lightning\Router\Route;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 
 class FakeController
 {
-    public function index() : ResponseInterface
+    public function index(): ResponseInterface
     {
         return new Response();
     }
@@ -64,7 +64,7 @@ final class RouteTest extends TestCase
     {
         $handler = 'Lightning\Test\Router\FakeController::index';
         $route = new Route('GET', '/articles', $handler);
-   
+
         $this->assertInstanceOf(ResponseInterface::class, $route->getHandler()());
 
         $handler = [$this,'testGetHandler'];
@@ -108,5 +108,4 @@ final class RouteTest extends TestCase
         $callable = $route->getHandler();
         $this->assertTrue(is_callable($callable));
     }
-
 }

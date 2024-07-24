@@ -42,7 +42,6 @@ class LocaleDetectorMiddleware implements MiddlewareInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-
         // TODO: translator should handle closest match
         $locale = Locale::acceptFromHttp($request->getHeaderLine('Accept-Language'));
 

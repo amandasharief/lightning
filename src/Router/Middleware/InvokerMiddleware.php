@@ -11,9 +11,9 @@
 
 namespace Lightning\Router\Middleware;
 
-use Lightning\Router\ControllerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;
+use Lightning\Router\ControllerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Lightning\Router\Exception\RouterException;

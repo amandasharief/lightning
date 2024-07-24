@@ -2,8 +2,8 @@
 
 namespace Lightning\Test\ServiceObject;
 
-use Lightning\Arguments\Arguments;
 use PHPUnit\Framework\TestCase;
+use Lightning\Arguments\Arguments;
 use Lightning\ServiceObject\Result;
 use Lightning\ServiceObject\AbstractServiceObject;
 
@@ -29,10 +29,10 @@ final class AbstractServiceObjectTest extends TestCase
 {
     public function testDispatch()
     {
-        $result = (new ServiceObject())->dispatch(['foo'=>'bar']);
+        $result = (new ServiceObject())->dispatch(['foo' => 'bar']);
 
         $this->assertInstanceOf(Result::class, $result);
         $this->assertTrue($result->get('initialized'));
-        $this->assertInstanceOf(Arguments::class,$result->get('args'));
+        $this->assertInstanceOf(Arguments::class, $result->get('args'));
     }
 }

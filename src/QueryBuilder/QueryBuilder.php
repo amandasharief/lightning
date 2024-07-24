@@ -434,7 +434,7 @@ class QueryBuilder implements Stringable
                     return $field . ' ' . $expression . ' ' . $this->arrayToPlaceHoldersString($value);
                 }
 
-            break;
+                break;
         }
 
         throw new RuntimeException('Error parsing expression');
@@ -497,19 +497,19 @@ class QueryBuilder implements Stringable
             case 'select':
                 $sql = $this->compileSelect();
 
-            break;
+                break;
             case 'insert':
                 $sql = $this->compileInsert();
 
-            break;
+                break;
             case 'update':
                 $sql = $this->compileUpdate();
 
-            break;
+                break;
             case 'delete':
                 $sql = $this->compileDelete();
 
-            break;
+                break;
         }
 
         return $sql;

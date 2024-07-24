@@ -52,7 +52,7 @@ final class ConsoleTest extends TestCase
         $this->assertStringNotContainsString('Hello Amanda', $this->out->getContents());
     }
 
-      /**
+    /**
      * @todo no idea how to test stty -echo without messing arounbd
      */
     public function testInput(): void

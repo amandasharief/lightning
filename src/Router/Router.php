@@ -119,10 +119,10 @@ class Router implements RequestHandlerInterface, RoutesInterface
             $request = $request->withAttribute($name, $value);
         }
 
-        if($route){
+        if ($route) {
             $handler = $route->getHandler($this->container);
-            $middleware =  $route->getMiddlewares();
-        }else{
+            $middleware = $route->getMiddlewares();
+        } else {
             $handler = $this->createErrorRequestHandler($request);
             $middleware = $this->middlewares;
         }
@@ -131,8 +131,8 @@ class Router implements RequestHandlerInterface, RoutesInterface
 
         return (new RequestHandler($middleware))->handle($request);
     }
-    
-    private function createErrorRequestHandler(ServerRequestInterface $request) : callable 
+
+    private function createErrorRequestHandler(ServerRequestInterface $request): callable
     {
         return function (ServerRequestInterface $request) {
             throw new NotFoundException(sprintf('The requested URL %s was not found', $request->getRequestTarget()));

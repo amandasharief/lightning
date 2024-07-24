@@ -33,7 +33,7 @@ class Hydrator implements HydratorInterface
 
     /**
      * Extracts data from an object
-     * 
+     *
      * @internal uninitalized properties are ignored as these are values which are not set.
      */
     public function extract(object $object): array
@@ -42,10 +42,11 @@ class Hydrator implements HydratorInterface
 
         $result = [];
         foreach ($props as $name => $prop) {
-            if($prop->isInitialized($object)){
+            if ($prop->isInitialized($object)) {
                 $result[$name] = $prop->getValue($object);
             }
         }
+
         return $result;
     }
 
@@ -67,7 +68,7 @@ class Hydrator implements HydratorInterface
         foreach ($props as $prop) {
             static::$cache[$class][$prop->getName()] = $prop;
         }
-       
+
         return static::$cache[$class];
     }
 }

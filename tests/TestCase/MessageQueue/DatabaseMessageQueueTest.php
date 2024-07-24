@@ -4,6 +4,7 @@ namespace Lightning\Test\TestCase\MessageQueue;
 
 use PDO;
 use PHPUnit\Framework\TestCase;
+
 use function Lightning\Dotenv\env;
 
 use Lightning\Fixture\FixtureManager;
@@ -36,7 +37,7 @@ final class DatabaseMessageQueueTest extends TestCase
         $this->fixtureManager->load([MessageQueueFixture::class]);
     }
 
-    public function tearDown(): void 
+    public function tearDown(): void
     {
         unset($this->pdo);
     }

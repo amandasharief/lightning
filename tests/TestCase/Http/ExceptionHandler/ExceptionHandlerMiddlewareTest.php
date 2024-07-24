@@ -69,7 +69,7 @@ final class ExceptionHandlerMiddlewareTest extends TestCase
         $this->assertEquals('text/html', $response->getHeaderLine('Content-type'));
         $this->assertEquals(
             '{"error":{"code":404,"message":"Not Found","hasRequest":true,"hasException":true}}',
-           (string) $response->getBody()
+            (string) $response->getBody()
         );
     }
 
@@ -85,7 +85,7 @@ final class ExceptionHandlerMiddlewareTest extends TestCase
         $this->assertEquals('text/html', $response->getHeaderLine('Content-type'));
         $this->assertEquals(
             '{"error":{"code":501,"message":"Not Implemented","custom":true}}',
-           (string) $response->getBody()
+            (string) $response->getBody()
         );
     }
 
@@ -101,7 +101,7 @@ final class ExceptionHandlerMiddlewareTest extends TestCase
         $this->assertEquals('text/html', $response->getHeaderLine('Content-type'));
         $this->assertEquals(
             '{"error":{"code":500,"message":"Internal Server Error","custom":true}}',
-           (string) $response->getBody()
+            (string) $response->getBody()
         );
     }
 
@@ -116,7 +116,7 @@ final class ExceptionHandlerMiddlewareTest extends TestCase
         $this->assertEquals('application/json', $response->getHeaderLine('Content-type'));
         $this->assertEquals(
             '{"error":{"code":404,"message":"Not Found"}}',
-           (string) $response->getBody()
+            (string) $response->getBody()
         );
     }
 
@@ -130,7 +130,7 @@ final class ExceptionHandlerMiddlewareTest extends TestCase
         $this->assertEquals('application/json', $response->getHeaderLine('Content-type'));
         $this->assertEquals(
             '{"error":{"code":404,"message":"Not Found"}}',
-           (string) $response->getBody()
+            (string) $response->getBody()
         );
     }
 
@@ -168,7 +168,7 @@ final class ExceptionHandlerMiddlewareTest extends TestCase
 
         $this->assertEquals(
             $expected,
-           (string) $response->getBody()
+            (string) $response->getBody()
         );
     }
 }

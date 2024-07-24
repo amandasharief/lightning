@@ -46,6 +46,7 @@ final class PriorityListenerProvider implements ListenerProviderInterface
                     if (empty($this->listeners[$eventName])) {
                         unset($this->listeners[$eventName]);
                     }
+
                     break;
                 }
             }
@@ -53,7 +54,7 @@ final class PriorityListenerProvider implements ListenerProviderInterface
 
         return $this;
     }
-        
+
     /**
      * Checks if an event has listeners
      */

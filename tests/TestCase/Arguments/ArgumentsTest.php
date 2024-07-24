@@ -2,8 +2,8 @@
 
 namespace Lightning\Test\Arguments;
 
-use Lightning\Arguments\Arguments;
 use PHPUnit\Framework\TestCase;
+use Lightning\Arguments\Arguments;
 use Lightning\Arguments\Exception\UnkownArgumentException;
 
 final class ArgumentsTest extends TestCase

@@ -62,7 +62,7 @@ abstract class AbstractJob implements RunnableInterface, RetryableInterface
      */
     public function fail(): void
     {
-        $this->attempts ++;
+        $this->attempts++;
     }
 
     /**

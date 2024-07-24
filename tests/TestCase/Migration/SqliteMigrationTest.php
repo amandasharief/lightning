@@ -4,10 +4,12 @@ namespace Lightning\Test\Migration;
 
 use PDO;
 use PHPUnit\Framework\TestCase;
+
 use function Lightning\Dotenv\env;
-use Lightning\Test\PersistentPdoFactory;
+
 use Lightning\Migration\Migration;
 use Lightning\Fixture\FixtureManager;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\Test\Fixture\MigrationsFixture;
 
 final class SqliteMigrationTest extends TestCase
@@ -33,7 +35,7 @@ final class SqliteMigrationTest extends TestCase
         }
     }
 
-    public function tearDown(): void 
+    public function tearDown(): void
     {
         unset($this->pdo);
     }

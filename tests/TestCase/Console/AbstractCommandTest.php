@@ -2,14 +2,12 @@
 
 namespace Lightning\Test\Console;
 
-use Lightning\Console\ANSI;
 use Lightning\Console\Console;
 use PHPUnit\Framework\TestCase;
 use Lightning\Console\Arguments;
-use Lightning\Console\AbstractCommand as Command;
 use Lightning\Console\ConsoleArgumentParser;
-use Lightning\Console\Exception\StopException;
 use Lightning\Console\TestSuite\InputStreamStub;
+use Lightning\Console\AbstractCommand as Command;
 use Lightning\Console\TestSuite\OutputStreamStub;
 
 class NameCommand extends Command
@@ -47,7 +45,7 @@ class HelloCommand extends Command
         return $this->parser;
     }
 
-    protected function execute(Arguments $args) : int
+    protected function execute(Arguments $args): int
     {
         $console = $this->getConsole();
 
@@ -55,7 +53,7 @@ class HelloCommand extends Command
             $this->abort();
         }
 
-        if($args->getOption('exit')){
+        if ($args->getOption('exit')) {
             $this->exit();
         }
 
@@ -66,10 +64,9 @@ class HelloCommand extends Command
         }
 
         $console->out(sprintf('Hello %s', $args->getArgument('name')));
+
         return Command::SUCCESS;
     }
-
-
 }
 
 final class AbstractCommandTest extends TestCase
@@ -103,7 +100,7 @@ final class AbstractCommandTest extends TestCase
     {
         $command = new HelloCommand($this->console);
         $this->assertEquals(Command::SUCCESS, $command->run(['bin/console', '-h'], $this->console));
-        
+
         $this->assertStringContainsString(
             "\e[32m-u,--uppercase \e[0mchange name to uppercase\n",
             $this->stdout->getContents()
@@ -114,7 +111,7 @@ final class AbstractCommandTest extends TestCase
     {
         $command = new HelloCommand($this->console);
         $this->assertEquals(Command::SUCCESS, $command->run(['bin/console', '-h'], $this->console));
-        
+
         $this->assertStringContainsString(
             "\e[32mname           \e[0mname to use (default: \"world\")\n",
             $this->stdout->getContents()
@@ -124,7 +121,7 @@ final class AbstractCommandTest extends TestCase
     public function testExit(): void
     {
         $command = new HelloCommand($this->console);
-       $this->assertEquals(Command::SUCCESS, $command->run(['bin/console', '-exit'], $this->console));
+        $this->assertEquals(Command::SUCCESS, $command->run(['bin/console', '-exit'], $this->console));
     }
 
     public function testAbort(): void

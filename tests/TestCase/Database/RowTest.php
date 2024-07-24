@@ -5,9 +5,10 @@ namespace Lightning\Test\Database;
 use PDO;
 use Lightning\Database\Row;
 use PHPUnit\Framework\TestCase;
+
 use function Lightning\Dotenv\env;
+
 use Lightning\Database\Connection;
-use Lightning\Test\PersistentPdoFactory;
 use Lightning\Fixture\FixtureManager;
 use Lightning\Test\Fixture\ArticlesFixture;
 
@@ -26,7 +27,7 @@ final class RowTest extends TestCase
         ]);
     }
 
-    public function tearDown(): void 
+    public function tearDown(): void
     {
         unset($this->pdo);
     }
@@ -100,10 +101,10 @@ final class RowTest extends TestCase
     }
 
     public function testWorksWithPDO(): void
-    {   
+    {
         $connection = new Connection(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
         $connection->connect();
-        
+
         $result = $connection->execute('SELECT * FROM articles')->fetchObject(Row::class);
 
         $this->assertInstanceOf(Row::class, $result);
@@ -122,7 +123,7 @@ final class RowTest extends TestCase
     {
         $this->assertEquals(
             '{"title":"Article","author":{"name":"Jon"},"tags":[{"title":"new"}]}',
-           (string) $this->createRowWithAssociatedData()
+            (string) $this->createRowWithAssociatedData()
         );
     }
 
@@ -144,7 +145,7 @@ final class RowTest extends TestCase
     public function testToArray()
     {
         $this->assertEquals(
-           json_decode('{"title":"Article","author":{"name":"Jon"},"tags":[{"title":"new"}]}', true),
+            json_decode('{"title":"Article","author":{"name":"Jon"},"tags":[{"title":"new"}]}', true),
             $this->createRowWithAssociatedData()->toArray()
         );
     }

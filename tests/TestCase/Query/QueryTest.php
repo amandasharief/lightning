@@ -8,12 +8,14 @@ use Lightning\Query\Query;
 use BadMethodCallException;
 use Lightning\Database\Row;
 use PHPUnit\Framework\TestCase;
+
 use function Lightning\Dotenv\env;
-use Lightning\Test\PersistentPdoFactory;
+
 use Lightning\Fixture\FixtureManager;
 use Lightning\Test\Fixture\TagsFixture;
 use Lightning\QueryBuilder\QueryBuilder;
 use Lightning\Test\Fixture\PostsFixture;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\Test\Fixture\AuthorsFixture;
 use Lightning\Test\Fixture\ArticlesFixture;
 
@@ -27,7 +29,7 @@ final class QueryTest extends TestCase
     protected function setUp(): void
     {
         // Create Connection
-        $this->pdo = ( new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
+        $this->pdo = (new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 
         $this->fixtureManager = new FixtureManager($this->pdo);
         $this->fixtureManager->load([
@@ -39,7 +41,7 @@ final class QueryTest extends TestCase
         ]);
     }
 
-    public function tearDown(): void 
+    public function tearDown(): void
     {
         unset($this->pdo);
     }
@@ -343,9 +345,9 @@ final class QueryTest extends TestCase
             ->where(['id' => 1000]);
 
         $this->assertSame(
-                'UPDATE posts SET title = :v0 WHERE posts.id = :v1',
-                (string) $query
-            );
+            'UPDATE posts SET title = :v0 WHERE posts.id = :v1',
+            (string) $query
+        );
 
         $this->assertEquals(1, $query->execute());
     }
@@ -371,9 +373,9 @@ final class QueryTest extends TestCase
             ->where(['id' => 1000]);
 
         $this->assertSame(
-                'DELETE FROM posts WHERE posts.id = :v0',
-                (string) $query
-            );
+            'DELETE FROM posts WHERE posts.id = :v0',
+            (string) $query
+        );
 
         $this->assertEquals(1, $query->execute());
     }

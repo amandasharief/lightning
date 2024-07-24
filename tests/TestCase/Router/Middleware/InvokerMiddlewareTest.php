@@ -2,16 +2,14 @@
 
 namespace Lightning\Test\TestCase\Router\Middleware;
 
-use Lightning\Router\ControllerInterface;
 use Nyholm\Psr7\Response;
-use Lightning\Router\Route;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
+use Lightning\Router\ControllerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Lightning\Router\Middleware\InvokerMiddleware;
-use Psr\Http\Message\RequestInterface;
 
 class Foo
 {
@@ -58,12 +56,12 @@ class ArticlesController implements ControllerInterface
         return $response;
     }
 
-    public function getCalled(): array 
+    public function getCalled(): array
     {
         return $this->called;
     }
 
-    public function setResponse(ResponseInterface $response) : void
+    public function setResponse(ResponseInterface $response): void
     {
         $this->response = $response;
     }
@@ -88,7 +86,7 @@ final class InvokerMiddlewareTest extends TestCase
     {
         $callable = [new PostsController(),'index'];
         $request = new ServerRequest('GET', '/posts/index');
-       
+
         $response = (new InvokerMiddleware($callable))->process($request, new DummyRequestHandler($request));
         $this->assertEquals('ok', (string) $response->getBody());
     }
@@ -98,11 +96,11 @@ final class InvokerMiddlewareTest extends TestCase
         $controller = new ArticlesController();
         $callable = [$controller,'index'];
         $request = new ServerRequest('GET', '/posts/index');
-       
+
         $response = (new InvokerMiddleware($callable))->process($request, new DummyRequestHandler($request));
         $this->assertEquals('ok', (string) $response->getBody());
 
-        $this->assertEquals(['beforeFilter','afterFilter'],$controller->getCalled());
+        $this->assertEquals(['beforeFilter','afterFilter'], $controller->getCalled());
     }
 
     public function testBeforeFilterReturnResponse(): void
@@ -111,15 +109,13 @@ final class InvokerMiddlewareTest extends TestCase
         $callable = [$controller,'index'];
         $request = new ServerRequest('GET', '/posts/index');
 
-        $response =new Response();
+        $response = new Response();
         $response->getBody()->write('changed');
         $controller->setResponse($response);
 
-       
         $response = (new InvokerMiddleware($callable))->process($request, new DummyRequestHandler($request));
         $this->assertEquals('changed', (string) $response->getBody());
 
-        $this->assertEquals(['beforeFilter'],$controller->getCalled());
+        $this->assertEquals(['beforeFilter'], $controller->getCalled());
     }
-  
 }

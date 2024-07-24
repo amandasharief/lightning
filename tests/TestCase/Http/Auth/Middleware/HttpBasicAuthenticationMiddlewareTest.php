@@ -7,11 +7,13 @@ use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 
 use PHPUnit\Framework\TestCase;
+
 use function Lightning\Dotenv\env;
-use Lightning\Test\PersistentPdoFactory;
+
 use Lightning\Fixture\FixtureManager;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Http\Message\ResponseInterface;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\TestSuite\TestRequestHandler;
 use Lightning\Test\Fixture\IdentitiesFixture;
 use Lightning\Http\Exception\UnauthorizedException;
@@ -25,7 +27,7 @@ final class HttpBasicAuthenticationMiddlewareTest extends TestCase
 
     public function setUp(): void
     {
-        $this->pdo = ( new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
+        $this->pdo = (new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 
         $this->fixtureManager = new FixtureManager($this->pdo);
         $this->fixtureManager->load([
@@ -33,7 +35,7 @@ final class HttpBasicAuthenticationMiddlewareTest extends TestCase
         ]);
     }
 
-    public function tearDown(): void 
+    public function tearDown(): void
     {
         unset($this->pdo);
     }

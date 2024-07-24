@@ -228,10 +228,10 @@ final class AbstractControllerTest extends TestCase
 
     private function createController(): ArticlesController
     {
-       $templateRenderer = (new TemplateRenderer())
+        $templateRenderer = (new TemplateRenderer())
             ->setPath(__DIR__ .'/TestApp/templates')
             ->setFileExtension('php');
 
-        return new ArticlesController( $templateRenderer );
+        return new ArticlesController($templateRenderer);
     }
 }

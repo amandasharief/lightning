@@ -6,10 +6,12 @@ use PDO;
 use PHPUnit\Framework\TestCase;
 
 use Lightning\Database\Statement;
+
 use function Lightning\Dotenv\env;
-use Lightning\Test\PersistentPdoFactory;
+
 use Lightning\Fixture\FixtureManager;
 use Lightning\Test\Fixture\TagsFixture;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\Test\Fixture\ArticlesFixture;
 
 final class StatementTest extends TestCase
@@ -18,7 +20,7 @@ final class StatementTest extends TestCase
 
     public function setUp(): void
     {
-        $this->pdo = ( new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
+        $this->pdo = (new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 
         $this->fixtureManager = new FixtureManager($this->pdo);
         $this->fixtureManager->load([
@@ -27,7 +29,7 @@ final class StatementTest extends TestCase
         ]);
     }
 
-    public function tearDown(): void 
+    public function tearDown(): void
     {
         unset($this->pdo);
     }

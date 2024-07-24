@@ -7,45 +7,45 @@ use Exception;
 use PDOException;
 use PHPUnit\Framework\TestCase;
 use Lightning\Database\Statement;
+
 use function Lightning\Dotenv\env;
+
 use Lightning\Database\Connection;
-use Lightning\Test\PersistentPdoFactory;
 use Lightning\Fixture\FixtureManager;
 use Lightning\Test\Fixture\TagsFixture;
 use Lightning\QueryBuilder\QueryBuilder;
+use Lightning\Test\PersistentPdoFactory;
 use Lightning\Test\Fixture\ArticlesFixture;
 
 final class ConnectionTest extends TestCase
 {
-
     private ?PDO $pdo;
     private ?Connection $connection;
 
     public function setUp(): void
     {
-        $this->pdo = ( new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
+        $this->pdo = (new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 
         $this->fixtureManager = new FixtureManager($this->pdo);
         $this->fixtureManager->load([
             ArticlesFixture::class,
             TagsFixture::class
         ]);
-
     }
 
-    public function tearDown(): void 
+    public function tearDown(): void
     {
         unset($this->pdo);
-        if(isset($this->connection)){
+        if (isset($this->connection)) {
             $this->connection->disconnect();
         }
     }
-
 
     private function createConnection(): Connection
     {
         $this->connection = new Connection(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
         $this->connection->connect();
+
         return $this->connection;
     }
 
@@ -54,17 +54,15 @@ final class ConnectionTest extends TestCase
         $connection = $connection = new Connection(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
         $this->assertNull($connection->getPdo());
         $connection->connect();
-        $this->assertInstanceOf(PDO::class,$connection->getPdo());
+        $this->assertInstanceOf(PDO::class, $connection->getPdo());
         $connection->disconnect();
     }
 
-
-    public function testIsConnected(): void 
+    public function testIsConnected(): void
     {
         $connection = $connection = new Connection(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
         $this->assertFalse($connection->isConnected());
 
-        
         $connection->connect();
         $this->assertTrue($connection->isConnected());
 
@@ -76,7 +74,6 @@ final class ConnectionTest extends TestCase
     {
         $this->assertContains($this->createConnection()->getDriver(), ['mysql','sqlite','pgsql']);
     }
-
 
     public function testPrepare(): void
     {
@@ -103,7 +100,6 @@ final class ConnectionTest extends TestCase
         $this->assertTrue($connection->beginTransaction());
         $this->assertTrue($connection->inTransaction());
         $this->assertFalse($connection->beginTransaction());
-
 
         $connection->rollback();
     }
@@ -205,8 +201,6 @@ final class ConnectionTest extends TestCase
         );
     }
 
-  
-
     public function testExecuteError(): void
     {
         $this->expectException(PDOException::class);
@@ -257,15 +251,15 @@ final class ConnectionTest extends TestCase
         switch ($connection->getDriver()) {
             case 'pgsql':
                 $this->assertEquals(1, $connection->getLastInsertId());
-            break;
+
+                break;
             case 'mysql':
             case 'sqlite':
                 $this->assertEquals(2003, $connection->getLastInsertId());
-            break;
+
+                break;
         }
     }
-
-
 
     public function testUpdate(): void
     {
@@ -278,10 +272,10 @@ final class ConnectionTest extends TestCase
         );
 
         $this->assertEquals(1,
-        $connection->update('articles', [
-            'title' => 'just this one',
-        ], ['id' => 1000])
-    );
+            $connection->update('articles', [
+                'title' => 'just this one',
+            ], ['id' => 1000])
+        );
     }
 
     public function testDelete(): void
@@ -297,16 +291,15 @@ final class ConnectionTest extends TestCase
         );
     }
 
-    public function testAutoconnect(): void 
+    public function testAutoconnect(): void
     {
         $connection = $this->createConnection();
         $count = $connection->execute('SELECT COUNT(*) AS count FROM users')->fetchColumn();
         $this->assertGreaterThanOrEqual(3, $count); // @todo issue with on CI returning different amount investigate
     }
 
-    public function testSerialize(): void 
+    public function testSerialize(): void
     {
-
         $connection = $this->createConnection();
         $connection->connect();
         $this->assertTrue($connection->isConnected());

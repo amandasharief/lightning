@@ -91,11 +91,11 @@ class ConsoleHelpFormatter
     private ?string $reset = null;
 
     /**
-     * 
+     *
      */
     public function __construct(private bool $useColor = true)
     {
-        if($useColor){
+        if ($useColor) {
             $this->color1 = ANSI::FG_YELLOW;
             $this->color2 = ANSI::FG_GREEN;
             $this->reset = ANSI::RESET;

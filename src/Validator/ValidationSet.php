@@ -301,9 +301,10 @@ class ValidationSet
     /**
      * The value that is passed can also be null
      */
-    public function nullable() : static 
+    public function nullable(): static
     {
         $this->nullable = true;
+
         return $this;
     }
 
@@ -320,7 +321,7 @@ class ValidationSet
     /**
      * The value that is passed can also be null
      */
-    public function isNullable(): bool 
+    public function isNullable(): bool
     {
         return $this->nullable;
     }

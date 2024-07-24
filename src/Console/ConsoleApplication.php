@@ -134,16 +134,16 @@ class ConsoleApplication implements CommandInterface
     /**
      * Displays the HELP
      */
-   public function getHelp(): string
-   {
-       $help = $this->createHelpFormatter();
-       if (! empty($this->description)) {
-           $help->setDescription($this->description);
-       }
+    public function getHelp(): string
+    {
+        $help = $this->createHelpFormatter();
+        if (! empty($this->description)) {
+            $help->setDescription($this->description);
+        }
 
-       $help->setUsage([sprintf('%s <command> [options] [arguments]', $this->name)]);
-       $help->setCommands($this->commands);
+        $help->setUsage([sprintf('%s <command> [options] [arguments]', $this->name)]);
+        $help->setCommands($this->commands);
 
-       return $help->generate();
-   }
+        return $help->generate();
+    }
 }

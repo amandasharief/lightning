@@ -86,7 +86,8 @@ class AnsiStyleFormatter extends AnsiFormatter
                 $style = $this->styles[$tag] ?? null;
                 if ($style) {
                     $string = $matches[2][$key];
-                    $text = str_replace($matches[0][$key], implode(' ', $style) . $string . ANSI::RESET, $text);;
+                    $text = str_replace($matches[0][$key], implode(' ', $style) . $string . ANSI::RESET, $text);
+                    ;
                 }
             }
         }

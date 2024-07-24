@@ -13,10 +13,6 @@ namespace Lightning\Controller;
 
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
-use Lightning\Controller\Event\AfterRender;
-use Lightning\Controller\Event\BeforeRender;
-use Lightning\Controller\Event\AfterRedirect;
-use Lightning\Controller\Event\BeforeRedirect;
 use Lightning\TemplateRenderer\TemplateRendererInterface;
 
 /**
@@ -125,7 +121,6 @@ abstract class AbstractController
             return $response;
         }
 
-
         $response = $this->createResponse()
             ->withHeader('Location', $uri)
             ->withStatus($status);
@@ -146,9 +141,9 @@ abstract class AbstractController
         return $this->view;
     }
 
-     /**
-     * Before render hook
-     */
+    /**
+    * Before render hook
+    */
     protected function beforeRender(): ?ResponseInterface
     {
         return null;

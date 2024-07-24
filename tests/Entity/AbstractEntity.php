@@ -8,7 +8,7 @@ use ReflectionProperty;
 /**
  * Brought this back to aid with existing tests after refactor
  */
-abstract class AbstractEntity 
+abstract class AbstractEntity
 {
     public function toState(): array
     {

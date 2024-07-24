@@ -2,9 +2,9 @@
 
 namespace Lightning\Test\Worker;
 
-use Lightning\Arguments\Arguments;
 use PHPUnit\Framework\TestCase;
 use Lightning\Worker\AbstractJob;
+use Lightning\Arguments\Arguments;
 
 class SendEmailNotification extends AbstractJob
 {

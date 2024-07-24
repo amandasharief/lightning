@@ -46,9 +46,10 @@ class PhpSession extends AbstractSession
             'use_cookies' => false,
             'use_only_cookies' => false,
             'use_trans_sid' => false
-         ]);
- 
-        $this->session = $_SESSION ?: []; 
+        ]);
+
+        $this->session = $_SESSION ?: [];
+
         return $this->isStarted;
     }
 
@@ -68,7 +69,7 @@ class PhpSession extends AbstractSession
         foreach ($removed as  $key) {
             unset($_SESSION[$key]);
         }
-        
+
         $closed = $this->isCli() ?: session_write_close();
 
         $this->isStarted = $closed === false;

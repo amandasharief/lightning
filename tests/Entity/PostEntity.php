@@ -2,8 +2,6 @@
 
 namespace Lightning\Test\Entity;
 
-use Lightning\Utility\Collection;
-
 class PostEntity extends AbstractEntity
 {
     private int $id;

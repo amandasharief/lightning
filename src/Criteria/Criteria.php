@@ -82,7 +82,8 @@ class Criteria
             case 'IN':
             case 'NOT IN':
                 if (! is_array($value)) {
-                    throw new InvalidArgumentException(sprintf('Invalid comparison value for `%s`, expected an array', $field));;
+                    throw new InvalidArgumentException(sprintf('Invalid comparison value for `%s`, expected an array', $field));
+                    ;
                 }
 
                 break;
@@ -95,14 +96,13 @@ class Criteria
 
                 $value = sprintf('/^%s$/i', str_replace(['%','_'], ['.*','.'], preg_quote((string) $value)));
 
-            break;
+                break;
             default:
                 if (! in_array($expression, ['=','!=','<>']) && is_array($value)) {
                     throw new InvalidArgumentException(sprintf('Invalid comparison value for `%s`, did not expect array', $field));
                 }
 
-            break;
-
+                break;
         }
 
         if (is_object($value)) {

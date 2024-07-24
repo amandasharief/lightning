@@ -31,7 +31,8 @@ class ProgressBarHelper
     public function __construct(private Console $console, private int $minimum = 0, private int $maximum = 100)
     {
         $this->isatty = $this->console->stdout->isatty();
-        $this->color = $this->isatty && ! getenv('NO_COLOR');;
+        $this->color = $this->isatty && ! getenv('NO_COLOR');
+        ;
 
         if ($this->color) {
             $this->barEmpty = '█'; // Give modern look
@@ -102,9 +103,9 @@ class ProgressBarHelper
         return $this;
     }
 
-     /**
-     * Get the bar character for the empty part of the progress bar
-     */
+    /**
+    * Get the bar character for the empty part of the progress bar
+    */
     public function getEmptyBarCharacter(): string
     {
         return $this->barEmpty ;
@@ -166,16 +167,16 @@ class ProgressBarHelper
         return $this;
     }
 
-     /**
-     * Draws a progress bar.
-     * @see http://ascii-table.com/ansi-escape-sequences-vt-100.php
-     */
+    /**
+    * Draws a progress bar.
+    * @see http://ascii-table.com/ansi-escape-sequences-vt-100.php
+    */
     protected function draw(int $value, int $max): void
     {
         $percentage = floor(($value * 100) / $max);
         $pending = 100 - $percentage;
         if ($pending % 2 !== 0) {
-            $pending ++;
+            $pending++;
         }
 
         // build

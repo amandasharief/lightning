@@ -21,7 +21,7 @@ class InputStreamStub extends InputStream
 
     public function read(?int $bytes = null): ?string
     {
-        $this->current ++;
+        $this->current++;
 
         if (! isset($this->input[$this->current])) {
             throw new RuntimeException('Console input is requesting more input that what was provided');

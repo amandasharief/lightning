@@ -8,11 +8,12 @@
  * @copyright   Copyright (c) Amanda Sharief
  * @license     https://opensource.org/licenses/LGPL-3.0 LGPL-3.0
  */
+
 namespace Lightning\Hydrator;
 
 interface HydratorInterface
 {
-    public function hydrate(object $object, array $data) : void;
+    public function hydrate(object $object, array $data): void;
 
-    public function extract(object $object) : array;
+    public function extract(object $object): array;
 }

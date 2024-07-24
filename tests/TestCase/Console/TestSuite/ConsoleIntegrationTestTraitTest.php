@@ -6,9 +6,9 @@ use RuntimeException;
 use Lightning\Console\Console;
 use PHPUnit\Framework\TestCase;
 use Lightning\Console\Arguments;
-use Lightning\Console\AbstractCommand as Command;
-
 use Lightning\Console\TestSuite\InputStreamStub;
+
+use Lightning\Console\AbstractCommand as Command;
 use Lightning\Console\TestSuite\OutputStreamStub;
 use Lightning\Console\TestSuite\ConsoleIntegrationTestTrait;
 
@@ -34,7 +34,7 @@ class DummyCommand extends Command
         ]);
     }
 
-    protected function execute(Arguments $args) : int
+    protected function execute(Arguments $args): int
     {
         $console = $this->getConsole();
 

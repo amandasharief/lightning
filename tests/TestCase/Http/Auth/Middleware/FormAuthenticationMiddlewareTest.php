@@ -6,12 +6,14 @@ use PDO;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
+
 use function Lightning\Dotenv\env;
-use Lightning\Test\PersistentPdoFactory;
+
 use Lightning\Fixture\FixtureManager;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Lightning\Http\Session\PhpSession;
 use Psr\Http\Message\ResponseInterface;
+use Lightning\Test\PersistentPdoFactory;
 
 use Lightning\TestSuite\TestRequestHandler;
 use Lightning\Http\Session\SessionInterface;
@@ -28,7 +30,7 @@ final class FormAuthenticationMiddlewareTest extends TestCase
 
     public function setUp(): void
     {
-        $this->pdo = ( new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
+        $this->pdo = (new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 
         $this->fixtureManager = new FixtureManager($this->pdo);
         $this->fixtureManager->load([

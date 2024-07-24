@@ -14,9 +14,7 @@ namespace Lightning\Database;
 use PDO;
 use Throwable;
 use Stringable;
-use Psr\Log\LoggerInterface;
 use Lightning\Database\Exception\DatabaseException;
-use PDOStatement;
 
 /**
  * Connection
@@ -25,7 +23,7 @@ use PDOStatement;
 class Connection
 {
     protected ?PDO $pdo = null;
- 
+
     private const DEFAULT_PDO_OPTIONS = [
         /**
          * don't set to true unless you know what you are doing, this can have all kinds of effects
@@ -55,7 +53,7 @@ class Connection
     /**
      * Magic method to return property names that will be serialized
      */
-    public function __sleep() : array 
+    public function __sleep(): array
     {
         return ['dsn','username','password','pdoOptions'];
     }
@@ -169,7 +167,7 @@ class Connection
      */
     public function execute(string|Stringable $query, array $params = []): Statement
     {
-        if(!$this->pdo){
+        if (! $this->pdo) {
             $this->connect();
         }
 
@@ -218,7 +216,6 @@ class Connection
 
         return ! is_string($id) || $id === '0' ? null : $id;
     }
-
 
     /**
      * Inserts a row into the table

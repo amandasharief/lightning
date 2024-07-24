@@ -42,7 +42,8 @@ class Migration
         $migrations = [];
 
         foreach (glob($this->path . '/*.sql') as $path) {
-            $migration = $this->parseMigration($path);;
+            $migration = $this->parseMigration($path);
+            ;
 
             if (isset($migrations[$migration['version']])) {
                 throw new RuntimeException(sprintf('Migration version `%s` already exists', $migration['version']));

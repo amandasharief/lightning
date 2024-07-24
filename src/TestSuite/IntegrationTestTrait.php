@@ -58,7 +58,7 @@ trait IntegrationTestTrait
      */
     public function setupIntegrationTesting(
         ServerRequestFactory $serverRequestFactory, ResponseFactoryInterface $responseFactory, RequestHandlerInterface $requestHandler, TestSessionInterface $testSession
-        ): void {
+    ): void {
         $this->serverRequestFactory = $serverRequestFactory;
         $this->responseFactory = $responseFactory;
         $this->requestHandler = $requestHandler;
@@ -573,7 +573,6 @@ trait IntegrationTestTrait
     {
         $result = [];
         foreach ($this->getResponse()->getHeader('Set-Cookie') as $cookie) {
-
             // Ignore expired cookies, aka deleting
             $hasExpired = preg_match('/expires=([^;]*)/', $cookie, $matches) && strtotime($matches[1]) < time();
 

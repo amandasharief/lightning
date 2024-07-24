@@ -25,7 +25,7 @@ final class RandomStringTest extends TestCase
     {
         $this->assertMatchesRegularExpression(
             '/^[0123456789abcdef]{32}$/',
-             (new RandomString())->withCharset(Randomstring::HEX)->generate(32)
+            (new RandomString())->withCharset(Randomstring::HEX)->generate(32)
         );
 
         $this->assertMatchesRegularExpression(

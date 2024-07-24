@@ -122,7 +122,7 @@ class Autowire
                 sprintf('constructor parameter `%s` has no type or default value', $parameter->name)
             );
         }
-        
+
         if ($parameterType->isBuiltin()) {
             if (isset($vars[$parameter->name])) {
                 return $vars[$parameter->name];

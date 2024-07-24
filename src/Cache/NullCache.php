@@ -11,25 +11,20 @@
 
 namespace Lightning\Cache;
 
-use Lightning\Cache\Exception\InvalidArgumentException;
-
 /**
  * Null Cache
  */
 class NullCache extends AbstractCache
 {
-
     public function get($key, $default = null)
     {
         return $default;
     }
 
-
     public function set($key, $value, $ttl = null)
     {
         return true;
     }
-
 
     public function has($key)
     {
@@ -43,6 +38,6 @@ class NullCache extends AbstractCache
 
     public function clear()
     {
-          return true;
+        return true;
     }
 }

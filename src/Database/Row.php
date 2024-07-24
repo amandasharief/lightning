@@ -18,7 +18,7 @@ use JsonSerializable;
 class Row implements ArrayAccess, JsonSerializable, Stringable
 {
     private array $data = [];
-    
+
     final public function __construct()
     {
     }

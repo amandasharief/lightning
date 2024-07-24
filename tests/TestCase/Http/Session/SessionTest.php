@@ -5,6 +5,7 @@ namespace Lightning\Test\Http\Session;
 use Redis;
 use LogicException;
 use PHPUnit\Framework\TestCase;
+
 use function Lightning\Dotenv\env;
 
 use Lightning\Http\Session\PhpSession;

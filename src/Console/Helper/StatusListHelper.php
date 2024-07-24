@@ -70,7 +70,7 @@ class StatusListHelper
             if (! isset($this->maxWidth)) {
                 $this->maxWidth = max(array_map('strlen', array_keys($this->statuses)));
                 if (! $this->maxWidth % 2) {
-                    $this->maxWidth ++;
+                    $this->maxWidth++;
                 }
             }
             $stat = str_pad(strtoupper($status), $this->maxWidth, ' ', STR_PAD_BOTH);

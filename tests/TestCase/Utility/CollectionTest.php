@@ -115,7 +115,8 @@ final class CollectionTest extends TestCase
     }
 
     public function testGet(): void
-    {;
+    {
+        ;
         $this->assertNull((new Collection())->get(0));
 
         $collection = new Collection(['foo']);

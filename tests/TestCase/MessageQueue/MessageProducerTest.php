@@ -3,7 +3,6 @@
 namespace Lightning\Test\TestCase\MessageQueue;
 
 use PHPUnit\Framework\TestCase;
-use Lightning\MessageQueue\Message;
 use Lightning\MessageQueue\MessageProducer;
 use Lightning\MessageQueue\MemoryMessageQueue;
 
@@ -21,7 +20,6 @@ class ProducerMessage
 
 class ProducerTestMessageQueue extends MemoryMessageQueue
 {
-
     public function send(string $queue, string $message, int $delay = 0): bool
     {
         return false;
@@ -54,7 +52,6 @@ final class MessageProducerTest extends TestCase
 
         $this->assertTrue($messageProducer->send('default', new ProducerMessage('foo')));
         $this->assertNotEmpty($messageQueue->receive('default'));
-
     }
 
     public function testSendFail(): void
@@ -62,6 +59,6 @@ final class MessageProducerTest extends TestCase
         $messageQueue = new ProducerTestMessageQueue();
         $messageProducer = new MessageProducer($messageQueue);
 
-        $this->assertFalse($messageProducer->send('default',new ProducerMessage('foo')));
+        $this->assertFalse($messageProducer->send('default', new ProducerMessage('foo')));
     }
 }

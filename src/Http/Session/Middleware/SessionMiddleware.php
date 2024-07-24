@@ -24,9 +24,6 @@ class SessionMiddleware implements MiddlewareInterface
 
     /**
      * Constructor
-     *
-     * @param SessionInterface $session
-     * @param array $cookieOptions
      */
     public function __construct(SessionInterface $session, array $cookieOptions = [])
     {
@@ -40,10 +37,6 @@ class SessionMiddleware implements MiddlewareInterface
 
     /**
      * Process an incoming server request
-     *
-     * @param ServerRequestInterface $request
-     * @param RequestHandlerInterface $handler
-     * @return ResponseInterface
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {

@@ -53,7 +53,7 @@ class ValidationRules
      */
     public function empty(mixed $value): bool
     {
-        return !$this->notEmpty($value);
+        return ! $this->notEmpty($value);
     }
 
     /**
@@ -65,7 +65,7 @@ class ValidationRules
             return count($value) > 0;
         }
 
-        if (is_null($value) || !is_scalar($value)) {
+        if (is_null($value) || ! is_scalar($value)) {
             return false;
         }
 
@@ -77,7 +77,7 @@ class ValidationRules
      */
     public function notBlank(mixed $value): bool
     {
-        if (is_null($value) || !is_scalar($value)) {
+        if (is_null($value) || ! is_scalar($value)) {
             return false;
         }
 

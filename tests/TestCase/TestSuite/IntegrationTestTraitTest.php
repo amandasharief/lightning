@@ -316,7 +316,8 @@ final class IntegrationTestTraitTest extends TestCase
     public function testCookieNotSet(): void
     {
         $this->createResponse('ok');
-        $this->assertCookieNotSet('id');;
+        $this->assertCookieNotSet('id');
+        ;
     }
 
     public function testCookieEquals(): void

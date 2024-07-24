@@ -5,10 +5,8 @@ namespace Lightning\Test\TestCase\MessageQueue;
 use PHPUnit\Framework\TestCase;
 use Lightning\MessageQueue\Message;
 
-
 class SendEmailNotification
 {
-
 }
 
 final class MessageTest extends TestCase
@@ -37,6 +35,4 @@ final class MessageTest extends TestCase
             (new Message(new SendEmailNotification()))->getTimestamp()
         );
     }
-
- 
 }

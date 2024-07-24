@@ -343,7 +343,7 @@ final class QueryBuilderTest extends TestCase
         $this->assertEquals(
             'SELECT articles.id, articles.name, articles.email FROM articles LEFT JOIN users AS u ON user.id = articles.user_id',
             (string) $builder
-         );
+        );
     }
 
     public function testLeftJoinArray(): void
@@ -385,7 +385,7 @@ final class QueryBuilderTest extends TestCase
         $this->assertEquals(
             'SELECT articles.id, articles.name, articles.email FROM articles RIGHT JOIN users AS u ON user.id = articles.user_id',
             (string) $builder
-         );
+        );
     }
 
     public function testRightJoinArray(): void
@@ -427,7 +427,7 @@ final class QueryBuilderTest extends TestCase
         $this->assertEquals(
             'SELECT articles.id, articles.name, articles.email FROM articles FULL JOIN users AS u ON user.id = articles.user_id',
             (string) $builder
-         );
+        );
     }
 
     public function testFullJoinArray(): void
@@ -618,9 +618,9 @@ final class QueryBuilderTest extends TestCase
             ->where(['id' => 1234,'OR' => ['status' => 'active']]);
 
         $this->assertEquals(
-                'SELECT articles.id, articles.name, articles.email FROM articles WHERE articles.id = :v0 OR articles.status = :v1',
-                (string) $builder
-            );
+            'SELECT articles.id, articles.name, articles.email FROM articles WHERE articles.id = :v0 OR articles.status = :v1',
+            (string) $builder
+        );
 
         $builder = $this->createBuilder()
             ->select(['id', 'name','email'])
@@ -641,9 +641,9 @@ final class QueryBuilderTest extends TestCase
             ->where(['NOT' => ['id' => [123,456]]]);
 
         $this->assertEquals(
-                'SELECT articles.id, articles.name, articles.email FROM articles WHERE NOT articles.id IN ( :v0, :v1 )',
-                (string) $builder
-            );
+            'SELECT articles.id, articles.name, articles.email FROM articles WHERE NOT articles.id IN ( :v0, :v1 )',
+            (string) $builder
+        );
 
         $builder = $this->createBuilder()
             ->select(['id', 'name','email'])
@@ -651,9 +651,9 @@ final class QueryBuilderTest extends TestCase
             ->where(['id' => 1234,'NOT' => ['status' => 'active']]);
 
         $this->assertEquals(
-                'SELECT articles.id, articles.name, articles.email FROM articles WHERE articles.id = :v0 AND NOT articles.status = :v1',
-                (string) $builder
-            );
+            'SELECT articles.id, articles.name, articles.email FROM articles WHERE articles.id = :v0 AND NOT articles.status = :v1',
+            (string) $builder
+        );
 
         $builder = $this->createBuilder()
             ->select(['id', 'name','email'])

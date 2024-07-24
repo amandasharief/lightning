@@ -10,12 +10,12 @@ use function Lightning\Dotenv\env;
 use Lightning\Migration\Migration;
 use Lightning\Fixture\FixtureManager;
 use Lightning\Test\PersistentPdoFactory;
-use Lightning\Test\Fixture\MigrationsFixture;
+use Lightning\Console\TestSuite\TestConsole;
 
+use Lightning\Test\Fixture\MigrationsFixture;
 use Lightning\Migration\Command\MigrateUpCommand;
 use Lightning\Migration\Command\MigrateDownCommand;
 use Lightning\Console\TestSuite\ConsoleIntegrationTestTrait;
-use Lightning\Console\TestSuite\TestConsole;
 
 final class MigrateDownCommandTest extends TestCase
 {
@@ -29,7 +29,7 @@ final class MigrateDownCommandTest extends TestCase
     public function setUp(): void
     {
         // Create Connection
-        $this->pdo = ( new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
+        $this->pdo = (new PersistentPdoFactory())->create(env('DB_DSN'), env('DB_USERNAME'), env('DB_PASSWORD'));
 
         $driver = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
 

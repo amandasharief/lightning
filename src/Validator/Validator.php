@@ -88,7 +88,7 @@ class Validator
                 continue;
             }
 
-            if($validationSet->isNullable() && array_key_exists($field, $data) && $value === null){
+            if ($validationSet->isNullable() && array_key_exists($field, $data) && $value === null) {
                 continue;
             }
 
