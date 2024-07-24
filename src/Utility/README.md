@@ -4,7 +4,7 @@ A collection of utility components
 
 ## Collection
 
-The collection is a super charged object oriented array, with the main array based functions for sorting and maniupation.
+The collection is a super charged object oriented array, with the main array based functions for sorting and maniuplation.
 
 ```php
 $entity = new UserEntity();

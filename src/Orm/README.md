@@ -59,7 +59,7 @@ class Article extends AbstractObjectRelationalMapper
 ```
 
 ```php
-$result = $article->findBy(['id'=>1000], ['with'=> ['author']]);
+$result = $article->find(['id'=>1000], ['with'=> ['author']]);
 ```
 
 The related `Author` is added to the `Article`
@@ -92,7 +92,6 @@ The following options are supported:
 - propertyName: the name of the property where the data will be set
 - foreignKey: the name of the foreign key in the other table
 - dependent: When set to true associated records will also be deleted
-- fields: An array of fields to select, if not provided it will use the Data Mapper default TODO: no longer relevant
 - conditions: An array of additional criteria to use. e.g. `['tenant_id' => TENANT_ID]`
 
 ## Has Many (one-to-many)
@@ -104,7 +103,6 @@ The following options are supported:
 - propertyName: the name of the property where the data will be set
 - foreignKey: the name of the foreign key in the other table
 - dependent: When set to true associated records will also be deleted
-- fields: An array of fields to select, if not provided it will use the Data Mapper default
 - conditions: An array of additional criteria to use. e.g. `['tenant_id' => TENANT_ID]`
 - order: A setting for order e.g. `status DESC`
 
@@ -137,7 +135,6 @@ The following options are supported:
 - foreignKey: the name of the foreign key used by this Data Mapper
 - otherForeignKey: the name of the foreign key used by the other Data Mapper
 - dependent: When set to true related records from the join table will be deleted
-- fields: An array of fields to select, if not provided it will use the Data Mapper default
 - conditions: An array of additional criteria to use. e.g. `['tenant_id' => TENANT_ID]`
 - order: A setting for order e.g. `status DESC`
 

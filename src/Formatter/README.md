@@ -12,14 +12,13 @@ echo $formatter->format('Hello {name}',['name' => 'jon']);
 You can also display messages depending up on the `count` argument supplied, you must always provide at least `3` variations, `zero`, `one` and `many`, if the count does not exist in the index, it will return the last message in the invoice.
 
 ```php
-echo $formater->format('You have no invoices|You have one invoice|You have {count} invoices',['count' => 4]); // you have 4 invoices
+echo $formater->format('You have no invoices|You have one invoice|You have {count} invoices', ['count' => 4]); // you have 4 invoices
 echo $formater->format('You have no invoices|You have one invoice|You have two invoices| You have {count} invoices',['count' => 3]); // you have 3 invoices
 ```
 
 ## DateTimeFormatter
 
-The `DateTimeFormatter` object gives you an application friendly way to work with dates and time. You can also configure this object
-in your DI container and then change the settings for the object in the `Middleware` or `Controller` which will then change how your whole application formats dates for each user, depending upon their preferences.
+The `DateTimeFormatter` object gives you an application friendly way to work with dates and time. You can also configure this object in your DI container and then change the settings for the object in the `Middleware` or `Controller` which will then change how your whole application formats dates for each user, depending upon their preferences.
 
 ```php
 date_default_timezone_set('UTC');

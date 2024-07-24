@@ -144,7 +144,7 @@ $articles = $mapper->findAll([
 ]);
 ```
 
-The `DataMapper` no longer has bulk methods such as `update all` or `delete all`, since whilst convinent it does not have anything to do with the mapper. Therefore you should create a query method in your Repository (an abstraction layer that uses the datamapper) which uses the PDO object. (The DatabaseDataSource object has update and delete methods as well, but i think perhaps for these type of operations you should use something native)
+The `DataMapper` no longer has bulk methods such as `update all` or `delete all`, since whilst convinent it does not have anything to do with the mapper. Therefore you should create a query method in your Repository (an abstraction layer that uses the data mapper) which uses the PDO object. (The `DatabaseDataSource` object has update and delete methods as well)
 
 See [Repository Pattern](https://martinfowler.com/eaaCatalog/repository.html)
 
@@ -186,7 +186,7 @@ The follow callbacks are supported and the `EventManger` which is a tiny and hig
 - `afterSave` - triggered after afterCreate or afterUpdate
 - `afterDelete`
 - `beforeFind` - triggered on all find operations including count. By stopping the Event you abort the find operation
-- `afterFind` - triggered on all find operations including count.
+- `afterFind` - triggered on all find and findAll. You can modify data here that has been read from the database before it is mapped.
 
 To register a callback pass the name of the event class name and then a callable
 

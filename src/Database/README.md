@@ -97,4 +97,4 @@ The default fetch mode for the `PDO` object created from the `PDOFactory` is an 
 
 ## Resources
 
-- [https://phpdelusions.net/pdo](https://phpdelusions.net/pdo Great content on PDO)
+- [PDO Tutorial (phpdelusions.net)](https://phpdelusions.net/pdo) A fantastic resource.
