@@ -369,7 +369,13 @@ final class DatabaseDataSourceTest extends TestCase
         $dataSource = $this->createDataSource();
         $dataSource->setLogger($this->logger);
 
-        $this->assertStringContainsString('error,no such table: pink_potatoes,[]', $this->logger->getLog());
+        //error,Table 'lightning.pink_potatoes' doesn't exist,
+        // different version 
+        $this->assertMatchesRegularExpression(
+            '/error,Table \'lightning.pink_potatoes\' doesn\'t exist|error,no such table: pink_potatoes/',
+            $this->logger->getLog()
+        );
+
     }
 
     public function testGetPDO(): void
