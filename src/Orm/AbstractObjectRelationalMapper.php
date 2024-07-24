@@ -57,6 +57,7 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
      *      'className' => User::class
      *      'foreignKey' => 'user_id', // in other table
      *      'dependent' => false
+     *      'conditions => [], // additional conditions
      *      'propertyName' => 'comments'
      *  ]
      */
@@ -69,6 +70,7 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
      *      'joinTable' => 'tags_users',
      *      'foreignKey' => 'tag_id',
      *      'otherForeignKey' => 'user_id', // the foreignKey for the associated model
+     *      'conditions' => [], // additional criteria you want to spec
      *      'dependent' => true
      *      'propertyName' => 'tags'
      * ]
@@ -177,7 +179,7 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
         $data = [];
 
         foreach ($associations['belongsTo'] as $property => $config) {
-            $conditions = $config['conditions'];
+            $conditions = $config['conditions']; /** @todo this only makes sense for hasMany */
             $mapper = $this->manager->get($config['className']);
             $bindingKey = $mapper->getPrimaryKey()[0];
 
@@ -195,7 +197,7 @@ abstract class AbstractObjectRelationalMapper extends AbstractDataMapper
     {
         $data = [];
         foreach ($associations['hasOne'] as $property => $config) {
-            $conditions = $config['conditions'];
+            $conditions = $config['conditions']; /** @todo this only makes sense for hasMany */
             $mapper = $this->manager->get($config['className']);
 
             $conditions[$config['foreignKey']] = $ids[$property];

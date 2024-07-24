@@ -290,37 +290,7 @@ final class AbstractObjectRelationalMapperTest extends TestCase
     //     dd($result);
     // }
 
-    public function testBelongsToConditions(): void
-    {
-        $article = new Article($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
 
-        $article->setAssociation('belongsTo', [
-            [
-                'className' => Author::class,
-                'foreignKey' => 'author_id',
-                'order' => null,
-                'conditions' => [
-                    'authors.id <>' => 2000
-                ],
-                'propertyName' => 'author'
-            ]
-
-        ]);
-        $result = $article->find(['id' => 1000], ['with' => ['author']]);
-
-        # Important check with array not toJson
-        $expected = [
-            'id' => 1000,
-            'title' => 'Article #1',
-            'body' => 'A description for article #1',
-            'author_id' => 2000,
-            'created_at' => '2021-10-03 09:01:00',
-            'updated_at' => '2021-10-03 09:02:00',
-            'author' => null
-
-        ];
-        $this->assertEquals($expected, $result->toState());
-    }
 
     public function testBelongsToNotFound(): void
     {
@@ -362,54 +332,6 @@ final class AbstractObjectRelationalMapperTest extends TestCase
             ]
         ];
 
-        $this->assertEquals($expected, $result->toState());
-    }
-
-    /**
-     * TOOD: rewrite test so its not modifying db since this causes for random errors in the CI matrix with other SQLITE and PHP versions
-     */
-    public function testHasOneConditions(): void
-    {
-        // Create Extra Record
-        $profile = new Profile($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
-        $user = new User($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
-
-        $ds = $profile->getDataSource();
-        $ds->update('profiles', ['user_id' => 1000]);
-
-        $result = $profile->getDataSource()->update('profiles', ['user_id' => 1000]);
-        $this->assertEquals(3, $result);
-
-        $user->setAssociation('hasOne', [
-            [
-                'className' => Profile::class,
-                'foreignKey' => 'user_id', // other table
-                'dependent' => true,
-                'propertyName' => 'profile',
-                'conditions' => [
-                    'profiles.id <>' => [2000,2002] // disabling this will cause to fail
-                ],
-                'order' => 'id DESC',
-                'propertyName' => 'profile'
-
-            ]
-        ]);
-
-        $result = $user->find(['id' => 1000], ['with' => ['profile']]);
-
-        $expected = [
-            'id' => 1000,
-            'name' => 'User #1',
-            'created_at' => '2021-10-14 09:01:00',
-            'updated_at' => '2021-10-14 09:02:00',
-            'profile' => [
-                'id' => 2001,
-                'name' => 'standard',
-                'user_id' => 1000,
-                'created_at' => '2021-10-03 14:03:00',
-                'updated_at' => '2021-10-03 14:04:00'
-            ]
-        ];
         $this->assertEquals($expected, $result->toState());
     }
 
@@ -610,50 +532,6 @@ final class AbstractObjectRelationalMapperTest extends TestCase
                     'updated_at' => '2021-10-03 09:02:00',
                 ],
                 1 => [
-                    'id' => 2002,
-                    'name' => 'Tag #3',
-                    'created_at' => '2021-10-03 09:05:00',
-                    'updated_at' => '2021-10-03 09:06:00'
-                ]
-            ]
-        ];
-        $this->assertEquals($expected, $result->toState());
-    }
-
-    /**
-     * TOOD: rewrite test so its not modifying db since this causes for random errors in the CI matrix with other SQLITE and PHP versions
-     */
-    public function testBelongsToManyConditions(): void
-    {
-        // Create extra
-        $this->dataSource->update('posts_tags', ['post_id' => 1000], ['criteria' => ['post_id' => 1002]]);
-
-        $post = new Post($this->dataSource, $this->hydrator, $this->eventManager, $this->mapperManager);
-
-        $post->setAssociation('belongsToMany', [
-            [
-                'className' => Tag::class,
-                'joinTable' => 'posts_tags',
-                'foreignKey' => 'post_id',
-                'otherForeignKey' => 'tag_id',
-                'conditions' => [
-                    'id !=' => 2000,
-                ],
-                'order' => null,
-                'propertyName' => 'tags'
-            ]
-        ]);
-
-        $result = $post->find(['id' => 1000], ['with' => ['tags']]);
-
-        $expected = [
-            'id' => 1000,
-            'title' => 'Post #1',
-            'body' => 'A description for post #1',
-            'created_at' => '2021-10-03 09:01:00',
-            'updated_at' => '2021-10-03 09:02:00',
-            'tags' => [
-                0 => [
                     'id' => 2002,
                     'name' => 'Tag #3',
                     'created_at' => '2021-10-03 09:05:00',

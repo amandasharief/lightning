@@ -155,7 +155,6 @@ class DatabaseDataSource implements DataSourceInterface
         try {
             if ($statement = $this->pdo->prepare($sql)) {
                 $statement->execute($params);
-
                 return $statement;
             }
 
