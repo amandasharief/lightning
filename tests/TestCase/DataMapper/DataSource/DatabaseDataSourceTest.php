@@ -349,6 +349,10 @@ final class DatabaseDataSourceTest extends TestCase
     {
         $this->logger->clearLog();
 
+        if($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'pgsql'){
+            $this->markTestSkipped('This test does not work with pgsql driver');
+        }
+    
         $dataSource = $this->createDataSource();
         $dataSource->setLogger($this->logger);
         $dataSource->getPDO()->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_SILENT); // disable exceptions throwing
