@@ -1,7 +1,0 @@
-<?php
-/**
- * @var \Lightning\TemplateRender\TemplateRenderer $this
- */
-$this->extend('layouts/default');
-?>
-<h1>Home</h1>

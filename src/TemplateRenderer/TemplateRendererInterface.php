@@ -21,5 +21,5 @@ interface TemplateRendererInterface
      * @param array $options
      * @return string
      */
-    public function render(string $template, array $variables = [], array $options = []) : string;
+    public function render(string $template, array $variables = [], array $options = []): string;
 }
