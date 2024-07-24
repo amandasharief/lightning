@@ -184,7 +184,7 @@ final class AbstractControllerTest extends TestCase
 
     public function testRenderHooks(): void
     {
-        $controller = new ApiController(new TemplateRenderer(__DIR__ .'/TestApp/templates'));
+        $controller = new ApiController((new TemplateRenderer())->setPath(__DIR__ .'/TestApp/templates')->setFileExtension('php'));
 
         $controller->index();
 
@@ -195,7 +195,7 @@ final class AbstractControllerTest extends TestCase
 
     public function testRenderHooksJson(): void
     {
-        $controller = new ApiController(new TemplateRenderer(__DIR__ .'/TestApp/templates'));
+        $controller = new ApiController((new TemplateRenderer())->setPath(__DIR__ .'/TestApp/templates')->setFileExtension('php'));
 
         $controller->indexJson();
 
@@ -206,7 +206,7 @@ final class AbstractControllerTest extends TestCase
 
     public function testRenderHooksFile(): void
     {
-        $controller = new ApiController(new TemplateRenderer(__DIR__ .'/TestApp/templates'));
+        $controller = new ApiController((new TemplateRenderer())->setPath(__DIR__ .'/TestApp/templates')->setFileExtension('php'));
 
         $controller->download();
 
@@ -217,7 +217,7 @@ final class AbstractControllerTest extends TestCase
 
     public function testRedirectHooks(): void
     {
-        $controller = new ApiController(new TemplateRenderer(__DIR__ .'/TestApp/templates'));
+        $controller = new ApiController((new TemplateRenderer())->setPath(__DIR__ .'/TestApp/templates')->setFileExtension('php'));
 
         $controller->old();
 
@@ -228,7 +228,10 @@ final class AbstractControllerTest extends TestCase
 
     private function createController(): ArticlesController
     {
-        $path = __DIR__ .'/TestApp/templates';
-        return new ArticlesController(new TemplateRenderer($path,['cachePath'=>sys_get_temp_dir() .'/tr_tests']));
+       $templateRenderer = (new TemplateRenderer())
+            ->setPath(__DIR__ .'/TestApp/templates')
+            ->setFileExtension('php');
+
+        return new ArticlesController( $templateRenderer );
     }
 }
