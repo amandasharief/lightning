@@ -111,8 +111,10 @@ class Autowire
         /** @var \ReflectionNamedType|\ReflectionUnionType|null $parameterType */
         $parameterType = $parameter->getType();
 
+        $hasDefaultValue = $parameter->isDefaultValueAvailable();
+
         if (! $parameterType) {
-            if ($parameter->isDefaultValueAvailable()) {
+            if ($hasDefaultValue) {
                 return $parameter->getDefaultValue();
             }
 
@@ -120,9 +122,7 @@ class Autowire
                 sprintf('constructor parameter `%s` has no type or default value', $parameter->name)
             );
         }
-
-        $hasDefaultValue = $parameter->isDefaultValueAvailable();
-
+        
         if ($parameterType->isBuiltin()) {
             if (isset($vars[$parameter->name])) {
                 return $vars[$parameter->name];

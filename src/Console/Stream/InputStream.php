@@ -20,7 +20,7 @@ class InputStream
     /**
      * Constructor
      */
-    public function __construct(string $handle, string $mode = 'r')
+    public function __construct(string $handle = 'php://stdin', string $mode = 'r')
     {
         $this->resource = fopen($handle, $mode);
         if (! $this->resource) {

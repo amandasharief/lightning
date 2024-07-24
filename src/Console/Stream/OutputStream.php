@@ -20,7 +20,7 @@ class OutputStream
     /**
      * Constructor
      */
-    public function __construct(string $handle, string $mode = 'w')
+    public function __construct(string $handle = 'php://stdout', string $mode = 'w')
     {
         $this->resource = fopen($handle, $mode);
         if (! $this->resource) {
